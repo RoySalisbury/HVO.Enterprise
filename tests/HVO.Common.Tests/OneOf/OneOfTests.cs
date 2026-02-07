@@ -1,0 +1,124 @@
+using System;
+using HVO.Common.OneOf;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+namespace HVO.Common.Tests.OneOf;
+
+[TestClass]
+public class OneOfTests
+{
+    [TestMethod]
+    public void OneOf2_ImplicitConversion_FromT1()
+    {
+        // Arrange & Act
+        OneOf<int, string> oneOf = 42;
+        
+        // Assert
+        Assert.IsTrue(oneOf.IsT1);
+        Assert.IsFalse(oneOf.IsT2);
+        Assert.AreEqual(42, oneOf.AsT1);
+    }
+
+    [TestMethod]
+    public void OneOf2_ImplicitConversion_FromT2()
+    {
+        // Arrange & Act
+        OneOf<int, string> oneOf = "test";
+        
+        // Assert
+        Assert.IsFalse(oneOf.IsT1);
+        Assert.IsTrue(oneOf.IsT2);
+        Assert.AreEqual("test", oneOf.AsT2);
+    }
+
+    [TestMethod]
+    public void OneOf2_Match_CallsCorrectHandler()
+    {
+        // Arrange
+        OneOf<int, string> intValue = 42;
+        OneOf<int, string> stringValue = "test";
+        
+        // Act
+        var intResult = intValue.Match(
+            i => $"Int: {i}",
+            s => $"String: {s}");
+        var stringResult = stringValue.Match(
+            i => $"Int: {i}",
+            s => $"String: {s}");
+        
+        // Assert
+        Assert.AreEqual("Int: 42", intResult);
+        Assert.AreEqual("String: test", stringResult);
+    }
+
+    [TestMethod]
+    public void OneOf2_AsT2_ThrowsWhenT1()
+    {
+        // Arrange
+        OneOf<int, string> oneOf = 42;
+        
+        // Act & Assert
+        Assert.ThrowsException<InvalidOperationException>(() => { var value = oneOf.AsT2; });
+    }
+
+    [TestMethod]
+    public void OneOf3_SupportsThreeTypes()
+    {
+        // Arrange & Act
+        OneOf<int, string, bool> intValue = 42;
+        OneOf<int, string, bool> stringValue = "test";
+        OneOf<int, string, bool> boolValue = true;
+        
+        // Assert
+        Assert.IsTrue(intValue.IsT1);
+        Assert.IsTrue(stringValue.IsT2);
+        Assert.IsTrue(boolValue.IsT3);
+    }
+
+    [TestMethod]
+    public void OneOf4_SupportsFourTypes()
+    {
+        // Arrange & Act
+        OneOf<int, string, bool, double> intValue = 42;
+        OneOf<int, string, bool, double> doubleValue = 3.14;
+        
+        // Assert
+        Assert.IsTrue(intValue.IsT1);
+        Assert.IsTrue(doubleValue.IsT4);
+    }
+
+    [TestMethod]
+    public void OneOfExtensions_Is_DetectsType()
+    {
+        // Arrange
+        OneOf<int, string> oneOf = 42;
+        
+        // Act & Assert
+        Assert.IsTrue(oneOf.Is<int>());
+        Assert.IsFalse(oneOf.Is<string>());
+    }
+
+    [TestMethod]
+    public void OneOfExtensions_TryGet_GetsValueWhenCorrectType()
+    {
+        // Arrange
+        OneOf<int, string> oneOf = 42;
+        
+        // Act
+        var success = oneOf.TryGet<int>(out var value);
+        
+        // Assert
+        Assert.IsTrue(success);
+        Assert.AreEqual(42, value);
+    }
+
+    [TestMethod]
+    public void OneOfExtensions_As_ThrowsWhenWrongType()
+    {
+        // Arrange
+        OneOf<int, string> oneOf = 42;
+        
+        // Act & Assert
+        Assert.ThrowsException<InvalidOperationException>(() => oneOf.As<string>());
+    }
+}
