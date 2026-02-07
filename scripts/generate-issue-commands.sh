@@ -61,8 +61,8 @@ for story_file in "$USER_STORIES_DIR"/US-*.md; do
     
     # Get metadata
     category=$(grep "^\*\*Category\*\*:" "$story_file" | sed 's/^\*\*Category\*\*: *//')
-    effort=$(grep "^\*\*Effort\*\*:" "$story_file" | sed 's/^\*\*Effort\*\*: *//' | grep -oE '[0-9]+')
-    sprint=$(grep "^\*\*Sprint\*\*:" "$story_file" | sed 's/^\*\*Sprint\*\*: *//' | grep -oE '[0-9]+')
+    effort=$(grep "^\*\*Effort\*\*:" "$story_file" | sed 's/^\*\*Effort\*\*: *//' | grep -oE '[0-9]+' | head -n1)
+    sprint=$(grep "^\*\*Sprint\*\*:" "$story_file" | sed 's/^\*\*Sprint\*\*: *//' | grep -oE '[0-9]+' | head -n1)
     
     # Determine labels
     labels="user-story"

@@ -1,5 +1,299 @@
 # HVO.Common
 
+A .NET Standard 2.0 utility library providing functional programming patterns and common utilities for all HVO projects.
+
+## Features
+
+- **Result<T>** - Functional error handling without exceptions
+- **Option<T>** - Type-safe optional values
+- **OneOf<T1, T2, ...>** - Discriminated unions (sum types)
+- **Extension Methods** - String, collection, and enum utilities
+- **Guard & Ensure** - Input validation and runtime assertions
+
+## Installation
+
+```bash
+dotnet add package HVO.Common
+```
+
+## Usage Examples
+
+### Result<T> Pattern
+
+Handle errors functionally without throwing exceptions:
+
+```csharp
+using HVO.Common.Results;
+
+public Result<Customer> GetCustomer(int id)
+{
+    try
+    {
+        if (id <= 0)
+            return Result<Customer>.Failure(
+                new ArgumentException("Invalid ID"));
+        
+        var customer = _repository.Find(id);
+        return customer ?? Result<Customer>.Failure(
+            new NotFoundException($"Customer {id} not found"));
+    }
+    catch (Exception ex)
+    {
+        return ex; // Implicit conversion
+    }
+}
+
+// Usage
+var result = GetCustomer(123);
+if (result.IsSuccessful)
+{
+    Console.WriteLine($"Found: {result.Value.Name}");
+}
+else
+{
+    _logger.LogError(result.Error, "Failed to get customer");
+}
+
+// Or use pattern matching
+var message = result.Match(
+    success: customer => $"Found: {customer.Name}",
+    failure: error => $"Error: {error?.Message}");
+```
+
+### Result<T, TEnum> with Typed Error Codes
+
+```csharp
+using HVO.Common.Results;
+using System.ComponentModel;
+
+public enum ValidationError
+{
+    [Description("Invalid input format")]
+    InvalidFormat,
+    
+    [Description("Required field missing")]
+    RequiredFieldMissing
+}
+
+public Result<Order, ValidationError> ValidateOrder(OrderRequest request)
+{
+    if (string.IsNullOrEmpty(request.CustomerName))
+        return ValidationError.RequiredFieldMissing;
+    
+    if (request.Amount <= 0)
+        return (ValidationError.InvalidFormat, "Amount must be positive");
+    
+    return Result<Order, ValidationError>.Success(order);
+}
+
+// Usage
+var result = ValidateOrder(request);
+if (result.IsSuccessful)
+{
+    ProcessOrder(result.Value);
+}
+else
+{
+    Console.WriteLine($"Error: {result.Error.Code} - {result.Error.Message}");
+}
+```
+
+### Option<T> Pattern
+
+Type-safe optional values:
+
+```csharp
+using HVO.Common.Options;
+
+public Option<string> GetConfigValue(string key)
+{
+    return _config.TryGetValue(key, out var value)
+        ? new Option<string>(value)
+        : Option<string>.None();
+}
+
+// Usage with default
+var apiKey = GetConfigValue("ApiKey")
+    .GetValueOrDefault("default-key");
+
+// Or with pattern matching
+GetConfigValue("ApiKey").Match(
+    onSome: key => Console.WriteLine($"API Key: {key}"),
+    onNone: () => Console.WriteLine("No API key configured"));
+```
+
+### OneOf<T1, T2, ...> Discriminated Unions
+
+Type-safe variant types:
+
+```csharp
+using HVO.Common.OneOf;
+
+// Return different types from a single method
+public OneOf<Customer, Guest, Anonymous> GetUser(string id)
+{
+    if (IsCustomer(id)) return GetCustomer(id);
+    if (IsGuest(id)) return GetGuest(id);
+    return new Anonymous();
+}
+
+// Pattern match on the result
+var user = GetUser("123");
+var greeting = user.Match(
+    customer => $"Welcome back, {customer.Name}!",
+    guest => "Welcome, guest!",
+    anonymous => "Please sign in");
+
+// Or use type checking
+if (user.IsT1)
+{
+    var customer = user.AsT1;
+    ProcessCustomer(customer);
+}
+```
+
+### Extension Methods
+
+#### String Extensions
+
+```csharp
+using HVO.Common.Extensions;
+
+// Check for null or whitespace
+if (input.IsNullOrWhiteSpace()) { }
+
+// Truncate with suffix
+var preview = longText.TruncateWithSuffix(100, "...");
+
+// Remove all whitespace
+var compact = "Hello World".RemoveWhitespace(); // "HelloWorld"
+
+// Convert to enum
+var color = "Red".ToEnum<Color>();
+
+// Check multiple values
+if (input.ContainsAny("error", "warning", "failure")) { }
+```
+
+#### Collection Extensions
+
+```csharp
+using HVO.Common.Extensions;
+
+// Safe enumeration
+foreach (var item in collection.OrEmpty()) { }
+
+// Execute action for each
+items.ForEach(item => Console.WriteLine(item));
+
+// Chunk into batches
+var batches = items.Chunk(100);
+
+// Distinct by key
+var unique = items.DistinctBy(x => x.Id);
+
+// Find index
+var index = items.IndexOf(x => x.Name == "Test");
+```
+
+#### Enum Extensions
+
+```csharp
+using HVO.Common.Extensions;
+
+public enum Status
+{
+    [Description("Order is pending")]
+    Pending,
+    
+    [Description("Order is complete")]
+    Complete
+}
+
+var description = Status.Pending.GetDescription();
+// Returns: "Order is pending"
+```
+
+### Guard Clauses
+
+Input validation with informative exceptions:
+
+```csharp
+using HVO.Common.Utilities;
+
+public class CustomerService
+{
+    public void UpdateCustomer(int id, string name, int age)
+    {
+        Guard.AgainstNegativeOrZero(id, 0); // Throws if id <= 0
+        Guard.AgainstNullOrWhiteSpace(name); // Throws if null/empty
+        Guard.AgainstOutOfRange(age, 0, 150); // Throws if not in range
+    }
+    
+    public void ProcessItems(IEnumerable<Item> items)
+    {
+        Guard.AgainstNull(items);
+        Guard.AgainstNullOrEmpty(items); // Throws if collection is empty
+    }
+}
+```
+
+### Ensure Assertions
+
+Runtime state validation:
+
+```csharp
+using HVO.Common.Utilities;
+
+public class OrderProcessor
+{
+    private Order? _currentOrder;
+    
+    public void ProcessOrder()
+    {
+        Ensure.NotNull(_currentOrder, "Order must be set before processing");
+        Ensure.That(_currentOrder.Items.Any(), "Order must have items");
+        Ensure.InRange(_currentOrder.Total, 0, 1000000, "order total");
+        
+        // Process order...
+    }
+}
+```
+
+## LINQ-Style Extensions
+
+Both Result<T> and Option<T> support functional composition:
+
+```csharp
+// Map transforms the value
+var result = GetCustomer(123)
+    .Map(c => c.Name)
+    .Map(name => name.ToUpper());
+
+// Bind chains operations that return Result/Option
+var result = GetCustomer(123)
+    .Bind(customer => GetOrders(customer.Id))
+    .Bind(orders => CalculateTotal(orders));
+
+// Fluent actions
+GetCustomer(123)
+    .OnSuccess(c => _logger.LogInformation("Found customer {Name}", c.Name))
+    .OnFailure(ex => _logger.LogError(ex, "Customer not found"));
+```
+
+## Target Frameworks
+
+- .NET Standard 2.0 (for maximum compatibility)
+- Compatible with .NET Framework 4.6.1+, .NET Core 2.0+, .NET 5+
+
+## Zero Dependencies
+
+HVO.Common has no external dependencies and can be used in any .NET project.
+
+## License
+
+See LICENSE file in the repository root
+
 Common library providing shared patterns, abstractions, and utilities for all HVO projects.
 
 ## Features
