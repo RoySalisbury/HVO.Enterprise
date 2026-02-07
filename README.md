@@ -188,9 +188,53 @@ else
 - **Background processing**: Non-blocking with bounded queue
 - **Target overhead**: <100ns per operation (excluding Dispose)
 
+## Project Planning & User Stories
+
+This project follows a structured user story approach with 30 stories covering all features.
+
+### Quick Links
+
+- **[Quick Start: Creating GitHub Issues](QUICK-START-ISSUES.md)** - 5-minute guide to create all GitHub issues
+- **[Validation Summary](VALIDATION-SUMMARY.md)** - Complete status report of all user stories
+- **[User Stories Index](docs/user-stories/README.md)** - All 30 user stories (US-001 to US-030)
+- **[Scripts Documentation](scripts/README.md)** - Automation tools for issue creation
+
+### Project Status (30 User Stories, 180 Story Points)
+
+| Category | Stories | SP | Status |
+|----------|---------|-----|--------|
+| ✅ Completed | 5 | 26 | 14% |
+| 🚧 In Progress | 0 | 0 | 0% |
+| ❌ Not Started | 25 | 154 | 86% |
+
+**Completed Stories**:
+- US-001: Core Package Setup (3 SP)
+- US-002: Auto-Managed Correlation (5 SP)
+- US-003: Background Job Correlation (5 SP)
+- US-004: Bounded Queue Worker (8 SP)
+- US-019: HVO.Common Library (5 SP)
+
+### Creating GitHub Issues
+
+All user story markdown files have been created. To convert them to GitHub issues:
+
+```bash
+# 1. Authenticate
+gh auth login
+
+# 2. Generate issue creation script
+./scripts/generate-issue-commands.sh > create-all-issues.sh
+
+# 3. Execute
+chmod +x create-all-issues.sh && ./create-all-issues.sh
+```
+
+See [QUICK-START-ISSUES.md](QUICK-START-ISSUES.md) for detailed instructions.
+
 ## Documentation
 
 - [Project Plan](docs/project-plan.md) - Detailed implementation plan and architecture decisions
+- [User Stories](docs/user-stories/README.md) - All 30 user stories with acceptance criteria
 - [Copilot Instructions](.github/copilot-instructions.md) - Development guidelines and coding standards
 
 ## Development
