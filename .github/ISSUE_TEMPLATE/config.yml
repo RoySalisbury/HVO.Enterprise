@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 📚 Documentation
+    url: https://github.com/RoySalisbury/HVO.Enterprise/tree/main/docs
+    about: Read the project documentation
+  - name: 💬 Discussions
+    url: https://github.com/RoySalisbury/HVO.Enterprise/discussions
+    about: Ask questions and discuss ideas with the community
+  - name: 🔍 Project Plan
+    url: https://github.com/RoySalisbury/HVO.Enterprise/blob/main/docs/project-plan.md
+    about: View the detailed project implementation plan

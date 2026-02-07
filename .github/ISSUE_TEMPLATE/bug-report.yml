@@ -1,0 +1,115 @@
+name: 🐛 Bug Report
+description: Report a bug or unexpected behavior
+title: "[BUG]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Bug Report
+        
+        Thanks for taking the time to report a bug! Please fill out the form below.
+        
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is
+      placeholder: Describe the bug...
+    validations:
+      required: true
+      
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: I expected...
+    validations:
+      required: true
+      
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: Instead, what happened was...
+    validations:
+      required: true
+      
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Steps to Reproduce
+      description: Detailed steps to reproduce the behavior
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Execute '...'
+        4. See error
+    validations:
+      required: true
+      
+  - type: textarea
+    id: code-sample
+    attributes:
+      label: Code Sample
+      description: If applicable, provide a minimal code sample that reproduces the issue
+      placeholder: |
+        ```csharp
+        // Minimal reproduction code
+        ```
+      render: csharp
+      
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: |
+        Provide details about your environment
+      value: |
+        - **OS**: [e.g., Windows 11, Ubuntu 22.04]
+        - **.NET Version**: [e.g., .NET 8.0, .NET Framework 4.8.1]
+        - **Package Version**: [e.g., HVO.Enterprise.Telemetry v1.0.0]
+        - **IDE**: [e.g., Visual Studio 2022, VS Code]
+    validations:
+      required: true
+      
+  - type: textarea
+    id: stack-trace
+    attributes:
+      label: Stack Trace / Error Message
+      description: If applicable, include the full stack trace or error message
+      placeholder: |
+        ```
+        Paste stack trace or error message here
+        ```
+      render: shell
+      
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here (screenshots, logs, etc.)
+      
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How severe is this bug?
+      options:
+        - Critical - System crash, data loss
+        - High - Major functionality broken
+        - Medium - Feature partially working
+        - Low - Minor issue, workaround available
+    validations:
+      required: true
+      
+  - type: checkboxes
+    id: willingness-to-fix
+    attributes:
+      label: Contribution
+      description: Are you willing to submit a PR to fix this bug?
+      options:
+        - label: I am willing to submit a PR to fix this bug
+        - label: I can help test a fix
