@@ -145,13 +145,10 @@ namespace HVO.Enterprise.Telemetry.Abstractions
             object? target,
             object?[] arguments)
         {
-            if (method == null)
+            if (method == null || arguments == null)
             {
-                throw new ArgumentNullException(nameof(method));
-            }
-            if (arguments == null)
-            {
-                throw new ArgumentNullException(nameof(arguments));
+                throw new ArgumentNullException(
+                    method == null ? nameof(method) : nameof(arguments));
             }
             
             Method = method;

@@ -44,9 +44,8 @@ for story_file in "$USER_STORIES_DIR"/US-*.md; do
     fi
     
     filename=$(basename "$story_file")
-    story_id="${filename%.md}"
-    story_id="${story_id%-*}"
-    story_id="$(echo "$story_id" | cut -d'-' -f1-2)"  # e.g., US-001
+    # Extract story ID (e.g., US-001) from filename like US-001-core-package-setup.md
+    story_id="$(echo "$filename" | cut -d'-' -f1-2)"  # e.g., US-001
     
     # Extract title from first line
     title=$(head -n1 "$story_file" | sed 's/^# US-[0-9]*: //')

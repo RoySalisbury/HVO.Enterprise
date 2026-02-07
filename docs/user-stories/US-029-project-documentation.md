@@ -173,7 +173,7 @@ public class OrderService
         catch (Exception ex)
         {
             operation.SetStatus(ActivityStatusCode.Error, ex.Message);
-            return ex; // Implicit Result<Order>.Failure(ex)
+            return Result<Order>.Failure(ex); // Explicit conversion required
         }
     }
 }
