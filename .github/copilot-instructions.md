@@ -790,6 +790,75 @@ public interface IReservationService
 }
 ```
 
+## User Story Documentation Requirements
+
+### When Completing a User Story
+
+**IMPORTANT**: When completing any user story, you MUST update the corresponding documentation in `docs/user-stories/`.
+
+#### Required Updates
+
+1. **Update User Story Status**
+   - Change status from `❌ Not Started` to `✅ Complete`
+   - Update the status date if present
+
+2. **Mark Acceptance Criteria as Complete**
+   - Change all checkboxes from `[ ]` to `[x]` for completed items
+   - Add implementation notes if relevant
+
+3. **Add Implementation Summary** (at end of document)
+   - Brief description of what was implemented
+   - Key decisions made during implementation
+   - Any deviations from the original plan (with justification)
+   - Links to relevant code files or classes
+   - Any known limitations or future considerations
+
+4. **Update Related Documentation**
+   - If the story mentions updating other docs (README, project-plan, etc.), ensure those are updated
+   - Cross-reference related user stories that were blocked or are now unblocked
+
+#### Example Implementation Summary
+
+```markdown
+## Implementation Summary
+
+**Completed**: 2026-02-07  
+**Implemented by**: GitHub Copilot
+
+### What Was Implemented
+- Created HVO.Enterprise.Telemetry.csproj targeting .NET Standard 2.0
+- Added all 8 required dependencies with specified versions
+- Created 13 folder structure directories with .gitkeep files
+- Added compatibility test project for .NET 8
+
+### Key Files
+- `src/HVO.Enterprise.Telemetry/HVO.Enterprise.Telemetry.csproj`
+- `src/HVO.Enterprise.Telemetry/Abstractions/ITelemetryService.cs`
+- `tests/HVO.Enterprise.Telemetry.Tests/`
+
+### Decisions Made
+- Used .NET Standard 2.0 only (no multi-targeting) per project requirements
+- Added placeholder ITelemetryService interface for test compatibility
+- Created .NET 8 test project to verify dependency resolution
+
+### Quality Gates
+- ✅ Build: 0 warnings, 0 errors
+- ✅ Tests: 84/84 passed
+- ✅ Code Review: No issues
+- ✅ Security: 0 vulnerabilities
+
+### Next Steps
+This story unblocks US-002 through US-018.
+```
+
+### Checklist Before Marking Story Complete
+
+- [ ] Update story status to `✅ Complete`
+- [ ] Mark all acceptance criteria checkboxes as `[x]`
+- [ ] Add implementation summary section
+- [ ] Update any related documentation referenced in the story
+- [ ] Commit documentation updates along with code changes
+
 ## Tooling Availability Policy
 
 ### Missing CLI Tools
