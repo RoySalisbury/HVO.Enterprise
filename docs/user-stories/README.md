@@ -2,6 +2,23 @@
 
 This directory contains user stories for implementing the HVO.Enterprise telemetry library as outlined in the [project plan](../project-plan.md).
 
+## 🎯 Creating GitHub Issues
+
+These user stories can be converted to **GitHub Issues** using our structured issue templates:
+
+- **[Create a User Story Issue](https://github.com/RoySalisbury/HVO.Enterprise/issues/new?template=user-story.yml)** - Use this template to create issues
+- **[Helper Script](../../scripts/create-issues-helper.sh)** - Run this to see all stories with creation URLs
+- **[Conversion Guide](../../.github/CREATING-ISSUES.md)** - Complete guide for creating issues from these stories
+
+The issue templates provide:
+- ✅ Azure DevOps-style structure with "As a... I want... So that..." format
+- ✅ Trackable checkboxes for Acceptance Criteria and Definition of Done
+- ✅ Story points and sprint tracking
+- ✅ Proper labels (user-story, sp-X, sprint-X, category)
+- ✅ Dependency linking between issues
+
+See [.github/README.md](../../.github/README.md) for complete documentation on using issue templates.
+
 ## Story Organization
 
 User stories are organized by functional area:

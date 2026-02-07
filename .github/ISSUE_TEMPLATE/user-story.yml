@@ -1,0 +1,194 @@
+name: 💡 User Story
+description: Create a new user story for feature development
+title: "[USER STORY]: "
+labels: ["user-story", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## User Story Template
+        
+        Use this template to create a structured user story following Azure DevOps style.
+        
+        **Guidelines:**
+        - Fill in all required sections
+        - Use checkboxes for acceptance criteria (they're trackable!)
+        - Add story points and sprint information in labels
+        
+  - type: input
+    id: story-id
+    attributes:
+      label: Story ID
+      description: "User story identifier (e.g., US-001, US-002)"
+      placeholder: "US-XXX"
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      description: What category does this story belong to?
+      options:
+        - Core Package
+        - Extension Package
+        - Testing & Samples
+        - Documentation
+        - Infrastructure
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: effort
+    attributes:
+      label: Story Points
+      description: Estimated effort in story points
+      options:
+        - "1"
+        - "2"
+        - "3"
+        - "5"
+        - "8"
+        - "13"
+        - "21"
+    validations:
+      required: true
+      
+  - type: input
+    id: sprint
+    attributes:
+      label: Sprint
+      description: "Target sprint number or identifier"
+      placeholder: "Sprint 1"
+      
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: |
+        Write the user story in the format:
+        As a [user/role], I want [goal/desire], so that [benefit/value].
+      placeholder: |
+        As a **[user role]**,
+        I want **[feature/capability]**,
+        So that **[business value/benefit]**.
+      value: |
+        As a **[user role]**,
+        I want **[feature/capability]**,
+        So that **[business value/benefit]**.
+    validations:
+      required: true
+      
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: |
+        List specific, testable conditions that must be met for this story to be complete.
+        Use checkboxes format for tracking: - [ ] criterion
+      placeholder: |
+        ## Acceptance Criteria
+        
+        1. **Category 1**
+           - [ ] Specific testable criterion
+           - [ ] Another criterion
+           
+        2. **Category 2**
+           - [ ] Specific testable criterion
+           - [ ] Another criterion
+      value: |
+        ## Acceptance Criteria
+        
+        1. **[Category Name]**
+           - [ ] Criterion 1
+           - [ ] Criterion 2
+           
+        2. **[Category Name]**
+           - [ ] Criterion 1
+           - [ ] Criterion 2
+    validations:
+      required: true
+      
+  - type: textarea
+    id: technical-requirements
+    attributes:
+      label: Technical Requirements
+      description: Detailed technical specifications, code samples, interfaces, etc.
+      placeholder: |
+        ### Implementation Details
+        
+        Describe the technical approach, key classes/interfaces, patterns to use.
+        
+        ```csharp
+        // Code examples
+        public class Example { }
+        ```
+      
+  - type: textarea
+    id: testing-requirements
+    attributes:
+      label: Testing Requirements
+      description: How will this story be tested?
+      placeholder: |
+        ### Unit Tests
+        - Test scenario 1
+        - Test scenario 2
+        
+        ### Integration Tests
+        - Integration scenario 1
+        
+        ### Performance Requirements
+        - Metric: < X ms/ns
+        
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: List stories that block this one or that this one blocks
+      placeholder: |
+        **Blocked By**: #issue-number, #issue-number
+        **Blocks**: #issue-number, #issue-number
+        
+  - type: textarea
+    id: definition-of-done
+    attributes:
+      label: Definition of Done
+      description: Checklist of items that must be complete
+      placeholder: |
+        - [ ] Core functionality implemented
+        - [ ] Unit tests passing (>85% coverage)
+        - [ ] Integration tests passing
+        - [ ] Performance benchmarks met
+        - [ ] XML documentation complete
+        - [ ] Code reviewed and approved
+        - [ ] Zero warnings in build
+      value: |
+        - [ ] Core functionality implemented
+        - [ ] Unit tests passing
+        - [ ] Code reviewed and approved
+        - [ ] Documentation updated
+        - [ ] Zero warnings in build
+        
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional Notes
+      description: Design decisions, implementation tips, common pitfalls, etc.
+      placeholder: |
+        ### Design Decisions
+        - Decision 1: Rationale
+        
+        ### Implementation Tips
+        - Tip 1
+        
+        ### Common Pitfalls
+        - Pitfall 1
+        
+  - type: textarea
+    id: related-links
+    attributes:
+      label: Related Documentation
+      description: Links to related docs, designs, or external resources
+      placeholder: |
+        - [Project Plan](../docs/project-plan.md)
+        - [Related Documentation](https://...)
