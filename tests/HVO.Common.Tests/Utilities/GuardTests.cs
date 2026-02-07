@@ -1,0 +1,139 @@
+using System;
+using HVO.Common.Utilities;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+namespace HVO.Common.Tests.Utilities;
+
+[TestClass]
+public class GuardTests
+{
+    [TestMethod]
+    public void AgainstNull_ThrowsWhenNull()
+    {
+        string? value = null;
+        Assert.ThrowsException<ArgumentNullException>(() => Guard.AgainstNull(value));
+    }
+
+    [TestMethod]
+    public void AgainstNull_ReturnsValueWhenNotNull()
+    {
+        var value = "test";
+        var result = Guard.AgainstNull(value);
+        Assert.AreEqual("test", result);
+    }
+
+    [TestMethod]
+    public void AgainstNullOrWhiteSpace_ThrowsWhenWhitespace()
+    {
+        Assert.ThrowsException<ArgumentException>(() => Guard.AgainstNullOrWhiteSpace("   "));
+    }
+
+    [TestMethod]
+    public void AgainstNullOrWhiteSpace_ReturnsValueWhenValid()
+    {
+        var result = Guard.AgainstNullOrWhiteSpace("test");
+        Assert.AreEqual("test", result);
+    }
+
+    [TestMethod]
+    public void AgainstNullOrEmpty_ThrowsWhenEmpty()
+    {
+        Assert.ThrowsException<ArgumentException>(() => Guard.AgainstNullOrEmpty(Array.Empty<int>()));
+    }
+
+    [TestMethod]
+    public void AgainstOutOfRange_ReturnsValueWhenInRange()
+    {
+        var result = Guard.AgainstOutOfRange(5, 1, 10);
+        Assert.AreEqual(5, result);
+    }
+
+    [TestMethod]
+    public void AgainstOutOfRange_ThrowsWhenOutOfRange()
+    {
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => Guard.AgainstOutOfRange(15, 1, 10));
+    }
+
+    [TestMethod]
+    public void Against_ThrowsWhenConditionIsTrue()
+    {
+        Assert.ThrowsException<ArgumentException>(() => Guard.Against(true, "Condition was true"));
+    }
+
+    [TestMethod]
+    public void Against_DoesNotThrowWhenConditionIsFalse()
+    {
+        Guard.Against(false, "Condition was false"); // Should not throw
+    }
+
+    private enum TestEnum { Value1, Value2 }
+
+    [TestMethod]
+    public void AgainstInvalidEnum_ThrowsWhenInvalid()
+    {
+        Assert.ThrowsException<ArgumentException>(() => Guard.AgainstInvalidEnum((TestEnum)99));
+    }
+
+    [TestMethod]
+    public void AgainstInvalidEnum_ReturnsValueWhenValid()
+    {
+        var result = Guard.AgainstInvalidEnum(TestEnum.Value1);
+        Assert.AreEqual(TestEnum.Value1, result);
+    }
+}
+
+[TestClass]
+public class EnsureTests
+{
+    [TestMethod]
+    public void That_ThrowsWhenConditionIsFalse()
+    {
+        Assert.ThrowsException<InvalidOperationException>(() => Ensure.That(false, "Condition was false"));
+    }
+
+    [TestMethod]
+    public void That_DoesNotThrowWhenConditionIsTrue()
+    {
+        Ensure.That(true, "Condition is true"); // Should not throw
+    }
+
+    [TestMethod]
+    public void NotNull_ThrowsWhenNull()
+    {
+        string? value = null;
+        Assert.ThrowsException<InvalidOperationException>(() => Ensure.NotNull(value));
+    }
+
+    [TestMethod]
+    public void NotNull_ReturnsValueWhenNotNull()
+    {
+        var value = "test";
+        var result = Ensure.NotNull(value);
+        Assert.AreEqual("test", result);
+    }
+
+    [TestMethod]
+    public void NotNullOrWhiteSpace_ThrowsWhenWhitespace()
+    {
+        Assert.ThrowsException<InvalidOperationException>(() => Ensure.NotNullOrWhiteSpace("   "));
+    }
+
+    [TestMethod]
+    public void InRange_ReturnsValueWhenInRange()
+    {
+        var result = Ensure.InRange(5, 1, 10, "value");
+        Assert.AreEqual(5, result);
+    }
+
+    [TestMethod]
+    public void InRange_ThrowsWhenOutOfRange()
+    {
+        Assert.ThrowsException<InvalidOperationException>(() => Ensure.InRange(15, 1, 10, "value"));
+    }
+
+    [TestMethod]
+    public void Unreachable_AlwaysThrows()
+    {
+        Assert.ThrowsException<InvalidOperationException>(() => Ensure.Unreachable("This should never be reached"));
+    }
+}
