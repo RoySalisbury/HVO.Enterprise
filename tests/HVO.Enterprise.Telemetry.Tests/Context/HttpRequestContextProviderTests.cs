@@ -19,14 +19,16 @@ namespace HVO.Enterprise.Telemetry.Tests.Context
                 Path = "/api"
             });
             var provider = new HttpRequestContextProvider(accessor);
-            var activity = new Activity("test");
-            var options = new EnrichmentOptions();
+            using (var activity = new Activity("test"))
+            {
+                var options = new EnrichmentOptions();
 
-            provider.EnrichActivity(activity, options);
+                provider.EnrichActivity(activity, options);
 
-            Assert.AreEqual("GET", activity.GetTagItem("http.method"));
-            Assert.AreEqual("https://example.com/api", activity.GetTagItem("http.url"));
-            Assert.AreEqual("/api", activity.GetTagItem("http.target"));
+                Assert.AreEqual("GET", activity.GetTagItem("http.method"));
+                Assert.AreEqual("https://example.com/api", activity.GetTagItem("http.url"));
+                Assert.AreEqual("/api", activity.GetTagItem("http.target"));
+            }
         }
 
         [TestMethod]
@@ -40,15 +42,17 @@ namespace HVO.Enterprise.Telemetry.Tests.Context
                 QueryString = "user=john&apikey=secret123&page=1"
             });
             var provider = new HttpRequestContextProvider(accessor);
-            var activity = new Activity("test");
-            var options = new EnrichmentOptions { RedactPii = true };
+            using (var activity = new Activity("test"))
+            {
+                var options = new EnrichmentOptions { RedactPii = true };
 
-            provider.EnrichActivity(activity, options);
+                provider.EnrichActivity(activity, options);
 
-            var query = activity.GetTagItem("http.query") as string;
-            Assert.IsNotNull(query);
-            Assert.IsTrue(query!.Contains("apikey=***"));
-            Assert.IsTrue(query.Contains("user=john"));
+                var query = activity.GetTagItem("http.query") as string;
+                Assert.IsNotNull(query);
+                Assert.IsTrue(query!.Contains("apikey=***"));
+                Assert.IsTrue(query.Contains("user=john"));
+            }
         }
 
         [TestMethod]
@@ -66,13 +70,15 @@ namespace HVO.Enterprise.Telemetry.Tests.Context
                 }
             });
             var provider = new HttpRequestContextProvider(accessor);
-            var activity = new Activity("test");
-            var options = new EnrichmentOptions { MaxLevel = EnrichmentLevel.Verbose };
+            using (var activity = new Activity("test"))
+            {
+                var options = new EnrichmentOptions { MaxLevel = EnrichmentLevel.Verbose };
 
-            provider.EnrichActivity(activity, options);
+                provider.EnrichActivity(activity, options);
 
-            Assert.IsNull(activity.GetTagItem("http.header.authorization"));
-            Assert.AreEqual("value", activity.GetTagItem("http.header.x-trace"));
+                Assert.IsNull(activity.GetTagItem("http.header.authorization"));
+                Assert.AreEqual("value", activity.GetTagItem("http.header.x-trace"));
+            }
         }
 
         private sealed class FakeHttpRequestAccessor : IHttpRequestAccessor

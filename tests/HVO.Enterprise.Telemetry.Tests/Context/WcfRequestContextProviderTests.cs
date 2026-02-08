@@ -18,14 +18,16 @@ namespace HVO.Enterprise.Telemetry.Tests.Context
                 Binding = "netTcp"
             });
             var provider = new WcfRequestContextProvider(accessor);
-            var activity = new Activity("test");
-            var options = new EnrichmentOptions();
+            using (var activity = new Activity("test"))
+            {
+                var options = new EnrichmentOptions();
 
-            provider.EnrichActivity(activity, options);
+                provider.EnrichActivity(activity, options);
 
-            Assert.AreEqual("urn:action", activity.GetTagItem("wcf.action"));
-            Assert.AreEqual("net.tcp://localhost/service", activity.GetTagItem("wcf.endpoint"));
-            Assert.AreEqual("netTcp", activity.GetTagItem("wcf.binding"));
+                Assert.AreEqual("urn:action", activity.GetTagItem("wcf.action"));
+                Assert.AreEqual("net.tcp://localhost/service", activity.GetTagItem("wcf.endpoint"));
+                Assert.AreEqual("netTcp", activity.GetTagItem("wcf.binding"));
+            }
         }
 
         private sealed class FakeWcfRequestAccessor : IWcfRequestAccessor

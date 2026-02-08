@@ -15,12 +15,14 @@ namespace HVO.Enterprise.Telemetry.Tests.Context
             var options = new EnrichmentOptions { MaxLevel = EnrichmentLevel.Standard };
             var enricher = new ContextEnricher(options);
             var provider = new TestProvider();
-            var activity = new Activity("test");
+            
+            using (var activity = new Activity("test"))
+            {
+                enricher.RegisterProvider(provider);
+                enricher.EnrichActivity(activity);
 
-            enricher.RegisterProvider(provider);
-            enricher.EnrichActivity(activity);
-
-            Assert.IsTrue(provider.WasInvoked);
+                Assert.IsTrue(provider.WasInvoked);
+            }
         }
 
         [TestMethod]
@@ -29,10 +31,12 @@ namespace HVO.Enterprise.Telemetry.Tests.Context
             var options = new EnrichmentOptions { MaxLevel = EnrichmentLevel.Standard };
             var enricher = new ContextEnricher(options);
             var provider = new ThrowingProvider();
-            var activity = new Activity("test");
-
-            enricher.RegisterProvider(provider);
-            enricher.EnrichActivity(activity);
+            
+            using (var activity = new Activity("test"))
+            {
+                enricher.RegisterProvider(provider);
+                enricher.EnrichActivity(activity);
+            }
         }
 
         private sealed class TestProvider : IContextProvider

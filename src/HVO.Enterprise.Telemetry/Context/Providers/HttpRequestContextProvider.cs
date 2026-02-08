@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace HVO.Enterprise.Telemetry.Context.Providers
@@ -60,11 +61,8 @@ namespace HVO.Enterprise.Telemetry.Context.Providers
             {
                 if (request.Headers != null)
                 {
-                    foreach (var header in request.Headers)
+                    foreach (var header in request.Headers.Where(h => !options.ExcludedHeaders.Contains(h.Key)))
                     {
-                        if (options.ExcludedHeaders.Contains(header.Key))
-                            continue;
-
                         var key = "http.header." + header.Key.ToLowerInvariant();
                         AddTag(activity, key, header.Value, options);
                     }

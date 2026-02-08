@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using HVO.Enterprise.Telemetry.Context.Providers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -42,11 +43,8 @@ namespace HVO.Enterprise.Telemetry.Context
             if (activity == null)
                 throw new ArgumentNullException(nameof(activity));
 
-            foreach (var provider in SnapshotProviders())
+            foreach (var provider in SnapshotProviders().Where(p => p.Level <= _options.MaxLevel))
             {
-                if (provider.Level > _options.MaxLevel)
-                    continue;
-
                 try
                 {
                     provider.EnrichActivity(activity, _options);
@@ -64,11 +62,8 @@ namespace HVO.Enterprise.Telemetry.Context
             if (properties == null)
                 throw new ArgumentNullException(nameof(properties));
 
-            foreach (var provider in SnapshotProviders())
+            foreach (var provider in SnapshotProviders().Where(p => p.Level <= _options.MaxLevel))
             {
-                if (provider.Level > _options.MaxLevel)
-                    continue;
-
                 try
                 {
                     provider.EnrichProperties(properties, _options);

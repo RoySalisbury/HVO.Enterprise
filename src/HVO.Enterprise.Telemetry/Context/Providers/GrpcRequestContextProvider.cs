@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace HVO.Enterprise.Telemetry.Context.Providers
 {
@@ -48,11 +49,8 @@ namespace HVO.Enterprise.Telemetry.Context.Providers
 
             if (options.MaxLevel >= EnrichmentLevel.Verbose)
             {
-                foreach (var metadata in request.Metadata)
+                foreach (var metadata in request.Metadata.Where(m => !options.ExcludedHeaders.Contains(m.Key)))
                 {
-                    if (options.ExcludedHeaders.Contains(metadata.Key))
-                        continue;
-
                     activity.SetTag("rpc.metadata." + metadata.Key.ToLowerInvariant(), metadata.Value);
                 }
             }

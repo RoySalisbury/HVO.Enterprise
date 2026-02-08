@@ -19,14 +19,16 @@ namespace HVO.Enterprise.Telemetry.Tests.Context
                 Roles = new List<string> { "admin" }
             });
             var provider = new UserContextProvider(accessor);
-            var activity = new Activity("test");
-            var options = new EnrichmentOptions { RedactPii = false };
+            using (var activity = new Activity("test"))
+            {
+                var options = new EnrichmentOptions { RedactPii = false };
 
-            provider.EnrichActivity(activity, options);
+                provider.EnrichActivity(activity, options);
 
-            Assert.AreEqual("user-1", activity.GetTagItem("user.id"));
-            Assert.AreEqual("testuser", activity.GetTagItem("user.name"));
-            Assert.AreEqual("admin", activity.GetTagItem("user.roles"));
+                Assert.AreEqual("user-1", activity.GetTagItem("user.id"));
+                Assert.AreEqual("testuser", activity.GetTagItem("user.name"));
+                Assert.AreEqual("admin", activity.GetTagItem("user.roles"));
+            }
         }
 
         [TestMethod]
@@ -37,12 +39,14 @@ namespace HVO.Enterprise.Telemetry.Tests.Context
                 Username = "test@example.com"
             });
             var provider = new UserContextProvider(accessor);
-            var activity = new Activity("test");
-            var options = new EnrichmentOptions { RedactPii = true, RedactionStrategy = PiiRedactionStrategy.Mask };
+            using (var activity = new Activity("test"))
+            {
+                var options = new EnrichmentOptions { RedactPii = true, RedactionStrategy = PiiRedactionStrategy.Mask };
 
-            provider.EnrichActivity(activity, options);
+                provider.EnrichActivity(activity, options);
 
-            Assert.AreEqual("***", activity.GetTagItem("user.name"));
+                Assert.AreEqual("***", activity.GetTagItem("user.name"));
+            }
         }
 
         [TestMethod]
@@ -54,13 +58,15 @@ namespace HVO.Enterprise.Telemetry.Tests.Context
                 TenantId = "tenant-1"
             });
             var provider = new UserContextProvider(accessor);
-            var activity = new Activity("test");
-            var options = new EnrichmentOptions { MaxLevel = EnrichmentLevel.Standard };
+            using (var activity = new Activity("test"))
+            {
+                var options = new EnrichmentOptions { MaxLevel = EnrichmentLevel.Standard };
 
-            provider.EnrichActivity(activity, options);
+                provider.EnrichActivity(activity, options);
 
-            Assert.IsNull(activity.GetTagItem("user.email"));
-            Assert.IsNull(activity.GetTagItem("user.tenant_id"));
+                Assert.IsNull(activity.GetTagItem("user.email"));
+                Assert.IsNull(activity.GetTagItem("user.tenant_id"));
+            }
         }
 
         private sealed class FakeUserContextAccessor : IUserContextAccessor
