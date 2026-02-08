@@ -14,6 +14,17 @@ namespace HVO.Enterprise.Telemetry.Context.Providers
         private static PropertyInfo? _currentProperty;
         private static PropertyInfo? _requestProperty;
 
+        // Cached request object property lookups
+        private static Type? _requestType;
+        private static PropertyInfo? _httpMethodProperty;
+        private static PropertyInfo? _pathProperty;
+        private static PropertyInfo? _userAgentProperty;
+        private static PropertyInfo? _userHostAddressProperty;
+        private static PropertyInfo? _urlProperty;
+        private static PropertyInfo? _headersProperty;
+        private static PropertyInfo? _headersAllKeysProperty;
+        private static PropertyInfo? _headersItemProperty;
+
         /// <inheritdoc />
         public HttpRequestInfo? GetCurrentRequest()
         {
@@ -49,33 +60,49 @@ namespace HVO.Enterprise.Telemetry.Context.Providers
             if (request == null)
                 return null;
 
+            // Cache request type property lookups on first successful access
             var requestType = request.GetType();
-            var method = GetString(request, requestType, "HttpMethod");
-            var path = GetString(request, requestType, "Path");
-            var userAgent = GetString(request, requestType, "UserAgent");
-            var clientIp = GetString(request, requestType, "UserHostAddress");
+            if (_requestType != requestType)
+            {
+                _requestType = requestType;
+                _httpMethodProperty = requestType.GetProperty("HttpMethod");
+                _pathProperty = requestType.GetProperty("Path");
+                _userAgentProperty = requestType.GetProperty("UserAgent");
+                _userHostAddressProperty = requestType.GetProperty("UserHostAddress");
+                _urlProperty = requestType.GetProperty("Url");
+                _headersProperty = requestType.GetProperty("Headers");
+            }
+
+            var method = _httpMethodProperty?.GetValue(request, null)?.ToString();
+            var path = _pathProperty?.GetValue(request, null)?.ToString();
+            var userAgent = _userAgentProperty?.GetValue(request, null)?.ToString();
+            var clientIp = _userHostAddressProperty?.GetValue(request, null)?.ToString();
 
             // Get URL and query string correctly
-            var urlProperty = requestType.GetProperty("Url");
-            var urlValue = urlProperty?.GetValue(request, null) as Uri;
+            var urlValue = _urlProperty?.GetValue(request, null) as Uri;
             var url = urlValue?.ToString();
             var queryString = urlValue?.Query;
             if (queryString != null && queryString.Length > 0 && queryString.StartsWith("?"))
                 queryString = queryString.Substring(1);
 
             var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            var headersProperty = requestType.GetProperty("Headers");
-            var headersCollection = headersProperty != null ? headersProperty.GetValue(request, null) : null;
+            var headersCollection = _headersProperty?.GetValue(request, null);
             if (headersCollection != null)
             {
-                var keysProperty = headersCollection.GetType().GetProperty("AllKeys");
-                var keys = keysProperty != null ? keysProperty.GetValue(headersCollection, null) as string[] : null;
+                // Cache headers collection property lookups
+                if (_headersAllKeysProperty == null || _headersItemProperty == null)
+                {
+                    var headersType = headersCollection.GetType();
+                    _headersAllKeysProperty = headersType.GetProperty("AllKeys");
+                    _headersItemProperty = headersType.GetProperty("Item");
+                }
+
+                var keys = _headersAllKeysProperty?.GetValue(headersCollection, null) as string[];
                 if (keys != null)
                 {
-                    var itemProperty = headersCollection.GetType().GetProperty("Item");
                     foreach (var key in keys)
                     {
-                        var value = itemProperty != null ? itemProperty.GetValue(headersCollection, new object?[] { key }) as string : null;
+                        var value = _headersItemProperty?.GetValue(headersCollection, new object?[] { key }) as string;
                         if (!string.IsNullOrEmpty(key) && value != null)
                             headers[key] = value;
                     }
@@ -92,13 +119,6 @@ namespace HVO.Enterprise.Telemetry.Context.Providers
                 ClientIp = clientIp,
                 Headers = headers
             };
-        }
-
-        private static string? GetString(object target, Type targetType, string propertyName)
-        {
-            var property = targetType.GetProperty(propertyName);
-            var value = property != null ? property.GetValue(target, null) : null;
-            return value != null ? value.ToString() : null;
         }
     }
 }

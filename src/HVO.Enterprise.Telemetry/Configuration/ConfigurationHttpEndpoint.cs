@@ -15,6 +15,11 @@ namespace HVO.Enterprise.Telemetry.Configuration
     /// </summary>
     public sealed class ConfigurationHttpEndpoint : IDisposable
     {
+        /// <summary>
+        /// Maximum allowed request body size in bytes (1 MB).
+        /// </summary>
+        private const int MaxRequestBodySize = 1024 * 1024;
+
         private readonly HttpListener _listener;
         private readonly ILogger<ConfigurationHttpEndpoint> _logger;
         private readonly Func<string, bool>? _authenticator;
@@ -153,8 +158,34 @@ namespace HVO.Enterprise.Telemetry.Configuration
 
         private async Task HandleUpdateConfigurationAsync(HttpListenerContext context, CancellationToken cancellationToken)
         {
-            using var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding);
-            var json = await reader.ReadToEndAsync().ConfigureAwait(false);
+            // Guard against oversized payloads
+            if (context.Request.ContentLength64 > MaxRequestBodySize)
+            {
+                context.Response.StatusCode = 413;
+                await WriteResponseAsync(context.Response, "Request body too large", cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
+            // Read body with size limit using a bounded MemoryStream
+            string json;
+            using (var memoryStream = new MemoryStream())
+            {
+                var buffer = new byte[8192];
+                long totalRead = 0;
+                int bytesRead;
+                while ((bytesRead = await context.Request.InputStream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false)) > 0)
+                {
+                    totalRead += bytesRead;
+                    if (totalRead > MaxRequestBodySize)
+                    {
+                        context.Response.StatusCode = 413;
+                        await WriteResponseAsync(context.Response, "Request body too large", cancellationToken).ConfigureAwait(false);
+                        return;
+                    }
+                    memoryStream.Write(buffer, 0, bytesRead);
+                }
+                json = context.Request.ContentEncoding.GetString(memoryStream.ToArray());
+            }
 
             try
             {

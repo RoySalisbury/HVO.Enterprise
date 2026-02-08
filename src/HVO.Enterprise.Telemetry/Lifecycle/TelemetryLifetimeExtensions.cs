@@ -3,6 +3,7 @@ using System.Linq;
 using HVO.Enterprise.Telemetry.Metrics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace HVO.Enterprise.Telemetry.Lifecycle
 {
@@ -31,9 +32,15 @@ namespace HVO.Enterprise.Telemetry.Lifecycle
                 return services;
             }
 
-            // Register as singletons to ensure they're shared across the application
-            services.Add(new ServiceDescriptor(typeof(TelemetryBackgroundWorker), typeof(TelemetryBackgroundWorker), ServiceLifetime.Singleton));
-            services.Add(new ServiceDescriptor(typeof(TelemetryLifetimeManager), typeof(TelemetryLifetimeManager), ServiceLifetime.Singleton));
+            // Use factory lambdas to resolve constructor parameters via DI.
+            // TelemetryBackgroundWorker has primitive constructor params (capacity, maxRestartAttempts, etc.)
+            // that cannot be resolved by type-based registration.
+            services.Add(new ServiceDescriptor(typeof(TelemetryBackgroundWorker), sp =>
+                new TelemetryBackgroundWorker(logger: sp.GetService<ILogger<TelemetryBackgroundWorker>>()), ServiceLifetime.Singleton));
+            services.Add(new ServiceDescriptor(typeof(TelemetryLifetimeManager), sp =>
+                new TelemetryLifetimeManager(
+                    sp.GetRequiredService<TelemetryBackgroundWorker>(),
+                    sp.GetService<ILogger<TelemetryLifetimeManager>>()), ServiceLifetime.Singleton));
             services.Add(new ServiceDescriptor(typeof(ITelemetryLifetime), sp => sp.GetRequiredService<TelemetryLifetimeManager>(), ServiceLifetime.Singleton));
             services.Add(new ServiceDescriptor(typeof(IHostedService), typeof(TelemetryLifetimeHostedService), ServiceLifetime.Singleton));
             

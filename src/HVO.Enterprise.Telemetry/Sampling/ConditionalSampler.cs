@@ -1,6 +1,5 @@
 using System;
 using System.Diagnostics;
-using System.Linq;
 
 namespace HVO.Enterprise.Telemetry.Sampling
 {
@@ -54,8 +53,11 @@ namespace HVO.Enterprise.Telemetry.Sampling
 
             if (_slowOperationThreshold.HasValue && context.Tags != null)
             {
-                foreach (var tag in context.Tags.Where(t => string.Equals(t.Key, "duration.ms", StringComparison.OrdinalIgnoreCase)))
+                foreach (var tag in context.Tags)
                 {
+                    if (!string.Equals(tag.Key, "duration.ms", StringComparison.OrdinalIgnoreCase))
+                        continue;
+
                     var durationMs = ExtractDurationMs(tag.Value);
                     if (!durationMs.HasValue)
                         continue;

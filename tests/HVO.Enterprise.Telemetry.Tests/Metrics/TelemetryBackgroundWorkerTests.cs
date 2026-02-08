@@ -185,21 +185,21 @@ namespace HVO.Enterprise.Telemetry.Tests.Metrics
             // Wait for processing to start
             startEvent.Wait(TimeSpan.FromSeconds(1));
 
-            // Enqueue many more items to force drops
-            var dropped = 0;
+            // Enqueue many more items to force drops.
+            // With DropOldest, TryEnqueue always returns true because the new item
+            // is accepted (the oldest item is silently dropped instead).
             for (int i = 0; i < 20; i++)
             {
-                if (!worker.TryEnqueue(new TestWorkItem(() => { })))
-                    dropped++;
+                Assert.IsTrue(worker.TryEnqueue(new TestWorkItem(() => { })),
+                    "TryEnqueue should always return true with DropOldest strategy");
             }
 
             // Release processing
             continueEvent.Set();
             Thread.Sleep(100);
 
-            // Assert
-            Assert.IsTrue(dropped > 0, "Should have detected drops from TryEnqueue");
-            Assert.AreEqual(dropped, worker.DroppedCount);
+            // Assert - drops are tracked via DroppedCount
+            Assert.IsTrue(worker.DroppedCount > 0, "Should have tracked drops via DroppedCount");
         }
 
         [TestMethod]

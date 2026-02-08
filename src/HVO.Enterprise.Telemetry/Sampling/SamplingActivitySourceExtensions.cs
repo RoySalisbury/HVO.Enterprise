@@ -13,7 +13,7 @@ namespace HVO.Enterprise.Telemetry.Sampling
     public static class SamplingActivitySourceExtensions
     {
         private static readonly object ListenerLock = new object();
-        private static ISampler _globalSampler = new ProbabilisticSampler(1.0);
+        private static volatile ISampler _globalSampler = new ProbabilisticSampler(1.0);
         private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ActivitySource> _activitySources 
             = new System.Collections.Concurrent.ConcurrentDictionary<string, ActivitySource>();
         private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ActivityListener> _listeners 
