@@ -61,7 +61,7 @@ namespace HVO.Enterprise.Telemetry.Context.Providers
             var urlValue = urlProperty?.GetValue(request, null) as Uri;
             var url = urlValue?.ToString();
             var queryString = urlValue?.Query;
-            if (!string.IsNullOrEmpty(queryString) && queryString!.StartsWith("?"))
+            if (queryString != null && queryString.Length > 0 && queryString.StartsWith("?"))
                 queryString = queryString.Substring(1);
 
             var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
