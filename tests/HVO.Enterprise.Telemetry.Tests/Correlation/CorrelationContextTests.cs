@@ -259,7 +259,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Correlation
         {
             // Arrange
             CorrelationContext.Clear();
-            var activitySource = new ActivitySource("TestSource");
+            using var activitySource = new ActivitySource("TestSource");
             using var listener = new ActivityListener
             {
                 ShouldListenTo = s => s.Name == "TestSource",
