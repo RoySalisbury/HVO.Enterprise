@@ -32,6 +32,8 @@ namespace HVO.Enterprise.Telemetry.Exceptions
         /// <remarks>
         /// Defaults to a 24-hour window. Pass a different <paramref name="expirationWindow"/> value
         /// to control memory growth in high-volume scenarios.
+        /// Cleanup is sampled; expired groups are removed at most every five minutes or sooner if the
+        /// expiration window is shorter.
         /// </remarks>
         public ExceptionAggregator(TimeSpan? expirationWindow = null)
             : this(() => DateTimeOffset.UtcNow, expirationWindow)

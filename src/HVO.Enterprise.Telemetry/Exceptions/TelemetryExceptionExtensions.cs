@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Threading;
 
 namespace HVO.Enterprise.Telemetry.Exceptions
 {
@@ -9,6 +10,7 @@ namespace HVO.Enterprise.Telemetry.Exceptions
     public static class TelemetryExceptionExtensions
     {
         private static readonly ExceptionAggregator Aggregator = new ExceptionAggregator();
+        private static ExceptionTrackingOptions _options = new ExceptionTrackingOptions();
 
         /// <summary>
         /// Records an exception with the telemetry system.
@@ -62,9 +64,22 @@ namespace HVO.Enterprise.Telemetry.Exceptions
         }
 
         /// <summary>
-        /// Gets the exception tracking options.
+        /// Gets the current exception tracking options.
         /// </summary>
-        public static ExceptionTrackingOptions Options { get; } = new ExceptionTrackingOptions();
+        public static ExceptionTrackingOptions Options => Volatile.Read(ref _options);
+
+        /// <summary>
+        /// Updates the exception tracking options.
+        /// </summary>
+        /// <param name="options">Options to apply.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="options"/> is null.</exception>
+        public static void Configure(ExceptionTrackingOptions options)
+        {
+            if (options == null)
+                throw new ArgumentNullException(nameof(options));
+
+            Interlocked.Exchange(ref _options, options);
+        }
 
         /// <summary>
         /// Gets the exception aggregator for querying statistics.

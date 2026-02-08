@@ -63,16 +63,32 @@ namespace HVO.Enterprise.Telemetry.Exceptions
         /// <summary>
         /// Gets the first occurrence timestamp.
         /// </summary>
-        public DateTimeOffset FirstOccurrence => new DateTimeOffset(
-            Interlocked.Read(ref _firstOccurrenceTicks),
-            TimeSpan.Zero);
+        public DateTimeOffset FirstOccurrence
+        {
+            get
+            {
+                var ticks = Interlocked.Read(ref _firstOccurrenceTicks);
+                if (ticks == 0)
+                    return DateTimeOffset.MinValue;
+
+                return new DateTimeOffset(ticks, TimeSpan.Zero);
+            }
+        }
 
         /// <summary>
         /// Gets the last occurrence timestamp.
         /// </summary>
-        public DateTimeOffset LastOccurrence => new DateTimeOffset(
-            Interlocked.Read(ref _lastOccurrenceTicks),
-            TimeSpan.Zero);
+        public DateTimeOffset LastOccurrence
+        {
+            get
+            {
+                var ticks = Interlocked.Read(ref _lastOccurrenceTicks);
+                if (ticks == 0)
+                    return DateTimeOffset.MinValue;
+
+                return new DateTimeOffset(ticks, TimeSpan.Zero);
+            }
+        }
 
         internal long LastOccurrenceTicks => Interlocked.Read(ref _lastOccurrenceTicks);
 
