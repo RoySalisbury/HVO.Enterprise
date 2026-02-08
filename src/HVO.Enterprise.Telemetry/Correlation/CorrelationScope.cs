@@ -65,7 +65,7 @@ namespace HVO.Enterprise.Telemetry.Correlation
                 return;
             }
 
-            CorrelationContext.Current = _previousId!;
+            CorrelationContext.Current = _previousId;
             _disposed = true;
         }
     }
