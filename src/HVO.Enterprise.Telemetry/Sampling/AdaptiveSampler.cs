@@ -107,7 +107,7 @@ namespace HVO.Enterprise.Telemetry.Sampling
 
             return new SamplingResult(
                 decision,
-                string.Format("Adaptive: {0} (current rate: {1:P1})", reason, CurrentSamplingRate));
+                string.Format("Adaptive: {0} (current rate: {1:P1})", reason, currentRate));
         }
 
         private void AdjustSamplingRate(TimeSpan elapsed, long nowTicks)
