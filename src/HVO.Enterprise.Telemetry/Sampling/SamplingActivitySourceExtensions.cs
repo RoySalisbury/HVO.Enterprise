@@ -43,15 +43,7 @@ namespace HVO.Enterprise.Telemetry.Sampling
             var globalConfig = provider.GetEffectiveConfiguration();
             
             // Only use configuration provider rate if a global override is explicitly configured
-            double defaultRate;
-            if (globalConfig.SamplingRate.HasValue)
-            {
-                defaultRate = globalConfig.SamplingRate.Value;
-            }
-            else
-            {
-                defaultRate = options.DefaultSamplingRate;
-            }
+            var defaultRate = globalConfig.SamplingRate ?? options.DefaultSamplingRate;
 
             var perSourceSampler = new PerSourceSampler(new ProbabilisticSampler(defaultRate));
 
