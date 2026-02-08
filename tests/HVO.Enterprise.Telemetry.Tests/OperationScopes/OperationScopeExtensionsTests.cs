@@ -1,0 +1,61 @@
+using System;
+using System.Threading.Tasks;
+using HVO.Enterprise.Telemetry;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+namespace HVO.Enterprise.Telemetry.Tests.OperationScopes
+{
+    [TestClass]
+    public class OperationScopeExtensionsTests
+    {
+        [TestMethod]
+        public void Execute_RunsAction()
+        {
+            var factory = CreateFactory();
+            var called = false;
+
+            factory.Execute("Test", () => called = true);
+
+            Assert.IsTrue(called);
+        }
+
+        [TestMethod]
+        public void Execute_ThrowsOnFailure()
+        {
+            var factory = CreateFactory();
+
+            Assert.ThrowsException<InvalidOperationException>(() =>
+                factory.Execute("Test", () => throw new InvalidOperationException("boom")));
+        }
+
+        [TestMethod]
+        public async Task ExecuteAsync_RunsAction()
+        {
+            var factory = CreateFactory();
+            var called = false;
+
+            await factory.ExecuteAsync("Test", () =>
+            {
+                called = true;
+                return Task.CompletedTask;
+            });
+
+            Assert.IsTrue(called);
+        }
+
+        [TestMethod]
+        public async Task ExecuteAsync_ThrowsOnFailure()
+        {
+            var factory = CreateFactory();
+
+            await Assert.ThrowsExceptionAsync<InvalidOperationException>(() =>
+                factory.ExecuteAsync("Test", () => throw new InvalidOperationException("boom")));
+        }
+
+        private static OperationScopeFactory CreateFactory()
+        {
+            var sourceName = "HVO.Enterprise.Telemetry.Tests." + Guid.NewGuid().ToString("N");
+            return new OperationScopeFactory(sourceName, "1.0.0");
+        }
+    }
+}
