@@ -800,7 +800,9 @@ When working on user stories, **ALWAYS** follow this pattern:
 
 1. **Verify Build and Tests**
    - Run `dotnet build` - ensure 0 warnings/errors
-   - Run `dotnet test` - ensure all tests pass
+    - Run tests manually per project (do not rely on IDE test runner):
+      - `dotnet test tests/HVO.Common.Tests/HVO.Common.Tests.csproj`
+      - `dotnet test tests/HVO.Enterprise.Telemetry.Tests/HVO.Enterprise.Telemetry.Tests.csproj`
    - Confirm clean baseline before making changes
 
 2. **Create Feature Branch**
@@ -827,7 +829,9 @@ When working on user stories, **ALWAYS** follow this pattern:
 
 1. **Verify Build and Tests**
    - Run `dotnet build` - ensure 0 warnings/errors
-   - Run `dotnet test` - ensure all tests pass (including new tests)
+    - Run tests manually per project (do not rely on IDE test runner):
+      - `dotnet test tests/HVO.Common.Tests/HVO.Common.Tests.csproj`
+      - `dotnet test tests/HVO.Enterprise.Telemetry.Tests/HVO.Enterprise.Telemetry.Tests.csproj`
    - Fix any issues before proceeding
 
 2. **Update User Story Markdown**
