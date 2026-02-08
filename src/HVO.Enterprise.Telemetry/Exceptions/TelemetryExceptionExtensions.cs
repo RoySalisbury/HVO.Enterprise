@@ -14,13 +14,14 @@ namespace HVO.Enterprise.Telemetry.Exceptions
         /// Records an exception with the telemetry system.
         /// </summary>
         /// <param name="exception">Exception to record.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="exception"/> is null.</exception>
         public static void RecordException(this Exception exception)
         {
             if (exception == null)
-                return;
+                throw new ArgumentNullException(nameof(exception));
 
             var group = Aggregator.RecordException(exception);
-            ExceptionMetrics.RecordException(group.ExceptionType, group.Fingerprint);
+            ExceptionMetrics.RecordException(group.ExceptionType);
             ExceptionMetrics.RecordErrorRatePerMinute(group.GetErrorRate());
             ExceptionMetrics.RecordErrorRatePerHour(group.GetErrorRatePerHour());
 
@@ -28,18 +29,42 @@ namespace HVO.Enterprise.Telemetry.Exceptions
             if (activity == null)
                 return;
 
-            activity.SetStatus(ActivityStatusCode.Error, exception.Message);
+            var options = Options;
+            var statusDescription = options.IncludeMessageInActivityStatus
+                ? exception.Message
+                : exception.GetType().Name;
+
+            activity.SetStatus(ActivityStatusCode.Error, statusDescription);
             activity.AddTag("exception.type", exception.GetType().FullName ?? exception.GetType().Name);
-            activity.AddTag("exception.message", exception.Message);
             activity.AddTag("exception.fingerprint", group.Fingerprint);
 
-            if (!string.IsNullOrEmpty(exception.StackTrace))
+            ActivityTagsCollection? eventTags = null;
+            if (options.CaptureMessage)
             {
-                activity.AddTag("exception.stacktrace", exception.StackTrace);
+                eventTags ??= new ActivityTagsCollection();
+                eventTags.Add("exception.message", exception.Message);
             }
 
-            activity.AddEvent(new ActivityEvent("exception", DateTimeOffset.UtcNow));
+            if (options.CaptureStackTrace && !string.IsNullOrEmpty(exception.StackTrace))
+            {
+                eventTags ??= new ActivityTagsCollection();
+                eventTags.Add("exception.stacktrace", exception.StackTrace);
+            }
+
+            if (eventTags != null && eventTags.Count > 0)
+            {
+                activity.AddEvent(new ActivityEvent("exception", DateTimeOffset.UtcNow, eventTags));
+            }
+            else
+            {
+                activity.AddEvent(new ActivityEvent("exception", DateTimeOffset.UtcNow));
+            }
         }
+
+        /// <summary>
+        /// Gets the exception tracking options.
+        /// </summary>
+        public static ExceptionTrackingOptions Options { get; } = new ExceptionTrackingOptions();
 
         /// <summary>
         /// Gets the exception aggregator for querying statistics.

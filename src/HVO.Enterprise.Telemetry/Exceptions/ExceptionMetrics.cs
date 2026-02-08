@@ -9,8 +9,8 @@ namespace HVO.Enterprise.Telemetry.Exceptions
     public static class ExceptionMetrics
     {
         private static readonly ICounter<long> ExceptionCounter;
-        private static readonly IHistogram<long> ExceptionRatePerMinuteHistogram;
-        private static readonly IHistogram<long> ExceptionRatePerHourHistogram;
+        private static readonly IHistogram<double> ExceptionRatePerMinuteHistogram;
+        private static readonly IHistogram<double> ExceptionRatePerHourHistogram;
 
         static ExceptionMetrics()
         {
@@ -21,12 +21,12 @@ namespace HVO.Enterprise.Telemetry.Exceptions
                 "exceptions",
                 "Total number of exceptions");
 
-            ExceptionRatePerMinuteHistogram = recorder.CreateHistogram(
+            ExceptionRatePerMinuteHistogram = recorder.CreateHistogramDouble(
                 "exceptions.rate.per_minute",
                 "exceptions/min",
                 "Exception rate per minute");
 
-            ExceptionRatePerHourHistogram = recorder.CreateHistogram(
+            ExceptionRatePerHourHistogram = recorder.CreateHistogramDouble(
                 "exceptions.rate.per_hour",
                 "exceptions/hour",
                 "Exception rate per hour");
@@ -36,17 +36,13 @@ namespace HVO.Enterprise.Telemetry.Exceptions
         /// Records an exception occurrence.
         /// </summary>
         /// <param name="exceptionType">Exception type.</param>
-        /// <param name="fingerprint">Exception fingerprint.</param>
-        public static void RecordException(string exceptionType, string fingerprint)
+        public static void RecordException(string exceptionType)
         {
             if (string.IsNullOrEmpty(exceptionType))
                 throw new ArgumentException("Exception type must be non-empty.", nameof(exceptionType));
-            if (string.IsNullOrEmpty(fingerprint))
-                throw new ArgumentException("Exception fingerprint must be non-empty.", nameof(fingerprint));
 
             ExceptionCounter.Add(1,
-                new MetricTag("type", exceptionType),
-                new MetricTag("fingerprint", fingerprint));
+                new MetricTag("type", exceptionType));
         }
 
         /// <summary>
@@ -55,7 +51,7 @@ namespace HVO.Enterprise.Telemetry.Exceptions
         /// <param name="exceptionsPerMinute">Exceptions per minute.</param>
         public static void RecordErrorRatePerMinute(double exceptionsPerMinute)
         {
-            ExceptionRatePerMinuteHistogram.Record(ToLong(exceptionsPerMinute));
+            ExceptionRatePerMinuteHistogram.Record(NormalizeRate(exceptionsPerMinute));
         }
 
         /// <summary>
@@ -64,15 +60,15 @@ namespace HVO.Enterprise.Telemetry.Exceptions
         /// <param name="exceptionsPerHour">Exceptions per hour.</param>
         public static void RecordErrorRatePerHour(double exceptionsPerHour)
         {
-            ExceptionRatePerHourHistogram.Record(ToLong(exceptionsPerHour));
+            ExceptionRatePerHourHistogram.Record(NormalizeRate(exceptionsPerHour));
         }
 
-        private static long ToLong(double value)
+        private static double NormalizeRate(double value)
         {
             if (double.IsNaN(value) || double.IsInfinity(value))
                 return 0;
 
-            return Convert.ToInt64(Math.Round(value));
+            return value;
         }
     }
 }

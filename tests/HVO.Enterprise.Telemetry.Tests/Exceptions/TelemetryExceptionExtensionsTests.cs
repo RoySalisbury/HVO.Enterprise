@@ -31,7 +31,6 @@ namespace HVO.Enterprise.Telemetry.Tests.Exceptions
 
             Assert.AreEqual(ActivityStatusCode.Error, activity.Status);
             Assert.IsTrue(activity.Tags.Any(tag => tag.Key == "exception.type"));
-            Assert.IsTrue(activity.Tags.Any(tag => tag.Key == "exception.message"));
             Assert.IsTrue(activity.Tags.Any(tag => tag.Key == "exception.fingerprint"));
         }
     }

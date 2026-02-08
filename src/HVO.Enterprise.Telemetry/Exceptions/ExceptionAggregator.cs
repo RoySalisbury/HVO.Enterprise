@@ -11,12 +11,16 @@ namespace HVO.Enterprise.Telemetry.Exceptions
     /// </summary>
     public sealed class ExceptionAggregator
     {
+        private static readonly TimeSpan MinimumRateWindow = TimeSpan.FromSeconds(1);
+        private static readonly TimeSpan DefaultCleanupInterval = TimeSpan.FromMinutes(5);
         private readonly ConcurrentDictionary<string, ExceptionGroup> _groups;
         private readonly TimeSpan _expirationWindow;
         private readonly Func<DateTimeOffset> _nowProvider;
+        private readonly long _cleanupIntervalTicks;
         private long _totalCount;
         private long _firstOccurrenceTicks;
         private long _lastOccurrenceTicks;
+        private long _lastCleanupTicks;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ExceptionAggregator"/> class.
@@ -39,9 +43,15 @@ namespace HVO.Enterprise.Telemetry.Exceptions
             if (nowProvider == null)
                 throw new ArgumentNullException(nameof(nowProvider));
 
+            var window = expirationWindow ?? TimeSpan.FromHours(24);
+            if (window <= TimeSpan.Zero)
+                throw new ArgumentOutOfRangeException(nameof(expirationWindow), "Expiration window must be greater than zero.");
+
             _groups = new ConcurrentDictionary<string, ExceptionGroup>();
-            _expirationWindow = expirationWindow ?? TimeSpan.FromHours(24);
             _nowProvider = nowProvider;
+            _expirationWindow = window;
+            _cleanupIntervalTicks = Math.Min(window.Ticks, DefaultCleanupInterval.Ticks);
+            _lastCleanupTicks = _nowProvider().UtcTicks;
         }
 
         /// <summary>
@@ -71,12 +81,13 @@ namespace HVO.Enterprise.Telemetry.Exceptions
                     return existing;
                 });
 
-            var nowTicks = _nowProvider().Ticks;
+            var nowTicks = _nowProvider().UtcTicks;
             Interlocked.Increment(ref _totalCount);
             Interlocked.Exchange(ref _lastOccurrenceTicks, nowTicks);
             if (Interlocked.Read(ref _firstOccurrenceTicks) == 0)
                 Interlocked.CompareExchange(ref _firstOccurrenceTicks, nowTicks, 0);
 
+            TryCleanup(nowTicks);
             return group;
         }
 
@@ -138,19 +149,21 @@ namespace HVO.Enterprise.Telemetry.Exceptions
         private double GetRatePerMinute(long count)
         {
             var duration = GetGlobalDuration();
-            if (duration.TotalMinutes < 0.01)
-                return count;
+            var effectiveMinutes = Math.Max(duration.TotalMinutes, MinimumRateWindow.TotalMinutes);
+            if (effectiveMinutes <= 0)
+                return 0;
 
-            return count / duration.TotalMinutes;
+            return count / effectiveMinutes;
         }
 
         private double GetRatePerHour(long count)
         {
             var duration = GetGlobalDuration();
-            if (duration.TotalHours < 0.001)
-                return count;
+            var effectiveHours = Math.Max(duration.TotalHours, MinimumRateWindow.TotalHours);
+            if (effectiveHours <= 0)
+                return 0;
 
-            return count / duration.TotalHours;
+            return count / effectiveHours;
         }
 
         private TimeSpan GetGlobalDuration()
@@ -166,14 +179,26 @@ namespace HVO.Enterprise.Telemetry.Exceptions
             return new TimeSpan(lastTicks - firstTicks);
         }
 
+        private void TryCleanup(long nowTicks)
+        {
+            var lastCleanupTicks = Interlocked.Read(ref _lastCleanupTicks);
+            if (nowTicks - lastCleanupTicks < _cleanupIntervalTicks)
+                return;
+
+            if (Interlocked.CompareExchange(ref _lastCleanupTicks, nowTicks, lastCleanupTicks) != lastCleanupTicks)
+                return;
+
+            CleanupExpiredGroups(nowTicks);
+        }
+
         /// <summary>
         /// Removes expired exception groups.
         /// </summary>
-        private void CleanupExpiredGroups()
+        private void CleanupExpiredGroups(long? nowTicks = null)
         {
-            var now = _nowProvider();
+            var currentTicks = nowTicks ?? _nowProvider().UtcTicks;
             var expired = _groups
-                .Where(kvp => now - kvp.Value.LastOccurrence > _expirationWindow)
+                .Where(kvp => currentTicks - kvp.Value.LastOccurrenceTicks > _expirationWindow.Ticks)
                 .Select(kvp => kvp.Key)
                 .ToList();
 

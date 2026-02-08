@@ -8,8 +8,11 @@ namespace HVO.Enterprise.Telemetry.Exceptions
     /// </summary>
     public sealed class ExceptionGroup
     {
+        private static readonly TimeSpan MinimumRateWindow = TimeSpan.FromSeconds(1);
         private long _count;
         private readonly Func<DateTimeOffset> _nowProvider;
+        private long _firstOccurrenceTicks;
+        private long _lastOccurrenceTicks;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ExceptionGroup"/> class.
@@ -26,12 +29,14 @@ namespace HVO.Enterprise.Telemetry.Exceptions
                 throw new ArgumentNullException(nameof(nowProvider));
 
             _nowProvider = nowProvider;
+            var now = _nowProvider();
+            _firstOccurrenceTicks = now.UtcTicks;
+            _lastOccurrenceTicks = _firstOccurrenceTicks;
+
             Fingerprint = fingerprint;
             ExceptionType = exception.GetType().FullName ?? exception.GetType().Name;
             Message = exception.Message;
             StackTrace = exception.StackTrace;
-            FirstOccurrence = _nowProvider();
-            LastOccurrence = FirstOccurrence;
             _count = 1;
         }
 
@@ -58,12 +63,18 @@ namespace HVO.Enterprise.Telemetry.Exceptions
         /// <summary>
         /// Gets the first occurrence timestamp.
         /// </summary>
-        public DateTimeOffset FirstOccurrence { get; }
+        public DateTimeOffset FirstOccurrence => new DateTimeOffset(
+            Interlocked.Read(ref _firstOccurrenceTicks),
+            TimeSpan.Zero);
 
         /// <summary>
         /// Gets the last occurrence timestamp.
         /// </summary>
-        public DateTimeOffset LastOccurrence { get; private set; }
+        public DateTimeOffset LastOccurrence => new DateTimeOffset(
+            Interlocked.Read(ref _lastOccurrenceTicks),
+            TimeSpan.Zero);
+
+        internal long LastOccurrenceTicks => Interlocked.Read(ref _lastOccurrenceTicks);
 
         /// <summary>
         /// Gets the total number of occurrences.
@@ -80,7 +91,7 @@ namespace HVO.Enterprise.Telemetry.Exceptions
                 throw new ArgumentNullException(nameof(exception));
 
             Interlocked.Increment(ref _count);
-            LastOccurrence = _nowProvider();
+            Interlocked.Exchange(ref _lastOccurrenceTicks, _nowProvider().UtcTicks);
         }
 
         /// <summary>
@@ -89,11 +100,14 @@ namespace HVO.Enterprise.Telemetry.Exceptions
         /// <returns>Error rate per minute.</returns>
         public double GetErrorRate()
         {
-            var duration = LastOccurrence - FirstOccurrence;
-            if (duration.TotalMinutes < 0.01)
-                return Count;
+            var count = Count;
+            if (count == 0)
+                return 0;
 
-            return Count / duration.TotalMinutes;
+            var duration = GetDuration();
+            var effectiveMinutes = Math.Max(duration.TotalMinutes, MinimumRateWindow.TotalMinutes);
+
+            return count / effectiveMinutes;
         }
 
         /// <summary>
@@ -102,11 +116,14 @@ namespace HVO.Enterprise.Telemetry.Exceptions
         /// <returns>Error rate per hour.</returns>
         public double GetErrorRatePerHour()
         {
-            var duration = LastOccurrence - FirstOccurrence;
-            if (duration.TotalHours < 0.001)
-                return Count;
+            var count = Count;
+            if (count == 0)
+                return 0;
 
-            return Count / duration.TotalHours;
+            var duration = GetDuration();
+            var effectiveHours = Math.Max(duration.TotalHours, MinimumRateWindow.TotalHours);
+
+            return count / effectiveHours;
         }
 
         /// <summary>
@@ -120,6 +137,16 @@ namespace HVO.Enterprise.Telemetry.Exceptions
                 return 0;
 
             return (double)Count / totalOperations * 100.0;
+        }
+
+        private TimeSpan GetDuration()
+        {
+            var firstTicks = Interlocked.Read(ref _firstOccurrenceTicks);
+            var lastTicks = Interlocked.Read(ref _lastOccurrenceTicks);
+            if (lastTicks < firstTicks)
+                return TimeSpan.Zero;
+
+            return new TimeSpan(lastTicks - firstTicks);
         }
     }
 }

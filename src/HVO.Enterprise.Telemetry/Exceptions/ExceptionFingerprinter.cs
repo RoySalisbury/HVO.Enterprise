@@ -51,17 +51,16 @@ namespace HVO.Enterprise.Telemetry.Exceptions
                 NormalizeStackTrace(exception.StackTrace)
             };
 
-            if (exception.InnerException != null)
-            {
-                components.Add(GenerateFingerprint(exception.InnerException));
-            }
-
             if (exception is AggregateException aggregateException)
             {
                 foreach (var inner in aggregateException.InnerExceptions.Take(3))
                 {
                     components.Add(GenerateFingerprint(inner));
                 }
+            }
+            else if (exception.InnerException != null)
+            {
+                components.Add(GenerateFingerprint(exception.InnerException));
             }
 
             var combined = string.Join("|", components);
