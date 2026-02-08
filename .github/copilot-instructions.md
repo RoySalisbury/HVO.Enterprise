@@ -799,21 +799,29 @@ public interface IReservationService
 #### Required Updates
 
 1. **Update User Story Status**
-   - Change status from `❌ Not Started` to `✅ Complete`
+   - Change status from `❌ Not Started` to `✅ Complete` in the markdown file
    - Update the status date if present
 
-2. **Mark Acceptance Criteria as Complete**
+2. **Update GitHub Issue Status**
+   - **CRITICAL**: Close the corresponding GitHub issue when the user story is complete
+   - Use `gh issue close <issue-number> --comment "Closing as complete. Summary of implementation."`
+   - When starting work on a user story, update the issue with progress comments
+   - Use labels to track status: `status:in-progress` when working, `status:complete` when done
+   - Add a comment summarizing what was completed when closing the issue
+   - **DO NOT** leave issues open after the work is merged and complete
+
+3. **Mark Acceptance Criteria as Complete**
    - Change all checkboxes from `[ ]` to `[x]` for completed items
    - Add implementation notes if relevant
 
-3. **Add Implementation Summary** (at end of document)
+4. **Add Implementation Summary** (at end of document)
    - Brief description of what was implemented
    - Key decisions made during implementation
    - Any deviations from the original plan (with justification)
    - Links to relevant code files or classes
    - Any known limitations or future considerations
 
-4. **Update Related Documentation**
+5. **Update Related Documentation**
    - If the story mentions updating other docs (README, project-plan, etc.), ensure those are updated
    - Cross-reference related user stories that were blocked or are now unblocked
 
@@ -853,7 +861,9 @@ This story unblocks US-002 through US-018.
 
 ### Checklist Before Marking Story Complete
 
-- [ ] Update story status to `✅ Complete`
+- [ ] Update story status to `✅ Complete` in markdown file
+- [ ] **Close the GitHub issue** with `gh issue close <issue-number>`
+- [ ] Add a comment to the issue summarizing what was completed
 - [ ] Mark all acceptance criteria checkboxes as `[x]`
 - [ ] Add implementation summary section
 - [ ] Update any related documentation referenced in the story
