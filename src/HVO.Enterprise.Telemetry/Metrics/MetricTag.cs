@@ -46,5 +46,18 @@ namespace HVO.Enterprise.Telemetry.Metrics
             if (!IsValid)
                 throw new ArgumentException("MetricTag is invalid or default. Use a properly initialized tag.");
         }
+
+        /// <summary>
+        /// Validates an array of tags to ensure none are default or invalid.
+        /// </summary>
+        /// <param name="tags">The tags to validate.</param>
+        /// <exception cref="ArgumentException">Thrown when any tag is invalid or default.</exception>
+        internal static void ValidateTags(MetricTag[] tags)
+        {
+            for (int i = 0; i < tags.Length; i++)
+            {
+                tags[i].Validate();
+            }
+        }
     }
 }

@@ -198,19 +198,11 @@ namespace HVO.Enterprise.Telemetry.Metrics
                     return;
                 }
 
-                ValidateTags(tags);
+                MetricTag.ValidateTags(tags);
                 _cardinalityTracker?.Track(_metricName, tags);
                 var taggedName = MetricTagKeyBuilder.BuildTaggedName(_metricName, tags);
                 var taggedTotal = _totals.AddOrUpdate(taggedName, value, (_, existing) => existing + value);
                 _eventSource.IncrementValue(taggedName, taggedTotal);
-            }
-
-            private static void ValidateTags(MetricTag[] tags)
-            {
-                for (int i = 0; i < tags.Length; i++)
-                {
-                    tags[i].Validate();
-                }
             }
 
             private static void ValidateNonNegative(long value)
@@ -275,17 +267,9 @@ namespace HVO.Enterprise.Telemetry.Metrics
                     return;
                 }
 
-                ValidateTags(tags);
+                MetricTag.ValidateTags(tags);
                 _cardinalityTracker?.Track(_metricName, tags);
                 _eventSource.RecordValue(MetricTagKeyBuilder.BuildTaggedName(_metricName, tags), value);
-            }
-
-            private static void ValidateTags(MetricTag[] tags)
-            {
-                for (int i = 0; i < tags.Length; i++)
-                {
-                    tags[i].Validate();
-                }
             }
         }
 
@@ -344,17 +328,9 @@ namespace HVO.Enterprise.Telemetry.Metrics
                     return;
                 }
 
-                ValidateTags(tags);
+                MetricTag.ValidateTags(tags);
                 _cardinalityTracker?.Track(_metricName, tags);
                 _eventSource.RecordValue(MetricTagKeyBuilder.BuildTaggedName(_metricName, tags), value);
-            }
-
-            private static void ValidateTags(MetricTag[] tags)
-            {
-                for (int i = 0; i < tags.Length; i++)
-                {
-                    tags[i].Validate();
-                }
             }
         }
     }
