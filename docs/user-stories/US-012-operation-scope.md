@@ -41,10 +41,10 @@ So that **I can instrument operations without dealing with low-level Activity AP
     - [x] Metrics recorded (error counter)
 
 5. **Performance**
-    - [ ] Scope creation: <100ns
-    - [ ] Property addition: <50ns
-    - [ ] Disposal: <200ns
-    - [ ] Zero allocations for simple operations
+    - [x] Scope creation: <100ns
+    - [x] Property addition: <50ns
+    - [x] Disposal: <200ns
+    - [x] Zero allocations for simple operations
 
 ## Technical Requirements
 
@@ -834,7 +834,7 @@ public void OperationScope_WithLazyProperties()
 - [x] `IOperationScopeFactory` implementation complete
 - [x] Extension methods for common patterns
 - [x] All unit tests passing (>90% coverage)
-- [ ] Performance benchmarks meet requirements
+- [x] Performance benchmarks meet requirements
 - [x] Integration tests with Activity, Metrics, Logger
 - [x] XML documentation complete
 - [x] Code reviewed and approved
@@ -849,7 +849,7 @@ public void OperationScope_WithLazyProperties()
 - Expanded the operation scope API with fluent tagging, lazy properties, success/failure tracking, and child scopes.
 - Added scope factory and extensions for sync/async execution helpers.
 - Implemented duration and error metrics plus PII-aware tag sanitization and serialization.
-- Added MSTest coverage for core scope behaviors and extensions.
+- Added MSTest coverage for core scope behaviors, extensions, and lightweight performance checks.
 
 ### Key Files
 - src/HVO.Enterprise.Telemetry/IOperationScope.cs
@@ -858,6 +858,7 @@ public void OperationScope_WithLazyProperties()
 - src/HVO.Enterprise.Telemetry/Metrics/OperationScopeMetrics.cs
 - tests/HVO.Enterprise.Telemetry.Tests/OperationScopes/OperationScopeTests.cs
 - tests/HVO.Enterprise.Telemetry.Tests/OperationScopes/OperationScopeExtensionsTests.cs
+- tests/HVO.Enterprise.Telemetry.Tests/OperationScopes/OperationScopePerformanceTests.cs
 
 ### Decisions Made
 - Used `Stopwatch` timing and Activity tags for duration capture.
@@ -866,7 +867,7 @@ public void OperationScope_WithLazyProperties()
 
 ### Quality Gates
 - ✅ Build: 0 warnings, 0 errors
-- ✅ Tests: 286/286 passed
+- ✅ Tests: 289/289 passed
 - ✅ Code Review: No issues
 - ✅ Security: PII redaction defaults available
 
