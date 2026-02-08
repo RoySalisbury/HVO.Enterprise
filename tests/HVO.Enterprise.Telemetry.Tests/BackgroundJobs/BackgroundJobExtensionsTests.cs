@@ -22,7 +22,7 @@ namespace HVO.Enterprise.Telemetry.Tests.BackgroundJobs
             var completedEvent = new ManualResetEventSlim(false);
 
             // Act
-            originalCorrelationId.EnqueueWithContext(() =>
+            BackgroundJobExtensions.EnqueueWithContext(() =>
             {
                 executedCorrelationId = CorrelationContext.Current;
                 completedEvent.Set();
@@ -47,7 +47,7 @@ namespace HVO.Enterprise.Telemetry.Tests.BackgroundJobs
             var executedCorrelationId = string.Empty;
 
             // Act
-            await originalCorrelationId.EnqueueWithContextAsync(async () =>
+            await BackgroundJobExtensions.EnqueueWithContextAsync(async () =>
             {
                 await Task.Delay(10); // Simulate async work
                 executedCorrelationId = CorrelationContext.Current;
@@ -69,7 +69,7 @@ namespace HVO.Enterprise.Telemetry.Tests.BackgroundJobs
             var executedCorrelationId = string.Empty;
 
             // Act
-            var result = await originalCorrelationId.EnqueueWithContextAsync(async () =>
+            var result = await BackgroundJobExtensions.EnqueueWithContextAsync(async () =>
             {
                 await Task.Delay(10);
                 executedCorrelationId = CorrelationContext.Current;
@@ -93,7 +93,7 @@ namespace HVO.Enterprise.Telemetry.Tests.BackgroundJobs
             var completedEvent = new ManualResetEventSlim(false);
 
             // Act
-            jobCorrelationId.EnqueueWithContext(() =>
+            BackgroundJobExtensions.EnqueueWithContext(() =>
             {
                 Thread.Sleep(50); // Ensure this runs after we change the calling context
                 completedEvent.Set();
@@ -114,33 +114,24 @@ namespace HVO.Enterprise.Telemetry.Tests.BackgroundJobs
         [ExpectedException(typeof(ArgumentNullException))]
         public void EnqueueWithContext_WithNullAction_ThrowsException()
         {
-            // Arrange
-            var correlationId = Guid.NewGuid().ToString("N");
-
             // Act
-            correlationId.EnqueueWithContext(null!);
+            BackgroundJobExtensions.EnqueueWithContext(null!);
         }
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentNullException))]
         public async Task EnqueueWithContextAsync_WithNullAction_ThrowsException()
         {
-            // Arrange
-            var correlationId = Guid.NewGuid().ToString("N");
-
             // Act
-            await correlationId.EnqueueWithContextAsync((Func<Task>)null!);
+            await BackgroundJobExtensions.EnqueueWithContextAsync((Func<Task>)null!);
         }
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentNullException))]
         public async Task EnqueueWithContextAsyncGeneric_WithNullFunc_ThrowsException()
         {
-            // Arrange
-            var correlationId = Guid.NewGuid().ToString("N");
-
             // Act
-            await correlationId.EnqueueWithContextAsync((Func<Task<int>>)null!);
+            await BackgroundJobExtensions.EnqueueWithContextAsync((Func<Task<int>>)null!);
         }
 
         // Note: Exception propagation test removed - unhandled exceptions in ThreadPool.QueueUserWorkItem
@@ -158,7 +149,7 @@ namespace HVO.Enterprise.Telemetry.Tests.BackgroundJobs
             var level2CorrelationId = string.Empty;
 
             // Act
-            await originalCorrelationId.EnqueueWithContextAsync(async () =>
+            await BackgroundJobExtensions.EnqueueWithContextAsync(async () =>
             {
                 level1CorrelationId = CorrelationContext.Current;
 

@@ -119,15 +119,19 @@ public static class StringExtensions
             result = (TEnum)Enum.Parse(typeof(TEnum), value, ignoreCase);
             return true;
         }
-        catch
+        catch (Exception)
         {
+            // Enum.Parse can throw ArgumentException (not a valid member) or
+            // OverflowException (underlying value out of range). We use catch(Exception)
+            // rather than a bare catch to avoid swallowing SEH/CLR-critical exceptions.
+            // This follows the standard TryParse pattern of returning false on failure.
             result = default;
             return false;
         }
     }
 
     /// <summary>
-    /// Reverses a string
+    /// Reverses a string, correctly handling Unicode surrogate pairs.
     /// </summary>
     /// <param name="value">The string to reverse</param>
     /// <returns>The reversed string</returns>
@@ -135,9 +139,25 @@ public static class StringExtensions
     public static string Reverse(this string value)
     {
         if (value == null) throw new ArgumentNullException(nameof(value));
+        if (value.Length <= 1) return value;
 
         char[] charArray = value.ToCharArray();
         Array.Reverse(charArray);
+
+        // Fix surrogate pairs that were swapped by the reversal.
+        // After reversing, a high-low surrogate pair becomes low-high which is invalid.
+        // We need to swap each such pair back to high-low order.
+        for (int i = 0; i < charArray.Length - 1; i++)
+        {
+            if (char.IsLowSurrogate(charArray[i]) && char.IsHighSurrogate(charArray[i + 1]))
+            {
+                var temp = charArray[i];
+                charArray[i] = charArray[i + 1];
+                charArray[i + 1] = temp;
+                i++; // skip the next char since we already processed it
+            }
+        }
+
         return new string(charArray);
     }
 

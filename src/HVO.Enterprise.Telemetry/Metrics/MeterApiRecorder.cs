@@ -9,7 +9,16 @@ namespace HVO.Enterprise.Telemetry.Metrics
     /// <summary>
     /// Metric recorder using System.Diagnostics.Metrics for modern runtimes.
     /// </summary>
-    internal sealed class MeterApiRecorder : IMetricRecorder
+    /// <remarks>
+    /// This class implements <see cref="IDisposable"/> to properly clean up its
+    /// <see cref="Meter"/> instance. However, in normal operation the singleton lifetime
+    /// is managed by <see cref="MetricRecorderFactory"/> which holds it in a static field
+    /// for the process lifetime. Dispose is therefore only called during explicit cleanup
+    /// (e.g., integration tests or DI container shutdown). The <see cref="IMetricRecorder"/>
+    /// interface intentionally does not extend <c>IDisposable</c> to avoid burdening callers
+    /// with disposal concerns for what is effectively a process-scoped singleton.
+    /// </remarks>
+    internal sealed class MeterApiRecorder : IMetricRecorder, IDisposable
     {
         internal const string MeterName = "HVO.Enterprise.Telemetry";
         internal const string MeterVersion = "1.0.0";
@@ -64,6 +73,14 @@ namespace HVO.Enterprise.Telemetry.Metrics
             var state = new ObservableGaugeState(observeValue);
             _ = _meter.CreateObservableGauge(name, state.Observe, unit, description);
             return new ObservableGaugeHandle(state);
+        }
+
+        /// <summary>
+        /// Disposes the underlying <see cref="Meter"/> and releases resources.
+        /// </summary>
+        public void Dispose()
+        {
+            _meter.Dispose();
         }
 
         private sealed class ObservableGaugeState

@@ -160,9 +160,10 @@ namespace HVO.Enterprise.Telemetry.Lifecycle
 
             try
             {
-                // Synchronous shutdown for event handlers
-                // ConfigureAwait(false) is used throughout the async chain to avoid deadlocks
-                ShutdownAsync(timeout).ConfigureAwait(false).GetAwaiter().GetResult();
+                // Use Task.Run to avoid sync-over-async deadlock when a SynchronizationContext
+                // is present (e.g., ASP.NET classic, WPF). Task.Run schedules onto the thread pool,
+                // ensuring ConfigureAwait(false) is not needed to avoid capturing the calling context.
+                Task.Run(() => ShutdownAsync(timeout)).GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {
@@ -172,12 +173,18 @@ namespace HVO.Enterprise.Telemetry.Lifecycle
 
         private void CloseOpenActivities()
         {
-            // Stop current activity and all parents
+            // Walk the current Activity chain and dispose only activities owned by
+            // HVO.Enterprise.Telemetry. We check Activity.Source.Name to avoid disposing
+            // activities started by ASP.NET Core, HttpClient, gRPC, or other third-party
+            // instrumentation that may be in the parent chain at shutdown time.
             var activity = Activity.Current;
             while (activity != null)
             {
                 var parent = activity.Parent;
-                activity.Dispose();
+                if (activity.Source.Name.StartsWith("HVO.", StringComparison.Ordinal))
+                {
+                    activity.Dispose();
+                }
                 activity = parent;
             }
         }

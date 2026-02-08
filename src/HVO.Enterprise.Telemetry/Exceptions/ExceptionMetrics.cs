@@ -38,8 +38,9 @@ namespace HVO.Enterprise.Telemetry.Exceptions
         /// <param name="exceptionType">Exception type.</param>
         public static void RecordException(string exceptionType)
         {
+            // Telemetry methods must never throw - silently ignore bad input
             if (string.IsNullOrEmpty(exceptionType))
-                throw new ArgumentException("Exception type must be non-empty.", nameof(exceptionType));
+                return;
 
             ExceptionCounter.Add(1,
                 new MetricTag("type", exceptionType));

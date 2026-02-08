@@ -7,6 +7,13 @@ namespace HVO.Common.Options;
 /// Represents an optional value that may or may not be present
 /// </summary>
 /// <typeparam name="T">The type of the value, which must be non-null</typeparam>
+/// <remarks>
+/// <para><c>default(Option&lt;T&gt;)</c> is safe and equivalent to <see cref="None"/> (HasValue == false).</para>
+/// <para><b>RawJson coupling:</b> The <see cref="RawJson"/> property creates a compile-time
+/// dependency on <c>System.Text.Json</c>. See <see cref="HVO.Common.OneOf.IOneOf"/> remarks for the design
+/// rationale. This enables fallback access to the original JSON when deserialization to
+/// <typeparamref name="T"/> fails or is deferred.</para>
+/// </remarks>
 public readonly struct Option<T> where T : notnull
 {
     private readonly T? _value;

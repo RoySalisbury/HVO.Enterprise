@@ -2,7 +2,7 @@
 
 **GitHub Issue**: [#14](https://github.com/RoySalisbury/HVO.Enterprise/issues/14)
 
-**Status**: 🚧 In Progress  
+**Status**: ✅ Complete  
 **Category**: Core Package  
 **Effort**: 8 story points  
 **Sprint**: 4

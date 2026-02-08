@@ -9,37 +9,41 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
     /// Captures telemetry context for background job execution.
     /// Enables correlation and tracing across asynchronous job boundaries.
     /// </summary>
+    /// <remarks>
+    /// Once created via <see cref="Capture()"/> or <see cref="FromValues"/>,
+    /// instances are intended to be immutable and safe to share across threads.
+    /// </remarks>
     public sealed class BackgroundJobContext
     {
         /// <summary>
         /// Gets the correlation ID captured at enqueue time.
         /// </summary>
-        public string CorrelationId { get; set; } = null!;
+        public string CorrelationId { get; internal set; } = null!;
 
         /// <summary>
         /// Gets the parent Activity TraceId if available.
         /// </summary>
-        public string? ParentActivityId { get; set; }
+        public string? ParentActivityId { get; internal set; }
 
         /// <summary>
         /// Gets the parent Activity SpanId if available.
         /// </summary>
-        public string? ParentSpanId { get; set; }
+        public string? ParentSpanId { get; internal set; }
 
         /// <summary>
         /// Gets the user context information (if available).
         /// </summary>
-        public Dictionary<string, string>? UserContext { get; set; }
+        public Dictionary<string, string>? UserContext { get; internal set; }
 
         /// <summary>
         /// Gets the timestamp when the job was enqueued.
         /// </summary>
-        public DateTimeOffset EnqueuedAt { get; set; }
+        public DateTimeOffset EnqueuedAt { get; internal set; }
 
         /// <summary>
         /// Gets optional custom metadata for the job.
         /// </summary>
-        public Dictionary<string, object>? CustomMetadata { get; set; }
+        public Dictionary<string, object>? CustomMetadata { get; internal set; }
 
         /// <summary>
         /// Captures the current telemetry context.

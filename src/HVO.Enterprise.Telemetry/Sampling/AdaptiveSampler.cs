@@ -24,9 +24,25 @@ namespace HVO.Enterprise.Telemetry.Sampling
             SamplingDecision.RecordAndSample, "Adaptive: 100% sampling");
         private static readonly SamplingResult AlwaysDropResult = new SamplingResult(
             SamplingDecision.Drop, "Adaptive: 0% sampling");
-        private double _cachedReasonRate = double.NaN;
-        private SamplingResult _cachedSampleResult;
-        private SamplingResult _cachedDropResult;
+
+        /// <summary>
+        /// Immutable cache entry for rate-specific sampling results, ensuring atomic reads.
+        /// </summary>
+        private sealed class CachedResults
+        {
+            public readonly double Rate;
+            public readonly SamplingResult SampleResult;
+            public readonly SamplingResult DropResult;
+
+            public CachedResults(double rate, SamplingResult sampleResult, SamplingResult dropResult)
+            {
+                Rate = rate;
+                SampleResult = sampleResult;
+                DropResult = dropResult;
+            }
+        }
+
+        private volatile CachedResults? _cachedResults;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AdaptiveSampler"/> class.
@@ -111,9 +127,10 @@ namespace HVO.Enterprise.Telemetry.Sampling
 
         private SamplingResult GetOrCreateCachedResult(double rate, bool shouldSample)
         {
-            if (rate == Volatile.Read(ref _cachedReasonRate))
+            var cached = _cachedResults;
+            if (cached != null && cached.Rate == rate)
             {
-                return shouldSample ? _cachedSampleResult : _cachedDropResult;
+                return shouldSample ? cached.SampleResult : cached.DropResult;
             }
 
             var rateStr = rate.ToString("P1");
@@ -124,9 +141,7 @@ namespace HVO.Enterprise.Telemetry.Sampling
                 SamplingDecision.Drop,
                 "Adaptive: dropped (rate: " + rateStr + ")");
 
-            _cachedSampleResult = sampleResult;
-            _cachedDropResult = dropResult;
-            Volatile.Write(ref _cachedReasonRate, rate);
+            _cachedResults = new CachedResults(rate, sampleResult, dropResult);
 
             return shouldSample ? sampleResult : dropResult;
         }

@@ -56,7 +56,10 @@ public static class Guard
     }
 
     /// <summary>
-    /// Ensures that a collection is not null or empty
+    /// Ensures that a collection is not null or empty.
+    /// For <see cref="ICollection{T}"/> inputs, uses <c>Count</c> to avoid enumerating.
+    /// For other <see cref="IEnumerable{T}"/> inputs, calls <c>Any()</c> which may
+    /// consume the first element of a non-rewindable sequence.
     /// </summary>
     /// <typeparam name="T">The type of elements in the collection</typeparam>
     /// <param name="value">The collection</param>
@@ -68,8 +71,16 @@ public static class Guard
         if (value == null)
             throw new ArgumentNullException(parameterName ?? nameof(value));
 
-        if (!value.Any())
+        // Prefer Count property when available to avoid consuming the enumerable
+        if (value is ICollection<T> collection)
+        {
+            if (collection.Count == 0)
+                throw new ArgumentException("Collection cannot be empty", parameterName ?? nameof(value));
+        }
+        else if (!value.Any())
+        {
             throw new ArgumentException("Collection cannot be empty", parameterName ?? nameof(value));
+        }
 
         return value;
     }

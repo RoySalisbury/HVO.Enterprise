@@ -11,6 +11,13 @@ namespace HVO.Common.Results;
 /// This struct provides a functional approach to error handling without throwing exceptions immediately.
 /// </summary>
 /// <typeparam name="T">The type of the successful result value</typeparam>
+/// <remarks>
+/// <para><b>default(Result&lt;T&gt;) warning:</b> Because this is a <c>readonly struct</c>, the
+/// <c>default</c> value has <c>IsSuccessful == true</c> and <c>Value == default(T)</c> (null for
+/// reference types). Always construct instances via <see cref="Success"/>, <see cref="Failure"/>,
+/// or the implicit conversion operators. Using <c>default</c> directly will produce a misleading
+/// "successful" result with a null value.</para>
+/// </remarks>
 public readonly struct Result<T>
 {
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -130,6 +137,12 @@ public readonly struct Result<T>
 /// </summary>
 /// <typeparam name="T">The type of the successful result value</typeparam>
 /// <typeparam name="TEnum">The enum type representing error codes</typeparam>
+/// <remarks>
+/// <para><b>default(Result&lt;T, TEnum&gt;) warning:</b> Because this is a <c>readonly struct</c>,
+/// the <c>default</c> value has <c>IsSuccessful == true</c> and <c>Value == default(T)</c>.
+/// Always construct instances via <see cref="Success"/>, <see cref="Failure(TEnum)"/>, or the
+/// implicit conversion operators.</para>
+/// </remarks>
 public readonly struct Result<T, TEnum> where TEnum : Enum
 {
     private readonly T _value;

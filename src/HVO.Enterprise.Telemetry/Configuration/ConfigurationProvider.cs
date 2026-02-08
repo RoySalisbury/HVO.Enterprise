@@ -191,7 +191,7 @@ namespace HVO.Enterprise.Telemetry.Configuration
 
             foreach (var source in SourceOrder)
             {
-                var globalConfig = _globalConfigurations[(int)source];
+                var globalConfig = Volatile.Read(ref _globalConfigurations[(int)source]);
                 if (globalConfig != null)
                     effective = globalConfig.MergeWith(effective);
 
@@ -227,7 +227,7 @@ namespace HVO.Enterprise.Telemetry.Configuration
 
             foreach (var source in SourceOrder)
             {
-                var globalConfig = _globalConfigurations[(int)source];
+                var globalConfig = Volatile.Read(ref _globalConfigurations[(int)source]);
                 if (globalConfig != null)
                 {
                     entries.Add(new ConfigurationEntry(ConfigurationLevel.Global, source, "global", globalConfig.Clone()));
@@ -296,7 +296,7 @@ namespace HVO.Enterprise.Telemetry.Configuration
 
             foreach (var source in SourceOrder)
             {
-                var globalConfig = _globalConfigurations[(int)source];
+                var globalConfig = Volatile.Read(ref _globalConfigurations[(int)source]);
                 if (globalConfig != null)
                 {
                     layers.Add(new ConfigurationLayer(ConfigurationLevel.Global, source, "global", globalConfig.Clone()));

@@ -37,6 +37,8 @@ namespace HVO.Enterprise.Telemetry.Exceptions
         /// Uses the exception type, normalized message, and the first three stack frames. For
         /// <see cref="AggregateException"/>, only the first three inner exceptions are included
         /// to limit fingerprint variability and processing overhead.
+        /// Inner exception chains are followed up to a maximum depth of 10 to prevent
+        /// <see cref="StackOverflowException"/> with pathologically deep chains.
         /// </remarks>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="exception"/> is null.</exception>
         public static string GenerateFingerprint(Exception exception)
@@ -44,6 +46,11 @@ namespace HVO.Enterprise.Telemetry.Exceptions
             if (exception == null)
                 throw new ArgumentNullException(nameof(exception));
 
+            return GenerateFingerprintInternal(exception, maxDepth: 10);
+        }
+
+        private static string GenerateFingerprintInternal(Exception exception, int maxDepth)
+        {
             var components = new List<string>
             {
                 exception.GetType().FullName ?? exception.GetType().Name,
@@ -51,16 +58,19 @@ namespace HVO.Enterprise.Telemetry.Exceptions
                 NormalizeStackTrace(exception.StackTrace)
             };
 
-            if (exception is AggregateException aggregateException)
+            if (maxDepth > 0)
             {
-                foreach (var inner in aggregateException.InnerExceptions.Take(3))
+                if (exception is AggregateException aggregateException)
                 {
-                    components.Add(GenerateFingerprint(inner));
+                    foreach (var inner in aggregateException.InnerExceptions.Take(3))
+                    {
+                        components.Add(GenerateFingerprintInternal(inner, maxDepth - 1));
+                    }
                 }
-            }
-            else if (exception.InnerException != null)
-            {
-                components.Add(GenerateFingerprint(exception.InnerException));
+                else if (exception.InnerException != null)
+                {
+                    components.Add(GenerateFingerprintInternal(exception.InnerException, maxDepth - 1));
+                }
             }
 
             var combined = string.Join("|", components);

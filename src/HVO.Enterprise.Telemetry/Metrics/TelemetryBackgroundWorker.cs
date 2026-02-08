@@ -33,7 +33,6 @@ namespace HVO.Enterprise.Telemetry.Metrics
         private long _droppedCount;
         private long _failedCount;
         private long _restartCount;
-        private int _queueDepth;
         private readonly ConcurrentDictionary<string, bool> _dropWarningsLogged;
 
         /// <summary>
@@ -88,7 +87,7 @@ namespace HVO.Enterprise.Telemetry.Metrics
         /// <summary>
         /// Gets current queue depth.
         /// </summary>
-        public int QueueDepth => Volatile.Read(ref _queueDepth);
+        public int QueueDepth => _channel.Reader.Count;
 
         /// <summary>
         /// Gets total items dropped due to backpressure.
@@ -139,21 +138,21 @@ namespace HVO.Enterprise.Telemetry.Metrics
                 return false;
             }
 
-            // Capture TryWrite result - returns false if channel is completed/disposed
+            // With DropOldest, TryWrite only returns false when the channel is completed/disposed.
+            // When the queue is full, the channel silently drops the oldest item to make room.
+            var depthBeforeWrite = _channel.Reader.Count;
             if (!_channel.Writer.TryWrite(item))
             {
                 _logger.LogWarning("Failed to enqueue item: channel is completed or disposed");
                 return false;
             }
 
-            var newDepth = Interlocked.Increment(ref _queueDepth);
-            if (newDepth > _capacity)
+            // If depth didn't increase, an old item was dropped to make room for the new one.
+            // The new item was still enqueued, so return true (the item was accepted).
+            if (_channel.Reader.Count <= depthBeforeWrite && depthBeforeWrite >= _capacity)
             {
-                // An old item was dropped to make room
-                Interlocked.Decrement(ref _queueDepth);
                 Interlocked.Increment(ref _droppedCount);
                 LogDropWarning(item.OperationType);
-                return false;
             }
 
             return true;
@@ -184,11 +183,11 @@ namespace HVO.Enterprise.Telemetry.Metrics
 
             try
             {
-                // Wait for queue to drain or timeout
-#if NET8_0_OR_GREATER
-                await _channel.Reader.Completion.WaitAsync(cts.Token);
-#else
-                // .NET Standard 2.0 doesn't have WaitAsync extension
+                // Wait for queue to drain or timeout.
+                // NOTE: This project targets .NET Standard 2.0 as a single binary that runs on
+                // both .NET Framework 4.8 and .NET 5+. Compile-time #if directives like
+                // NET8_0_OR_GREATER are useless here — they are never defined for netstandard2.0.
+                // We use a runtime-compatible cancellation pattern instead of Task.WaitAsync().
                 var tcs = new TaskCompletionSource<bool>();
                 using (cts.Token.Register(() => tcs.TrySetCanceled()))
                 {
@@ -196,7 +195,6 @@ namespace HVO.Enterprise.Telemetry.Metrics
                     if (completedTask == tcs.Task)
                         throw new OperationCanceledException(cts.Token);
                 }
-#endif
 
                 // Wait a bit for final processing
                 await Task.Delay(50, CancellationToken.None);
@@ -332,7 +330,6 @@ namespace HVO.Enterprise.Telemetry.Metrics
                     // Process all available items
                     while (reader.TryRead(out var item))
                     {
-                        Interlocked.Decrement(ref _queueDepth);
                         ProcessWorkItem(item);
                     }
                 }
