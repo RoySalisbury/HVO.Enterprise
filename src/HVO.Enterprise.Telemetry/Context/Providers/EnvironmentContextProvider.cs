@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -95,8 +94,11 @@ namespace HVO.Enterprise.Telemetry.Context.Providers
             if (options.CustomEnvironmentTags == null || options.CustomEnvironmentTags.Count == 0)
                 return;
 
-            foreach (var entry in options.CustomEnvironmentTags.Where(e => !string.IsNullOrWhiteSpace(e.Key) && !string.IsNullOrWhiteSpace(e.Value)))
+            foreach (var entry in options.CustomEnvironmentTags)
             {
+                if (string.IsNullOrWhiteSpace(entry.Key) || string.IsNullOrWhiteSpace(entry.Value))
+                    continue;
+
                 activity.SetTag("env." + entry.Key, entry.Value);
             }
         }
@@ -106,8 +108,11 @@ namespace HVO.Enterprise.Telemetry.Context.Providers
             if (options.CustomEnvironmentTags == null || options.CustomEnvironmentTags.Count == 0)
                 return;
 
-            foreach (var entry in options.CustomEnvironmentTags.Where(e => !string.IsNullOrWhiteSpace(e.Key) && !string.IsNullOrWhiteSpace(e.Value)))
+            foreach (var entry in options.CustomEnvironmentTags)
             {
+                if (string.IsNullOrWhiteSpace(entry.Key) || string.IsNullOrWhiteSpace(entry.Value))
+                    continue;
+
                 properties["env." + entry.Key] = entry.Value;
             }
         }
@@ -158,7 +163,7 @@ namespace HVO.Enterprise.Telemetry.Context.Providers
             // Check if it's modern .NET (not .NET Framework)
             if ((frameworkDescription.StartsWith(".NET Core", StringComparison.OrdinalIgnoreCase) ||
                  frameworkDescription.StartsWith(".NET ", StringComparison.OrdinalIgnoreCase)) &&
-                !frameworkDescription.Contains("Framework"))
+                frameworkDescription.IndexOf("Framework", StringComparison.OrdinalIgnoreCase) < 0)
             {
                 return ".NET";
             }
