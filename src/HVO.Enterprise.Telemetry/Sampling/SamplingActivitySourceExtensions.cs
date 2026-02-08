@@ -117,7 +117,8 @@ namespace HVO.Enterprise.Telemetry.Sampling
 
         /// <summary>
         /// Creates an ActivitySource with sampling configuration.
-        /// Caches ActivitySource instances by name to avoid listener leaks.
+        /// Caches ActivitySource instances by name and version (name:version) to avoid listener leaks,
+        /// while ensuring listeners are only registered once per ActivitySource name.
         /// </summary>
         /// <param name="name">ActivitySource name.</param>
         /// <param name="version">Optional version.</param>
