@@ -790,42 +790,118 @@ public interface IReservationService
 }
 ```
 
-## User Story Documentation Requirements
+## User Story Workflow Pattern
 
-### When Completing a User Story
+### CRITICAL: Always Follow This Workflow
+
+When working on user stories, **ALWAYS** follow this pattern:
+
+#### Before Starting Work
+
+1. **Verify Build and Tests**
+   - Run `dotnet build` - ensure 0 warnings/errors
+   - Run `dotnet test` - ensure all tests pass
+   - Confirm clean baseline before making changes
+
+2. **Create Feature Branch**
+   - Branch from `main`: `git checkout -b feature/us-XXX-short-description`
+   - Example: `git checkout -b feature/us-004-bounded-queue`
+   - **NEVER work directly on main branch**
+
+3. **Update User Story Markdown**
+   - Add GitHub issue number at top: `**GitHub Issue**: [#N](https://github.com/RoySalisbury/HVO.Enterprise/issues/N)`
+   - Change status to `🚧 In Progress`
+   - Add start date if tracking sprints
+
+4. **Update GitHub Issue**
+   - Comment on issue: "Starting work on US-XXX. Branch: feature/us-XXX-short-description"
+   - Add label: `status:in-progress`
+   - Assign to yourself if working in team
+
+5. **Begin Implementation**
+   - Write code following project standards
+   - Commit frequently with conventional commits
+   - Keep changes focused on the user story scope
+
+#### After Completing Work
+
+1. **Verify Build and Tests**
+   - Run `dotnet build` - ensure 0 warnings/errors
+   - Run `dotnet test` - ensure all tests pass (including new tests)
+   - Fix any issues before proceeding
+
+2. **Update User Story Markdown**
+   - Change status to `✅ Complete`
+   - Mark all acceptance criteria checkboxes as `[x]`
+   - Add implementation summary section (see template below)
+   - List key files created/modified
+   - Document important decisions made
+
+3. **Commit All Changes**
+   - `git add -A`
+   - `git commit -m "feat(scope): implement US-XXX description"`
+   - Follow conventional commits format
+
+4. **Push Branch and Create Pull Request**
+   - `git push origin feature/us-XXX-short-description`
+   - `gh pr create --title "feat: US-XXX - Description" --body "[PR description]" --base main`
+   - Link PR to issue: Include "Closes #N" in PR description
+   - Request review if working in team
+
+5. **Update GitHub Issue**
+   - Comment: "Implementation complete. PR #N created for review."
+   - Add link to PR
+   - Update with test results summary
+
+6. **After PR Merged**
+   - GitHub will auto-close the issue (via "Closes #N" in PR)
+   - Verify issue is closed
+   - Delete feature branch: `git branch -d feature/us-XXX-short-description`
+   - Pull latest main: `git checkout main && git pull`
+
+### GitHub Issue Number Convention
+
+**CRITICAL**: Always reference both the GitHub issue number AND user story number together:
+- ✅ CORRECT: "Working on GitHub Issue #5 (US-003)"
+- ✅ CORRECT: "Closing Issue #7 for US-005"
+- ❌ WRONG: "Closing US-003" (ambiguous - is that issue #3 or issue #5?)
+- ❌ WRONG: "Issue 5" without mentioning US-003
+
+The mapping is: **GitHub Issue # = User Story # + 2** (because issues #1 and #2 were infrastructure setup)
+
+### User Story Documentation Requirements
 
 **IMPORTANT**: When completing any user story, you MUST update the corresponding documentation in `docs/user-stories/`.
 
-#### Required Updates
+#### Required Updates in Markdown File
 
-1. **Update User Story Status**
-   - Change status from `❌ Not Started` to `✅ Complete` in the markdown file
+1. **Add GitHub Issue Number** (at top of file)
+   - Add line after title: `**GitHub Issue**: [#N](https://github.com/RoySalisbury/HVO.Enterprise/issues/N)`
+   - This prevents confusion between issue numbers and user story numbers
+
+2. **Update User Story Status**
+   - Before work: `🚧 In Progress`
+   - After completion: `✅ Complete`
    - Update the status date if present
 
-2. **Update GitHub Issue Status**
-   - **CRITICAL**: Close the corresponding GitHub issue when the user story is complete
-   - Use `gh issue close <issue-number> --comment "Closing as complete. Summary of implementation."`
-   - When starting work on a user story, update the issue with progress comments
-   - Use labels to track status: `status:in-progress` when working, `status:complete` when done
-   - Add a comment summarizing what was completed when closing the issue
-   - **DO NOT** leave issues open after the work is merged and complete
-
-3. **Mark Acceptance Criteria as Complete**
+3. **Mark Acceptance Criteria as Complete** (when done)
    - Change all checkboxes from `[ ]` to `[x]` for completed items
    - Add implementation notes if relevant
 
-4. **Add Implementation Summary** (at end of document)
+4. **Add Implementation Summary** (at end of document, when done)
    - Brief description of what was implemented
    - Key decisions made during implementation
    - Any deviations from the original plan (with justification)
    - Links to relevant code files or classes
    - Any known limitations or future considerations
 
-5. **Update Related Documentation**
+5. **Update Related Documentation** (when done)
    - If the story mentions updating other docs (README, project-plan, etc.), ensure those are updated
    - Cross-reference related user stories that were blocked or are now unblocked
 
-#### Example Implementation Summary
+### Implementation Summary Template
+
+Add this section at the end of the user story markdown file when work is complete:
 
 ```markdown
 ## Implementation Summary
@@ -859,15 +935,18 @@ public interface IReservationService
 This story unblocks US-002 through US-018.
 ```
 
-### Checklist Before Marking Story Complete
+### Checklist Before Creating PR
 
+- [ ] All builds successful (0 warnings, 0 errors)
+- [ ] All tests passing (including new tests)
 - [ ] Update story status to `✅ Complete` in markdown file
-- [ ] **Close the GitHub issue** with `gh issue close <issue-number>`
-- [ ] Add a comment to the issue summarizing what was completed
 - [ ] Mark all acceptance criteria checkboxes as `[x]`
-- [ ] Add implementation summary section
+- [ ] Add implementation summary section to markdown
 - [ ] Update any related documentation referenced in the story
-- [ ] Commit documentation updates along with code changes
+- [ ] Commit all changes with conventional commit message
+- [ ] Push feature branch to GitHub
+- [ ] Create PR with "Closes #N" in description
+- [ ] Add comment to GitHub issue with PR link
 
 ## Tooling Availability Policy
 
