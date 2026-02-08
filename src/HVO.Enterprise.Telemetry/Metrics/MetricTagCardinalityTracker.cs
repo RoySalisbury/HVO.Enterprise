@@ -11,11 +11,13 @@ namespace HVO.Enterprise.Telemetry.Metrics
         private readonly ConcurrentDictionary<string, bool> _warningsLogged;
         private readonly ILogger _logger;
         private readonly int _warningThreshold;
+        private readonly int _maxTrackedCombinations;
 
-        public MetricTagCardinalityTracker(ILogger logger, int warningThreshold = 100)
+        public MetricTagCardinalityTracker(ILogger logger, int warningThreshold = 100, int maxTrackedCombinations = 1000)
         {
             _logger = logger ?? NullLogger.Instance;
             _warningThreshold = warningThreshold;
+            _maxTrackedCombinations = maxTrackedCombinations;
             _uniqueCombinations = new ConcurrentDictionary<string, byte>();
             _uniqueCounts = new ConcurrentDictionary<string, int>();
             _warningsLogged = new ConcurrentDictionary<string, bool>();
@@ -43,6 +45,10 @@ namespace HVO.Enterprise.Telemetry.Metrics
 
         private void Track(string metricName, string tagKey)
         {
+            // Stop tracking new combinations once max is reached to prevent unbounded memory growth
+            if (_uniqueCombinations.Count >= _maxTrackedCombinations)
+                return;
+
             if (_uniqueCombinations.TryAdd(tagKey, 0))
             {
                 var count = _uniqueCounts.AddOrUpdate(metricName, 1, (_, existing) => existing + 1);

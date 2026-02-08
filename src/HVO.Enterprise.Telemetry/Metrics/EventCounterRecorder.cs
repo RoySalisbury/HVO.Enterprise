@@ -134,7 +134,7 @@ namespace HVO.Enterprise.Telemetry.Metrics
             private readonly TelemetryEventSource _eventSource;
             private readonly string _metricName;
             private readonly MetricTagCardinalityTracker? _cardinalityTracker;
-            private long _total;
+            private readonly ConcurrentDictionary<string, long> _totals;
 
             public EventCounterCounter(
                 TelemetryEventSource eventSource,
@@ -144,55 +144,73 @@ namespace HVO.Enterprise.Telemetry.Metrics
                 _eventSource = eventSource;
                 _metricName = metricName;
                 _cardinalityTracker = cardinalityTracker;
+                _totals = new ConcurrentDictionary<string, long>();
             }
 
             public void Add(long value)
             {
                 ValidateNonNegative(value);
-                var total = Interlocked.Add(ref _total, value);
+                var total = _totals.AddOrUpdate(_metricName, value, (_, existing) => existing + value);
                 _eventSource.IncrementValue(_metricName, total);
             }
 
             public void Add(long value, in MetricTag tag1)
             {
                 ValidateNonNegative(value);
+                tag1.Validate();
                 _cardinalityTracker?.Track(_metricName, in tag1);
-                var total = Interlocked.Add(ref _total, value);
-                _eventSource.IncrementValue(MetricTagKeyBuilder.BuildTaggedName(_metricName, in tag1), total);
+                var taggedName = MetricTagKeyBuilder.BuildTaggedName(_metricName, in tag1);
+                var total = _totals.AddOrUpdate(taggedName, value, (_, existing) => existing + value);
+                _eventSource.IncrementValue(taggedName, total);
             }
 
             public void Add(long value, in MetricTag tag1, in MetricTag tag2)
             {
                 ValidateNonNegative(value);
+                tag1.Validate();
+                tag2.Validate();
                 _cardinalityTracker?.Track(_metricName, in tag1, in tag2);
-                var total = Interlocked.Add(ref _total, value);
-                _eventSource.IncrementValue(MetricTagKeyBuilder.BuildTaggedName(_metricName, in tag1, in tag2), total);
+                var taggedName = MetricTagKeyBuilder.BuildTaggedName(_metricName, in tag1, in tag2);
+                var total = _totals.AddOrUpdate(taggedName, value, (_, existing) => existing + value);
+                _eventSource.IncrementValue(taggedName, total);
             }
 
             public void Add(long value, in MetricTag tag1, in MetricTag tag2, in MetricTag tag3)
             {
                 ValidateNonNegative(value);
+                tag1.Validate();
+                tag2.Validate();
+                tag3.Validate();
                 _cardinalityTracker?.Track(_metricName, in tag1, in tag2, in tag3);
-                var total = Interlocked.Add(ref _total, value);
-                _eventSource.IncrementValue(
-                    MetricTagKeyBuilder.BuildTaggedName(_metricName, in tag1, in tag2, in tag3),
-                    total);
+                var taggedName = MetricTagKeyBuilder.BuildTaggedName(_metricName, in tag1, in tag2, in tag3);
+                var total = _totals.AddOrUpdate(taggedName, value, (_, existing) => existing + value);
+                _eventSource.IncrementValue(taggedName, total);
             }
 
             public void Add(long value, params MetricTag[] tags)
             {
                 ValidateNonNegative(value);
 
-                var total = Interlocked.Add(ref _total, value);
-
                 if (tags == null || tags.Length == 0)
                 {
+                    var total = _totals.AddOrUpdate(_metricName, value, (_, existing) => existing + value);
                     _eventSource.IncrementValue(_metricName, total);
                     return;
                 }
 
+                ValidateTags(tags);
                 _cardinalityTracker?.Track(_metricName, tags);
-                _eventSource.IncrementValue(MetricTagKeyBuilder.BuildTaggedName(_metricName, tags), total);
+                var taggedName = MetricTagKeyBuilder.BuildTaggedName(_metricName, tags);
+                var taggedTotal = _totals.AddOrUpdate(taggedName, value, (_, existing) => existing + value);
+                _eventSource.IncrementValue(taggedName, taggedTotal);
+            }
+
+            private static void ValidateTags(MetricTag[] tags)
+            {
+                for (int i = 0; i < tags.Length; i++)
+                {
+                    tags[i].Validate();
+                }
             }
 
             private static void ValidateNonNegative(long value)
@@ -225,18 +243,24 @@ namespace HVO.Enterprise.Telemetry.Metrics
 
             public void Record(long value, in MetricTag tag1)
             {
+                tag1.Validate();
                 _cardinalityTracker?.Track(_metricName, in tag1);
                 _eventSource.RecordValue(MetricTagKeyBuilder.BuildTaggedName(_metricName, in tag1), value);
             }
 
             public void Record(long value, in MetricTag tag1, in MetricTag tag2)
             {
+                tag1.Validate();
+                tag2.Validate();
                 _cardinalityTracker?.Track(_metricName, in tag1, in tag2);
                 _eventSource.RecordValue(MetricTagKeyBuilder.BuildTaggedName(_metricName, in tag1, in tag2), value);
             }
 
             public void Record(long value, in MetricTag tag1, in MetricTag tag2, in MetricTag tag3)
             {
+                tag1.Validate();
+                tag2.Validate();
+                tag3.Validate();
                 _cardinalityTracker?.Track(_metricName, in tag1, in tag2, in tag3);
                 _eventSource.RecordValue(
                     MetricTagKeyBuilder.BuildTaggedName(_metricName, in tag1, in tag2, in tag3),
@@ -251,8 +275,17 @@ namespace HVO.Enterprise.Telemetry.Metrics
                     return;
                 }
 
+                ValidateTags(tags);
                 _cardinalityTracker?.Track(_metricName, tags);
                 _eventSource.RecordValue(MetricTagKeyBuilder.BuildTaggedName(_metricName, tags), value);
+            }
+
+            private static void ValidateTags(MetricTag[] tags)
+            {
+                for (int i = 0; i < tags.Length; i++)
+                {
+                    tags[i].Validate();
+                }
             }
         }
 
@@ -279,18 +312,24 @@ namespace HVO.Enterprise.Telemetry.Metrics
 
             public void Record(double value, in MetricTag tag1)
             {
+                tag1.Validate();
                 _cardinalityTracker?.Track(_metricName, in tag1);
                 _eventSource.RecordValue(MetricTagKeyBuilder.BuildTaggedName(_metricName, in tag1), value);
             }
 
             public void Record(double value, in MetricTag tag1, in MetricTag tag2)
             {
+                tag1.Validate();
+                tag2.Validate();
                 _cardinalityTracker?.Track(_metricName, in tag1, in tag2);
                 _eventSource.RecordValue(MetricTagKeyBuilder.BuildTaggedName(_metricName, in tag1, in tag2), value);
             }
 
             public void Record(double value, in MetricTag tag1, in MetricTag tag2, in MetricTag tag3)
             {
+                tag1.Validate();
+                tag2.Validate();
+                tag3.Validate();
                 _cardinalityTracker?.Track(_metricName, in tag1, in tag2, in tag3);
                 _eventSource.RecordValue(
                     MetricTagKeyBuilder.BuildTaggedName(_metricName, in tag1, in tag2, in tag3),
@@ -305,8 +344,17 @@ namespace HVO.Enterprise.Telemetry.Metrics
                     return;
                 }
 
+                ValidateTags(tags);
                 _cardinalityTracker?.Track(_metricName, tags);
                 _eventSource.RecordValue(MetricTagKeyBuilder.BuildTaggedName(_metricName, tags), value);
+            }
+
+            private static void ValidateTags(MetricTag[] tags)
+            {
+                for (int i = 0; i < tags.Length; i++)
+                {
+                    tags[i].Validate();
+                }
             }
         }
     }
