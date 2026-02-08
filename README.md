@@ -255,8 +255,9 @@ dotnet build
 cd src/HVO.Enterprise.Common
 dotnet build
 
-# Run tests
-dotnet test
+# Run tests (manual only - do not use IDE test runner)
+dotnet test tests/HVO.Common.Tests/HVO.Common.Tests.csproj
+dotnet test tests/HVO.Enterprise.Telemetry.Tests/HVO.Enterprise.Telemetry.Tests.csproj
 ```
 
 ### Design Principles
