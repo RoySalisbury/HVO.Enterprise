@@ -52,6 +52,18 @@ public class OneOfTests
     }
 
     [TestMethod]
+    public void OneOf2_ValueAndValueType_ReturnExpected()
+    {
+        OneOf<int, string> intValue = 10;
+        OneOf<int, string> stringValue = "value";
+
+        Assert.AreEqual(10, intValue.Value);
+        Assert.AreEqual(typeof(int), intValue.ValueType);
+        Assert.AreEqual("value", stringValue.Value);
+        Assert.AreEqual(typeof(string), stringValue.ValueType);
+    }
+
+    [TestMethod]
     public void OneOf2_AsT2_ThrowsWhenT1()
     {
         // Arrange
@@ -76,6 +88,20 @@ public class OneOfTests
     }
 
     [TestMethod]
+    public void OneOf3_Switch_InvokesCorrectBranch()
+    {
+        OneOf<int, string, bool> value = true;
+        var called = string.Empty;
+
+        value.Switch(
+            _ => called = "int",
+            _ => called = "string",
+            _ => called = "bool");
+
+        Assert.AreEqual("bool", called);
+    }
+
+    [TestMethod]
     public void OneOf4_SupportsFourTypes()
     {
         // Arrange & Act
@@ -85,6 +111,20 @@ public class OneOfTests
         // Assert
         Assert.IsTrue(intValue.IsT1);
         Assert.IsTrue(doubleValue.IsT4);
+    }
+
+    [TestMethod]
+    public void OneOf4_Match_ReturnsExpected()
+    {
+        OneOf<int, string, bool, double> value = 3.14;
+
+        var result = value.Match(
+            _ => "int",
+            _ => "string",
+            _ => "bool",
+            _ => "double");
+
+        Assert.AreEqual("double", result);
     }
 
     [TestMethod]
@@ -110,6 +150,17 @@ public class OneOfTests
         // Assert
         Assert.IsTrue(success);
         Assert.AreEqual(42, value);
+    }
+
+    [TestMethod]
+    public void OneOfExtensions_TryGet_ReturnsFalseWhenWrongType()
+    {
+        OneOf<int, string> oneOf = 42;
+
+        var success = oneOf.TryGet<string>(out var value);
+
+        Assert.IsFalse(success);
+        Assert.IsNull(value);
     }
 
     [TestMethod]

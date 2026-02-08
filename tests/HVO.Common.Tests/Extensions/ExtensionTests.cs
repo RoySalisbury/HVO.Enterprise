@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using HVO.Common.Extensions;
+using HvoCollectionExtensions = HVO.Common.Extensions.CollectionExtensions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HVO.Common.Tests.Extensions;
@@ -8,6 +9,12 @@ namespace HVO.Common.Tests.Extensions;
 [TestClass]
 public class StringExtensionsTests
 {
+    private enum TestParseEnum
+    {
+        First,
+        Second
+    }
+
     [TestMethod]
     public void IsNullOrWhiteSpace_ReturnsTrueForNull()
     {
@@ -46,6 +53,35 @@ public class StringExtensionsTests
     {
         var result = "HelloWorld".TruncateWithSuffix(8, "...");
         Assert.AreEqual("Hello...", result);
+    }
+
+    [TestMethod]
+    public void ToEnum_ParsesEnumValue()
+    {
+        var result = "Second".ToEnum<TestParseEnum>();
+        Assert.AreEqual(TestParseEnum.Second, result);
+    }
+
+    [TestMethod]
+    public void TryToEnum_ReturnsFalseForInvalid()
+    {
+        var success = "Invalid".TryToEnum<TestParseEnum>(out var value);
+
+        Assert.IsFalse(success);
+        Assert.AreEqual(default, value);
+    }
+
+    [TestMethod]
+    public void EqualsAny_ReturnsTrueWhenMatchFound()
+    {
+        Assert.IsTrue("Test".EqualsAny(StringComparison.OrdinalIgnoreCase, "foo", "test"));
+    }
+
+    [TestMethod]
+    public void Reverse_ReturnsReversedString()
+    {
+        var result = "abc".Reverse();
+        Assert.AreEqual("cba", result);
     }
 
     [TestMethod]
@@ -118,15 +154,36 @@ public class CollectionExtensionsTests
     }
 
     [TestMethod]
+    public void ForEach_WithIndex_UsesIndexValues()
+    {
+        var collection = new[] { "a", "b", "c" };
+        var concatenated = string.Empty;
+
+        collection.ForEach((value, index) =>
+        {
+            concatenated += index + value;
+        });
+
+        Assert.AreEqual("0a1b2c", concatenated);
+    }
+
+    [TestMethod]
     public void Chunk_PartitionsCollection()
     {
         var collection = new[] { 1, 2, 3, 4, 5 };
-        var chunks = collection.Chunk(2).ToList();
+        var chunks = HvoCollectionExtensions.Chunk(collection, 2).ToList();
 
         Assert.AreEqual(3, chunks.Count);
         CollectionAssert.AreEqual(new[] { 1, 2 }, chunks[0].ToArray());
         CollectionAssert.AreEqual(new[] { 3, 4 }, chunks[1].ToArray());
         CollectionAssert.AreEqual(new[] { 5 }, chunks[2].ToArray());
+    }
+
+    [TestMethod]
+    [ExpectedException(typeof(ArgumentOutOfRangeException))]
+    public void Chunk_WithInvalidSize_ThrowsException()
+    {
+        HvoCollectionExtensions.Chunk(new[] { 1, 2, 3 }, 0).ToList();
     }
 
     [TestMethod]
@@ -139,11 +196,20 @@ public class CollectionExtensionsTests
             new { Id = 1, Name = "C" }
         };
 
-        var distinct = items.DistinctBy(x => x.Id).ToList();
+        var distinct = HvoCollectionExtensions.DistinctBy(items, x => x.Id).ToList();
 
         Assert.AreEqual(2, distinct.Count);
         Assert.AreEqual(1, distinct[0].Id);
         Assert.AreEqual(2, distinct[1].Id);
+    }
+
+    [TestMethod]
+    public void Shuffle_ReturnsSameElements()
+    {
+        var items = new[] { 1, 2, 3, 4, 5 };
+        var shuffled = items.Shuffle().ToList();
+
+        CollectionAssert.AreEquivalent(items, shuffled);
     }
 
     [TestMethod]

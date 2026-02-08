@@ -36,6 +36,22 @@ namespace HVO.Enterprise.Telemetry.Tests.Metrics
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentException))]
+        public void CreateCounter_WithEmptyName_ThrowsException()
+        {
+            var recorder = MetricRecorderFactory.Instance;
+            recorder.CreateCounter(string.Empty);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void CreateHistogram_WithWhitespaceName_ThrowsException()
+        {
+            var recorder = MetricRecorderFactory.Instance;
+            recorder.CreateHistogram("   ");
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
         public void Counter_WithDefaultTag_ThrowsException()
         {
             var recorder = MetricRecorderFactory.Instance;
@@ -226,6 +242,26 @@ namespace HVO.Enterprise.Telemetry.Tests.Metrics
 
             histogramDouble.Record(1.5);
             histogramDouble.Record(2.5, new MetricTag("type", "latency"));
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentOutOfRangeException))]
+        public void Counter_WithNegativeValue_ThrowsException()
+        {
+            var recorder = MetricRecorderFactory.Instance;
+            var counter = recorder.CreateCounter("test.counter.negative");
+
+            counter.Add(-1);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentOutOfRangeException))]
+        public void EventCounterCounter_WithNegativeValue_ThrowsException()
+        {
+            var recorder = new EventCounterRecorder();
+            var counter = recorder.CreateCounter("legacy.counter.negative");
+
+            counter.Add(-1);
         }
 
         [TestMethod]
