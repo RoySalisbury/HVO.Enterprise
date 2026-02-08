@@ -166,6 +166,10 @@ namespace HVO.Enterprise.Telemetry.Metrics
         /// <param name="timeout">Maximum time to wait for queue to drain.</param>
         /// <param name="cancellationToken">Cancellation token for early abort.</param>
         /// <returns>Result indicating success, items flushed, and items remaining.</returns>
+        /// <remarks>
+        /// This method completes the channel writer and is intended for shutdown only.
+        /// After calling <see cref="FlushAsync"/>, no further items can be enqueued.
+        /// </remarks>
         public async Task<FlushResult> FlushAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
             if (_disposed)

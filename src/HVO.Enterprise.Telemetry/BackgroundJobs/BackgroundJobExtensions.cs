@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using HVO.Enterprise.Telemetry;
 
 namespace HVO.Enterprise.Telemetry.BackgroundJobs
 {
@@ -33,10 +34,9 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
                     {
                         action();
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-                        // Exception should be handled by the action itself or logged
-                        throw;
+                        Telemetry.RecordException(ex);
                     }
                 }
             });
@@ -63,7 +63,7 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
             {
                 using (context.Restore())
                 {
-                    await action();
+                    await action().ConfigureAwait(false);
                 }
             });
         }
@@ -90,7 +90,7 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
             {
                 using (context.Restore())
                 {
-                    return await func();
+                    return await func().ConfigureAwait(false);
                 }
             });
         }
