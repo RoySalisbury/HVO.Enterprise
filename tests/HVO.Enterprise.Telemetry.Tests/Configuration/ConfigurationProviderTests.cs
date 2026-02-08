@@ -64,6 +64,35 @@ namespace HVO.Enterprise.Telemetry.Tests.Configuration
             Assert.AreEqual(0.8, effective.SamplingRate);
         }
 
+        [TestMethod]
+        public void ConfigurationProvider_NamespaceExactMatch_WinsOverWildcard()
+        {
+            var provider = new ConfigurationProvider();
+            var namespaceValue = typeof(SampleService).Namespace;
+
+            provider.SetNamespaceConfiguration("HVO.Enterprise.Telemetry.Tests.*", new OperationConfiguration { SamplingRate = 0.2 });
+            provider.SetNamespaceConfiguration(namespaceValue!, new OperationConfiguration { SamplingRate = 0.6 });
+
+            var effective = provider.GetEffectiveConfiguration(typeof(SampleService));
+
+            Assert.AreEqual(0.6, effective.SamplingRate);
+        }
+
+        [TestMethod]
+        public void ConfigurationProvider_NamespaceLongestPrefix_Wins()
+        {
+            var provider = new ConfigurationProvider();
+            var namespaceValue = typeof(SampleService).Namespace;
+
+            provider.SetNamespaceConfiguration("HVO.Enterprise.*", new OperationConfiguration { SamplingRate = 0.1 });
+            provider.SetNamespaceConfiguration("HVO.Enterprise.Telemetry.*", new OperationConfiguration { SamplingRate = 0.4 });
+            provider.SetNamespaceConfiguration(namespaceValue! + ".*", new OperationConfiguration { SamplingRate = 0.7 });
+
+            var effective = provider.GetEffectiveConfiguration(typeof(SampleService));
+
+            Assert.AreEqual(0.7, effective.SamplingRate);
+        }
+
         private sealed class SampleService
         {
             public void DoWork()
