@@ -43,6 +43,9 @@ namespace HVO.Enterprise.Telemetry.Correlation
                 }
 
                 // Auto-generate new ID
+                // Note: Using format "N" (32 hexadecimal digits without hyphens) for consistency
+                // Activity.TraceId uses a different format (32 hexadecimal with dashes in W3C format)
+                // Both formats are valid correlation IDs and can be used interchangeably
                 var newId = Guid.NewGuid().ToString("N");
                 _correlationId.Value = newId;
                 return newId;

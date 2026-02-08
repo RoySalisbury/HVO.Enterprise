@@ -50,7 +50,13 @@ namespace HVO.Enterprise.Telemetry.Correlation
         /// Disposes the scope and restores the previous correlation ID.
         /// </summary>
         /// <remarks>
+        /// <para>
         /// This method is idempotent - calling it multiple times has the same effect as calling it once.
+        /// </para>
+        /// <para>
+        /// If there was no previous correlation ID (it was null), this method restores the context to null,
+        /// which will cause the next access to Current to use the three-tier fallback mechanism.
+        /// </para>
         /// </remarks>
         public void Dispose()
         {

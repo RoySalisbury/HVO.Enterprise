@@ -355,7 +355,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Correlation
             CorrelationContext.Current = "test-id";
 
             // Act
-            CorrelationContext.Current = null!;
+            CorrelationContext.Clear();
             var newId = CorrelationContext.Current;
 
             // Assert - should auto-generate new ID
