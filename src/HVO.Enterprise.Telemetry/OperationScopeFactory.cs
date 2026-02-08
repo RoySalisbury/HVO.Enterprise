@@ -29,8 +29,11 @@ namespace HVO.Enterprise.Telemetry
             ILoggerFactory? loggerFactory = null,
             IContextEnricher? enricher = null)
         {
-            if (string.IsNullOrEmpty(activitySourceName))
+            if (activitySourceName == null)
                 throw new ArgumentNullException(nameof(activitySourceName));
+
+            if (activitySourceName.Length == 0)
+                throw new ArgumentException("Activity source name must be non-empty.", nameof(activitySourceName));
 
             _activitySource = SamplingActivitySourceExtensions.CreateWithSampling(activitySourceName, activitySourceVersion);
             _logger = loggerFactory?.CreateLogger("HVO.Enterprise.Telemetry.OperationScope");
@@ -56,8 +59,11 @@ namespace HVO.Enterprise.Telemetry
         /// <inheritdoc />
         public IOperationScope Begin(string name, OperationScopeOptions? options = null)
         {
-            if (string.IsNullOrEmpty(name))
+            if (name == null)
                 throw new ArgumentNullException(nameof(name));
+
+            if (name.Length == 0)
+                throw new ArgumentException("Operation name must be non-empty.", nameof(name));
 
             var scopeOptions = options ?? new OperationScopeOptions();
             return new OperationScope(name, scopeOptions, _activitySource, _logger, _enricher, null);

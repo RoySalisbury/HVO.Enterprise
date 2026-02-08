@@ -77,7 +77,7 @@ namespace HVO.Enterprise.Telemetry
             return new OperationScopeOptions
             {
                 CreateActivity = CreateActivity,
-                ActivityKind = ActivityKind.Internal,
+                ActivityKind = ActivityKind,
                 LogEvents = LogEvents,
                 LogLevel = LogLevel,
                 RecordMetrics = RecordMetrics,

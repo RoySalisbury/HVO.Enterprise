@@ -237,7 +237,7 @@ namespace HVO.Enterprise.Telemetry.Internal
                 if (_failed)
                 {
                     _logger.Log(
-                        LogLevel.Error,
+                        _options.LogLevel,
                         _exception,
                         "Operation {OperationName} failed after {DurationMs}ms",
                         _name,
