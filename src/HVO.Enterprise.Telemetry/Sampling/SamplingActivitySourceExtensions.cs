@@ -120,6 +120,7 @@ namespace HVO.Enterprise.Telemetry.Sampling
         /// Caches ActivitySource instances by name and version (name:version) to avoid listener leaks,
         /// while ensuring listeners are only registered once per ActivitySource name.
         /// Uses the global sampler configured via <see cref="ConfigureSampling"/> or <see cref="ConfigureFromOptions"/>.
+        /// If no global sampler has been configured, uses the default sampler (100% sampling).
         /// </summary>
         /// <param name="name">ActivitySource name.</param>
         /// <param name="version">Optional version.</param>
@@ -196,6 +197,10 @@ namespace HVO.Enterprise.Telemetry.Sampling
         /// Clears all cached ActivitySource instances and disposes all registered listeners.
         /// This should only be called during application shutdown or for testing purposes.
         /// </summary>
+        /// <remarks>
+        /// This method is not thread-safe with concurrent <see cref="CreateWithSampling"/> calls.
+        /// Do not call this method while ActivitySources are in active use.
+        /// </remarks>
         public static void ClearCache()
         {
             lock (ListenerLock)
