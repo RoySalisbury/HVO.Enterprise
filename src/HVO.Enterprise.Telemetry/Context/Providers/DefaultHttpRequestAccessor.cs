@@ -9,6 +9,11 @@ namespace HVO.Enterprise.Telemetry.Context.Providers
     /// </summary>
     internal sealed class DefaultHttpRequestAccessor : IHttpRequestAccessor
     {
+        private static volatile bool _systemWebChecked;
+        private static Type? _httpContextType;
+        private static PropertyInfo? _currentProperty;
+        private static PropertyInfo? _requestProperty;
+
         /// <inheritdoc />
         public HttpRequestInfo? GetCurrentRequest()
         {
@@ -21,27 +26,42 @@ namespace HVO.Enterprise.Telemetry.Context.Providers
 
         private static HttpRequestInfo? TryGetSystemWebRequest()
         {
-            var httpContextType = Type.GetType("System.Web.HttpContext, System.Web");
-            if (httpContextType == null)
+            // Cache type lookups on first call
+            if (!_systemWebChecked)
+            {
+                _httpContextType = Type.GetType("System.Web.HttpContext, System.Web");
+                if (_httpContextType != null)
+                {
+                    _currentProperty = _httpContextType.GetProperty("Current", BindingFlags.Static | BindingFlags.Public);
+                    _requestProperty = _httpContextType.GetProperty("Request");
+                }
+                _systemWebChecked = true;
+            }
+
+            if (_httpContextType == null)
                 return null;
 
-            var currentProperty = httpContextType.GetProperty("Current", BindingFlags.Static | BindingFlags.Public);
-            var httpContext = currentProperty != null ? currentProperty.GetValue(null, null) : null;
+            var httpContext = _currentProperty?.GetValue(null, null);
             if (httpContext == null)
                 return null;
 
-            var requestProperty = httpContextType.GetProperty("Request");
-            var request = requestProperty != null ? requestProperty.GetValue(httpContext, null) : null;
+            var request = _requestProperty?.GetValue(httpContext, null);
             if (request == null)
                 return null;
 
             var requestType = request.GetType();
             var method = GetString(request, requestType, "HttpMethod");
-            var url = GetString(request, requestType, "Url");
             var path = GetString(request, requestType, "Path");
-            var queryString = GetString(request, requestType, "QueryString");
             var userAgent = GetString(request, requestType, "UserAgent");
             var clientIp = GetString(request, requestType, "UserHostAddress");
+
+            // Get URL and query string correctly
+            var urlProperty = requestType.GetProperty("Url");
+            var urlValue = urlProperty?.GetValue(request, null) as Uri;
+            var url = urlValue?.ToString();
+            var queryString = urlValue?.Query;
+            if (queryString != null && queryString.Length > 0 && queryString.StartsWith("?"))
+                queryString = queryString.Substring(1);
 
             var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             var headersProperty = requestType.GetProperty("Headers");

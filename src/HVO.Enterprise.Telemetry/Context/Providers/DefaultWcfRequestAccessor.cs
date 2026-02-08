@@ -8,6 +8,10 @@ namespace HVO.Enterprise.Telemetry.Context.Providers
     /// </summary>
     internal sealed class DefaultWcfRequestAccessor : IWcfRequestAccessor
     {
+        private static volatile bool _wcfChecked;
+        private static Type? _contextType;
+        private static PropertyInfo? _currentProperty;
+
         /// <inheritdoc />
         public WcfRequestInfo? GetCurrentRequest()
         {
@@ -20,16 +24,25 @@ namespace HVO.Enterprise.Telemetry.Context.Providers
 
         private static WcfRequestInfo? TryGetOperationContext()
         {
-            var contextType = Type.GetType("System.ServiceModel.OperationContext, System.ServiceModel");
-            if (contextType == null)
+            // Cache type lookups on first call
+            if (!_wcfChecked)
+            {
+                _contextType = Type.GetType("System.ServiceModel.OperationContext, System.ServiceModel");
+                if (_contextType != null)
+                {
+                    _currentProperty = _contextType.GetProperty("Current", BindingFlags.Static | BindingFlags.Public);
+                }
+                _wcfChecked = true;
+            }
+
+            if (_contextType == null)
                 return null;
 
-            var currentProperty = contextType.GetProperty("Current", BindingFlags.Static | BindingFlags.Public);
-            var context = currentProperty != null ? currentProperty.GetValue(null, null) : null;
+            var context = _currentProperty?.GetValue(null, null);
             if (context == null)
                 return null;
 
-            var incomingHeaders = GetPropertyValue(context, contextType, "IncomingMessageHeaders");
+            var incomingHeaders = GetPropertyValue(context, _contextType, "IncomingMessageHeaders");
             var action = GetPropertyString(incomingHeaders, "Action");
 
             var endpoint = GetNestedPropertyString(context, "EndpointDispatcher", "EndpointAddress", "Uri");

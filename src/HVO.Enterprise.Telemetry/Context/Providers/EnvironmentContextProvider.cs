@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace HVO.Enterprise.Telemetry.Context.Providers
@@ -156,11 +157,18 @@ namespace HVO.Enterprise.Telemetry.Context.Providers
 
         private static string GetRuntimeName()
         {
-#if NET5_0_OR_GREATER
-            return ".NET";
-#else
+            // Use runtime detection instead of compile-time defines
+            var frameworkDescription = RuntimeInformation.FrameworkDescription;
+            
+            // Check if it's modern .NET (not .NET Framework)
+            if ((frameworkDescription.StartsWith(".NET Core", StringComparison.OrdinalIgnoreCase) ||
+                 frameworkDescription.StartsWith(".NET ", StringComparison.OrdinalIgnoreCase)) &&
+                frameworkDescription.IndexOf("Framework", StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                return ".NET";
+            }
+            
             return ".NET Framework";
-#endif
         }
 
         private static string GetDeploymentEnvironment()

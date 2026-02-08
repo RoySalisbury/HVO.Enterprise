@@ -19,14 +19,16 @@ namespace HVO.Enterprise.Telemetry.Tests.Context
                 Metadata = new Dictionary<string, string> { { "x-trace", "value" } }
             });
             var provider = new GrpcRequestContextProvider(accessor);
-            var activity = new Activity("test");
-            var options = new EnrichmentOptions { MaxLevel = EnrichmentLevel.Verbose };
+            using (var activity = new Activity("test"))
+            {
+                var options = new EnrichmentOptions { MaxLevel = EnrichmentLevel.Verbose };
 
-            provider.EnrichActivity(activity, options);
+                provider.EnrichActivity(activity, options);
 
-            Assert.AreEqual("TestService", activity.GetTagItem("rpc.service"));
-            Assert.AreEqual("Get", activity.GetTagItem("rpc.method"));
-            Assert.AreEqual("value", activity.GetTagItem("rpc.metadata.x-trace"));
+                Assert.AreEqual("TestService", activity.GetTagItem("rpc.service"));
+                Assert.AreEqual("Get", activity.GetTagItem("rpc.method"));
+                Assert.AreEqual("value", activity.GetTagItem("rpc.metadata.x-trace"));
+            }
         }
 
         private sealed class FakeGrpcRequestAccessor : IGrpcRequestAccessor
