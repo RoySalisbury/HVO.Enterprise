@@ -14,6 +14,29 @@ namespace HVO.Enterprise.Telemetry.Tests.Configuration
     public class ConfigurationHttpEndpointTests
     {
         [TestMethod]
+        public void Constructor_WithNullPrefix_Throws()
+        {
+            Assert.ThrowsException<ArgumentNullException>(() =>
+                new ConfigurationHttpEndpoint(" ", new TelemetryOptions()));
+        }
+
+        [TestMethod]
+        public void Constructor_WithNullOptions_Throws()
+        {
+            Assert.ThrowsException<ArgumentNullException>(() =>
+                new ConfigurationHttpEndpoint("http://localhost:5055/", null!));
+        }
+
+        [TestMethod]
+        public void Dispose_IsIdempotent()
+        {
+            using var endpoint = new ConfigurationHttpEndpoint("http://localhost:5056/", new TelemetryOptions());
+
+            endpoint.Dispose();
+            endpoint.Dispose();
+        }
+
+        [TestMethod]
         public async Task ConfigurationHttpEndpoint_UpdatesConfigurationAsync()
         {
             var port = GetAvailablePort();

@@ -20,6 +20,15 @@ namespace HVO.Enterprise.Telemetry.Tests.Metrics
         }
 
         [TestMethod]
+        public void MetricRecorderFactory_Instance_IsSingleton()
+        {
+            var first = MetricRecorderFactory.Instance;
+            var second = MetricRecorderFactory.Instance;
+
+            Assert.AreSame(first, second);
+        }
+
+        [TestMethod]
         [ExpectedException(typeof(ArgumentException))]
         public void MetricTag_WithEmptyKey_ThrowsException()
         {
@@ -48,6 +57,14 @@ namespace HVO.Enterprise.Telemetry.Tests.Metrics
         {
             var recorder = MetricRecorderFactory.Instance;
             recorder.CreateHistogram("   ");
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void CreateObservableGauge_WithNullCallback_ThrowsException()
+        {
+            var recorder = new EventCounterRecorder();
+            recorder.CreateObservableGauge("test.gauge", null!);
         }
 
         [TestMethod]
@@ -242,6 +259,16 @@ namespace HVO.Enterprise.Telemetry.Tests.Metrics
 
             histogramDouble.Record(1.5);
             histogramDouble.Record(2.5, new MetricTag("type", "latency"));
+        }
+
+        [TestMethod]
+        public void EventCounterRecorder_CreateObservableGauge_DisposeIsIdempotent()
+        {
+            var recorder = new EventCounterRecorder();
+            var gauge = recorder.CreateObservableGauge("legacy.gauge", () => 1.0);
+
+            gauge.Dispose();
+            gauge.Dispose();
         }
 
         [TestMethod]

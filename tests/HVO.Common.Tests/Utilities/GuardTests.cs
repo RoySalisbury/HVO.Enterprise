@@ -42,6 +42,19 @@ public class GuardTests
     }
 
     [TestMethod]
+    public void AgainstNullOrEmpty_ThrowsWhenNullCollection()
+    {
+        IEnumerable<int>? value = null;
+        Assert.ThrowsException<ArgumentNullException>(() => Guard.AgainstNullOrEmpty(value));
+    }
+
+    [TestMethod]
+    public void AgainstNullOrEmptyString_ThrowsWhenNull()
+    {
+        Assert.ThrowsException<ArgumentException>(() => Guard.AgainstNullOrEmpty((string?)null));
+    }
+
+    [TestMethod]
     public void AgainstOutOfRange_ReturnsValueWhenInRange()
     {
         var result = Guard.AgainstOutOfRange(5, 1, 10);
@@ -52,6 +65,19 @@ public class GuardTests
     public void AgainstOutOfRange_ThrowsWhenOutOfRange()
     {
         Assert.ThrowsException<ArgumentOutOfRangeException>(() => Guard.AgainstOutOfRange(15, 1, 10));
+    }
+
+    [TestMethod]
+    public void AgainstNegativeOrZero_ThrowsWhenZero()
+    {
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => Guard.AgainstNegativeOrZero(0, 0));
+    }
+
+    [TestMethod]
+    public void AgainstNegativeOrZero_ReturnsValueWhenPositive()
+    {
+        var result = Guard.AgainstNegativeOrZero(5, 0);
+        Assert.AreEqual(5, result);
     }
 
     [TestMethod]

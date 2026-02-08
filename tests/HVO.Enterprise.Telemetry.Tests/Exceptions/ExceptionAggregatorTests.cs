@@ -61,6 +61,39 @@ namespace HVO.Enterprise.Telemetry.Tests.Exceptions
                 "Error rate should be within expected range.");
         }
 
+        [TestMethod]
+        public void GetGroup_ReturnsNullForEmptyFingerprint()
+        {
+            var aggregator = new ExceptionAggregator();
+
+            Assert.IsNull(aggregator.GetGroup(string.Empty));
+            Assert.IsNull(aggregator.GetGroup(null!));
+        }
+
+        [TestMethod]
+        public void GetGlobalErrorRatePercentage_ReturnsZeroWhenNoOperations()
+        {
+            var aggregator = new ExceptionAggregator();
+
+            var rate = aggregator.GetGlobalErrorRatePercentage(0);
+
+            Assert.AreEqual(0, rate);
+        }
+
+        [TestMethod]
+        public void Cleanup_RemovesExpiredGroups()
+        {
+            var clock = new TestClock(DateTimeOffset.UtcNow);
+            var aggregator = new ExceptionAggregator(clock.GetNow, TimeSpan.FromSeconds(1));
+
+            aggregator.RecordException(new InvalidOperationException("Test"));
+            clock.Advance(TimeSpan.FromSeconds(2));
+
+            var groups = aggregator.GetGroups();
+
+            Assert.AreEqual(0, groups.Count);
+        }
+
         private sealed class TestClock
         {
             private DateTimeOffset _current;

@@ -72,6 +72,22 @@ public class StringExtensionsTests
     }
 
     [TestMethod]
+    public void TryToEnum_IgnoresCaseWhenRequested()
+    {
+        var success = "second".TryToEnum<TestParseEnum>(out var value, ignoreCase: true);
+
+        Assert.IsTrue(success);
+        Assert.AreEqual(TestParseEnum.Second, value);
+    }
+
+    [TestMethod]
+    [ExpectedException(typeof(ArgumentException))]
+    public void ToEnum_ThrowsWhenInvalid()
+    {
+        _ = "Invalid".ToEnum<TestParseEnum>();
+    }
+
+    [TestMethod]
     public void EqualsAny_ReturnsTrueWhenMatchFound()
     {
         Assert.IsTrue("Test".EqualsAny(StringComparison.OrdinalIgnoreCase, "foo", "test"));
@@ -251,5 +267,15 @@ public class EnumExtensionsTests
     {
         var description = TestEnum.Second.GetDescription();
         Assert.AreEqual("Second", description);
+    }
+
+    [TestMethod]
+    public void GetDescription_ReturnsEmptyForNull()
+    {
+        Enum? value = null;
+
+        var description = EnumExtensions.GetDescription(value!);
+
+        Assert.AreEqual(string.Empty, description);
     }
 }

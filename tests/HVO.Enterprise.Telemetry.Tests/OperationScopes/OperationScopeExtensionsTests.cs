@@ -52,6 +52,25 @@ namespace HVO.Enterprise.Telemetry.Tests.OperationScopes
                 factory.ExecuteAsync("Test", () => throw new InvalidOperationException("boom")));
         }
 
+        [TestMethod]
+        public async Task ExecuteAsyncGeneric_ReturnsResult()
+        {
+            var factory = CreateFactory();
+
+            var result = await factory.ExecuteAsync("Test", () => Task.FromResult(42));
+
+            Assert.AreEqual(42, result);
+        }
+
+        [TestMethod]
+        public async Task ExecuteAsyncGeneric_ThrowsOnFailure()
+        {
+            var factory = CreateFactory();
+
+            await Assert.ThrowsExceptionAsync<InvalidOperationException>(() =>
+                factory.ExecuteAsync<int>("Test", () => throw new InvalidOperationException("boom")));
+        }
+
         private static OperationScopeFactory CreateFactory()
         {
             var sourceName = "HVO.Enterprise.Telemetry.Tests." + Guid.NewGuid().ToString("N");

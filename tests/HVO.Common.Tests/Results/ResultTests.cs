@@ -242,6 +242,65 @@ public class ResultExtensionsTests
     }
 
     [TestMethod]
+    public void OnSuccess_InvokesActionOnlyOnSuccess()
+    {
+        var result = Result<int>.Success(10);
+        var called = false;
+
+        result.OnSuccess(value =>
+        {
+            called = true;
+            Assert.AreEqual(10, value);
+        });
+
+        Assert.IsTrue(called);
+    }
+
+    [TestMethod]
+    public void OnFailure_InvokesActionOnlyOnFailure()
+    {
+        var error = new InvalidOperationException("boom");
+        var result = Result<int>.Failure(error);
+        Exception? observed = null;
+
+        result.OnFailure(ex => observed = ex);
+
+        Assert.AreEqual(error, observed);
+    }
+
+    [TestMethod]
+    public void WhereSuccess_FiltersSuccessfulResults()
+    {
+        var results = new[]
+        {
+            Result<int>.Success(1),
+            Result<int>.Failure(new Exception("fail")),
+            Result<int>.Success(2)
+        };
+
+        var values = results.WhereSuccess();
+
+        CollectionAssert.AreEqual(new[] { 1, 2 }, new System.Collections.Generic.List<int>(values));
+    }
+
+    [TestMethod]
+    public void WhereFailure_FiltersFailedResults()
+    {
+        var firstError = new Exception("fail-1");
+        var secondError = new Exception("fail-2");
+        var results = new[]
+        {
+            Result<int>.Failure(firstError),
+            Result<int>.Success(2),
+            Result<int>.Failure(secondError)
+        };
+
+        var errors = results.WhereFailure();
+
+        CollectionAssert.AreEqual(new[] { firstError, secondError }, new System.Collections.Generic.List<Exception>(errors));
+    }
+
+    [TestMethod]
     public void GetValueOrDefault_ReturnsValueOnSuccess()
     {
         // Arrange
@@ -265,5 +324,37 @@ public class ResultExtensionsTests
 
         // Assert
         Assert.AreEqual(0, value);
+    }
+
+    [TestMethod]
+    public void GetValueOrDefault_Factory_UsesDefaultOnFailure()
+    {
+        var result = Result<int>.Failure(new Exception());
+        var called = false;
+
+        var value = result.GetValueOrDefault(() =>
+        {
+            called = true;
+            return 7;
+        });
+
+        Assert.IsTrue(called);
+        Assert.AreEqual(7, value);
+    }
+
+    [TestMethod]
+    public void GetValueOrDefault_Factory_SkipsFactoryOnSuccess()
+    {
+        var result = Result<int>.Success(42);
+        var called = false;
+
+        var value = result.GetValueOrDefault(() =>
+        {
+            called = true;
+            return 7;
+        });
+
+        Assert.IsFalse(called);
+        Assert.AreEqual(42, value);
     }
 }

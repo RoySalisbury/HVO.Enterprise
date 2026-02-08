@@ -114,6 +114,47 @@ public class OptionExtensionsTests
     }
 
     [TestMethod]
+    public void OnSome_InvokesActionWhenValuePresent()
+    {
+        var option = new Option<int>(42);
+        var called = false;
+
+        option.OnSome(value =>
+        {
+            called = true;
+            Assert.AreEqual(42, value);
+        });
+
+        Assert.IsTrue(called);
+    }
+
+    [TestMethod]
+    public void OnNone_InvokesActionWhenValueAbsent()
+    {
+        var option = Option<int>.None();
+        var called = false;
+
+        option.OnNone(() => called = true);
+
+        Assert.IsTrue(called);
+    }
+
+    [TestMethod]
+    public void WhereSome_FiltersValues()
+    {
+        var options = new[]
+        {
+            new Option<int>(1),
+            Option<int>.None(),
+            new Option<int>(2)
+        };
+
+        var values = options.WhereSome();
+
+        CollectionAssert.AreEqual(new[] { 1, 2 }, new System.Collections.Generic.List<int>(values));
+    }
+
+    [TestMethod]
     public void GetValueOrDefault_ReturnsValueWhenPresent()
     {
         // Arrange
@@ -137,6 +178,38 @@ public class OptionExtensionsTests
 
         // Assert
         Assert.AreEqual(0, value);
+    }
+
+    [TestMethod]
+    public void GetValueOrDefault_Factory_UsesDefaultWhenAbsent()
+    {
+        var option = Option<int>.None();
+        var called = false;
+
+        var value = option.GetValueOrDefault(() =>
+        {
+            called = true;
+            return 5;
+        });
+
+        Assert.IsTrue(called);
+        Assert.AreEqual(5, value);
+    }
+
+    [TestMethod]
+    public void GetValueOrDefault_Factory_SkipsFactoryWhenPresent()
+    {
+        var option = new Option<int>(12);
+        var called = false;
+
+        var value = option.GetValueOrDefault(() =>
+        {
+            called = true;
+            return 5;
+        });
+
+        Assert.IsFalse(called);
+        Assert.AreEqual(12, value);
     }
 
     [TestMethod]

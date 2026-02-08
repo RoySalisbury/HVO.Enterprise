@@ -52,6 +52,19 @@ public class OneOfTests
     }
 
     [TestMethod]
+    public void OneOf2_Switch_InvokesCorrectBranch()
+    {
+        OneOf<int, string> value = "value";
+        var called = string.Empty;
+
+        value.Switch(
+            _ => called = "int",
+            _ => called = "string");
+
+        Assert.AreEqual("string", called);
+    }
+
+    [TestMethod]
     public void OneOf2_ValueAndValueType_ReturnExpected()
     {
         OneOf<int, string> intValue = 10;
@@ -102,6 +115,17 @@ public class OneOfTests
     }
 
     [TestMethod]
+    public void OneOf3_AsT2_ThrowsWhenWrongType()
+    {
+        OneOf<int, string, bool> value = 99;
+
+        Assert.ThrowsException<InvalidOperationException>(() =>
+        {
+            var result = value.AsT2;
+        });
+    }
+
+    [TestMethod]
     public void OneOf4_SupportsFourTypes()
     {
         // Arrange & Act
@@ -125,6 +149,27 @@ public class OneOfTests
             _ => "double");
 
         Assert.AreEqual("double", result);
+    }
+
+    [TestMethod]
+    public void OneOf4_AsT3_ThrowsWhenWrongType()
+    {
+        OneOf<int, string, bool, double> value = "value";
+
+        Assert.ThrowsException<InvalidOperationException>(() =>
+        {
+            var result = value.AsT3;
+        });
+    }
+
+    [TestMethod]
+    public void OneOfExtensions_Is_ThrowsWhenNull()
+    {
+        Assert.ThrowsException<ArgumentNullException>(() =>
+        {
+            IOneOf? value = null;
+            _ = OneOfExtensions.Is<int>(value!);
+        });
     }
 
     [TestMethod]
