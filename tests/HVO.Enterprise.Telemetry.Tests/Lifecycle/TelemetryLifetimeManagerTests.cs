@@ -151,12 +151,15 @@ namespace HVO.Enterprise.Telemetry.Tests.Lifecycle
             using var worker = new TelemetryBackgroundWorker();
             using var manager = new TelemetryLifetimeManager(worker);
 
-            using var source = new ActivitySource("TestSource");
+            // Use an HVO-prefixed source name because CloseOpenActivities only
+            // disposes activities whose Source.Name starts with "HVO." to avoid
+            // closing foreign activities owned by ASP.NET Core, gRPC, etc.
+            using var source = new ActivitySource("HVO.Enterprise.Telemetry.Tests");
             
             // Create an ActivityListener to enable activity creation
             using var listener = new ActivityListener
             {
-                ShouldListenTo = s => s.Name == "TestSource",
+                ShouldListenTo = s => s.Name == "HVO.Enterprise.Telemetry.Tests",
                 Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData
             };
             ActivitySource.AddActivityListener(listener);
@@ -312,12 +315,15 @@ namespace HVO.Enterprise.Telemetry.Tests.Lifecycle
             using var worker = new TelemetryBackgroundWorker();
             using var manager = new TelemetryLifetimeManager(worker);
 
-            using var source = new ActivitySource("TestSource");
+            // Use an HVO-prefixed source name because CloseOpenActivities only
+            // disposes activities whose Source.Name starts with "HVO." to avoid
+            // closing foreign activities owned by ASP.NET Core, gRPC, etc.
+            using var source = new ActivitySource("HVO.Enterprise.Telemetry.Tests");
             
             // Create an ActivityListener to enable activity creation
             using var listener = new ActivityListener
             {
-                ShouldListenTo = s => s.Name == "TestSource",
+                ShouldListenTo = s => s.Name == "HVO.Enterprise.Telemetry.Tests",
                 Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData
             };
             ActivitySource.AddActivityListener(listener);

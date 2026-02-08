@@ -173,12 +173,18 @@ namespace HVO.Enterprise.Telemetry.Lifecycle
 
         private void CloseOpenActivities()
         {
-            // Stop current activity and all parents
+            // Walk the current Activity chain and dispose only activities owned by
+            // HVO.Enterprise.Telemetry. We check Activity.Source.Name to avoid disposing
+            // activities started by ASP.NET Core, HttpClient, gRPC, or other third-party
+            // instrumentation that may be in the parent chain at shutdown time.
             var activity = Activity.Current;
             while (activity != null)
             {
                 var parent = activity.Parent;
-                activity.Dispose();
+                if (activity.Source.Name.StartsWith("HVO.", StringComparison.Ordinal))
+                {
+                    activity.Dispose();
+                }
                 activity = parent;
             }
         }

@@ -111,8 +111,16 @@ namespace HVO.Enterprise.Telemetry.Metrics
                 {
                     value = _observeValue();
                 }
-                catch
+                catch (Exception)
                 {
+                    // The _observeValue delegate is user-supplied and may throw for any
+                    // reason (e.g., disposed underlying resource, transient I/O error).
+                    // This runs inside a System.Threading.Timer callback every 1 second;
+                    // an unhandled exception here would crash the process. We catch
+                    // Exception (not bare catch) to avoid swallowing SEH / CLR-critical
+                    // exceptions on runtimes that propagate them. There is deliberately no
+                    // logging to avoid flooding when the delegate is persistently broken
+                    // — callers can detect the issue via the stale gauge value.
                     return;
                 }
 

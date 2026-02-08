@@ -183,11 +183,11 @@ namespace HVO.Enterprise.Telemetry.Metrics
 
             try
             {
-                // Wait for queue to drain or timeout
-#if NET8_0_OR_GREATER
-                await _channel.Reader.Completion.WaitAsync(cts.Token);
-#else
-                // .NET Standard 2.0 doesn't have WaitAsync extension
+                // Wait for queue to drain or timeout.
+                // NOTE: This project targets .NET Standard 2.0 as a single binary that runs on
+                // both .NET Framework 4.8 and .NET 5+. Compile-time #if directives like
+                // NET8_0_OR_GREATER are useless here — they are never defined for netstandard2.0.
+                // We use a runtime-compatible cancellation pattern instead of Task.WaitAsync().
                 var tcs = new TaskCompletionSource<bool>();
                 using (cts.Token.Register(() => tcs.TrySetCanceled()))
                 {
@@ -195,7 +195,6 @@ namespace HVO.Enterprise.Telemetry.Metrics
                     if (completedTask == tcs.Task)
                         throw new OperationCanceledException(cts.Token);
                 }
-#endif
 
                 // Wait a bit for final processing
                 await Task.Delay(50, CancellationToken.None);

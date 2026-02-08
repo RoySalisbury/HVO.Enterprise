@@ -8,6 +8,13 @@ namespace HVO.Common.OneOf;
 /// </summary>
 /// <typeparam name="T1">First possible type</typeparam>
 /// <typeparam name="T2">Second possible type</typeparam>
+/// <remarks>
+/// <para><b>default(OneOf&lt;T1, T2&gt;) warning:</b> Because this is a <c>readonly struct</c>,
+/// the <c>default</c> value has <c>_index == 0</c>, meaning <c>IsT1 == true</c> and
+/// <c>Value == default(T1)</c>. This is a limitation of value types in .NET — there is no way
+/// to distinguish "intentionally holds T1" from "uninitialized". Always construct instances via
+/// <see cref="FromT1"/> or <see cref="FromT2"/>.</para>
+/// </remarks>
 public readonly struct OneOf<T1, T2> : IOneOf
 {
     private readonly int _index;
@@ -148,6 +155,10 @@ public readonly struct OneOf<T1, T2> : IOneOf
 /// <typeparam name="T1">First possible type</typeparam>
 /// <typeparam name="T2">Second possible type</typeparam>
 /// <typeparam name="T3">Third possible type</typeparam>
+/// <remarks>
+/// <para><b>default warning:</b> <c>default(OneOf&lt;T1,T2,T3&gt;)</c> has <c>_index == 0</c>,
+/// appearing as T1 with a null/default value. Always use the <c>FromT*</c> factory methods.</para>
+/// </remarks>
 public readonly struct OneOf<T1, T2, T3> : IOneOf
 {
     private readonly int _index;
@@ -326,6 +337,10 @@ public readonly struct OneOf<T1, T2, T3> : IOneOf
 /// <typeparam name="T2">Second possible type</typeparam>
 /// <typeparam name="T3">Third possible type</typeparam>
 /// <typeparam name="T4">Fourth possible type</typeparam>
+/// <remarks>
+/// <para><b>default warning:</b> <c>default(OneOf&lt;T1,T2,T3,T4&gt;)</c> has <c>_index == 0</c>,
+/// appearing as T1 with a null/default value. Always use the <c>FromT*</c> factory methods.</para>
+/// </remarks>
 public readonly struct OneOf<T1, T2, T3, T4> : IOneOf
 {
     private readonly int _index;

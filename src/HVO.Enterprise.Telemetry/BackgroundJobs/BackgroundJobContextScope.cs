@@ -70,7 +70,14 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
                 }
                 catch (FormatException)
                 {
-                    // Invalid trace/span ID format, skip Activity creation
+                    // Invalid trace/span ID format — skip Activity creation.
+                    // This occurs when a caller supplies a malformed W3C trace-id or span-id,
+                    // which can happen with legacy systems or misconfigured producers.
+                    // We intentionally swallow FormatException (not a broader catch) so the
+                    // background job still executes; the only impact is loss of distributed
+                    // trace correlation for this particular job invocation.
+                    // Suppression: no logging here to stay allocation-free on the hot path;
+                    // callers can detect missing correlation via the null Activity.
                 }
             }
         }
