@@ -134,23 +134,26 @@ namespace HVO.Enterprise.Telemetry.Metrics
             private readonly TelemetryEventSource _eventSource;
             private readonly string _metricName;
             private readonly MetricTagCardinalityTracker? _cardinalityTracker;
-            private readonly ConcurrentDictionary<string, long> _totals;
+            private readonly ConcurrentDictionary<string, CounterTotal> _totals;
+            private readonly int _maxTrackedTotals;
 
             public EventCounterCounter(
                 TelemetryEventSource eventSource,
                 string metricName,
-                MetricTagCardinalityTracker? cardinalityTracker)
+                MetricTagCardinalityTracker? cardinalityTracker,
+                int maxTrackedTotals = 1000)
             {
                 _eventSource = eventSource;
                 _metricName = metricName;
                 _cardinalityTracker = cardinalityTracker;
-                _totals = new ConcurrentDictionary<string, long>();
+                _maxTrackedTotals = maxTrackedTotals;
+                _totals = new ConcurrentDictionary<string, CounterTotal>();
             }
 
             public void Add(long value)
             {
                 ValidateNonNegative(value);
-                var total = _totals.AddOrUpdate(_metricName, value, (_, existing) => existing + value);
+                var total = AddToTotal(_metricName, value);
                 _eventSource.IncrementValue(_metricName, total);
             }
 
@@ -160,7 +163,7 @@ namespace HVO.Enterprise.Telemetry.Metrics
                 tag1.Validate();
                 _cardinalityTracker?.Track(_metricName, in tag1);
                 var taggedName = MetricTagKeyBuilder.BuildTaggedName(_metricName, in tag1);
-                var total = _totals.AddOrUpdate(taggedName, value, (_, existing) => existing + value);
+                var total = AddToTotal(taggedName, value);
                 _eventSource.IncrementValue(taggedName, total);
             }
 
@@ -171,7 +174,7 @@ namespace HVO.Enterprise.Telemetry.Metrics
                 tag2.Validate();
                 _cardinalityTracker?.Track(_metricName, in tag1, in tag2);
                 var taggedName = MetricTagKeyBuilder.BuildTaggedName(_metricName, in tag1, in tag2);
-                var total = _totals.AddOrUpdate(taggedName, value, (_, existing) => existing + value);
+                var total = AddToTotal(taggedName, value);
                 _eventSource.IncrementValue(taggedName, total);
             }
 
@@ -183,7 +186,7 @@ namespace HVO.Enterprise.Telemetry.Metrics
                 tag3.Validate();
                 _cardinalityTracker?.Track(_metricName, in tag1, in tag2, in tag3);
                 var taggedName = MetricTagKeyBuilder.BuildTaggedName(_metricName, in tag1, in tag2, in tag3);
-                var total = _totals.AddOrUpdate(taggedName, value, (_, existing) => existing + value);
+                var total = AddToTotal(taggedName, value);
                 _eventSource.IncrementValue(taggedName, total);
             }
 
@@ -193,7 +196,7 @@ namespace HVO.Enterprise.Telemetry.Metrics
 
                 if (tags == null || tags.Length == 0)
                 {
-                    var total = _totals.AddOrUpdate(_metricName, value, (_, existing) => existing + value);
+                    var total = AddToTotal(_metricName, value);
                     _eventSource.IncrementValue(_metricName, total);
                     return;
                 }
@@ -201,14 +204,44 @@ namespace HVO.Enterprise.Telemetry.Metrics
                 MetricTag.ValidateTags(tags);
                 _cardinalityTracker?.Track(_metricName, tags);
                 var taggedName = MetricTagKeyBuilder.BuildTaggedName(_metricName, tags);
-                var taggedTotal = _totals.AddOrUpdate(taggedName, value, (_, existing) => existing + value);
+                var taggedTotal = AddToTotal(taggedName, value);
                 _eventSource.IncrementValue(taggedName, taggedTotal);
+            }
+
+            private long AddToTotal(string key, long value)
+            {
+                // Fast path: try to get existing total
+                if (_totals.TryGetValue(key, out var counterTotal))
+                {
+                    return counterTotal.Add(value);
+                }
+
+                // Prevent unbounded growth by capping total tracked tag combinations
+                if (_totals.Count >= _maxTrackedTotals)
+                {
+                    // Return the value itself as the total when limit reached
+                    return value;
+                }
+
+                // Slow path: create new total holder
+                counterTotal = _totals.GetOrAdd(key, _ => new CounterTotal());
+                return counterTotal.Add(value);
             }
 
             private static void ValidateNonNegative(long value)
             {
                 if (value < 0)
                     throw new ArgumentOutOfRangeException(nameof(value), "Counter values must be non-negative.");
+            }
+        }
+
+        private sealed class CounterTotal
+        {
+            private long _value;
+
+            public long Add(long increment)
+            {
+                return Interlocked.Add(ref _value, increment);
             }
         }
 

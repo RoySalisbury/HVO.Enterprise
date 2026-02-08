@@ -62,7 +62,7 @@ namespace HVO.Enterprise.Telemetry.Metrics
             MetricNameValidator.ValidateName(name, nameof(name));
 
             var state = new ObservableGaugeState(observeValue);
-            var gauge = _meter.CreateObservableGauge(name, state.Observe, unit, description);
+            _ = _meter.CreateObservableGauge(name, state.Observe, unit, description);
             return new ObservableGaugeHandle(state);
         }
 
