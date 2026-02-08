@@ -19,7 +19,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Correlation
         {
             // Clear any existing correlation context before each test
             CorrelationContext.Clear();
-            
+
             // Stop any existing Activity to ensure clean state
             Activity.Current?.Stop();
         }
@@ -266,11 +266,11 @@ namespace HVO.Enterprise.Telemetry.Tests.Correlation
                 Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded
             };
             ActivitySource.AddActivityListener(listener);
-            
+
             // Act
             using var activity = activitySource.StartActivity("TestOp");
             Assert.IsNotNull(activity, "Activity should be created");
-            
+
             var correlationId = CorrelationContext.Current;
 
             // Assert
@@ -289,7 +289,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Correlation
                 Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded
             };
             ActivitySource.AddActivityListener(listener);
-            
+
             using var activity = activitySource.StartActivity("TestOp");
             Assert.IsNotNull(activity, "Activity should be created");
 
@@ -306,7 +306,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Correlation
         {
             // Arrange
             CorrelationContext.Clear();
-            
+
             // Ensure no Activity is current
             Activity.Current?.Stop();
 
@@ -340,7 +340,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Correlation
         {
             // Arrange
             CorrelationContext.Current = "first-id";
-            
+
             // Act
             CorrelationContext.Current = "second-id";
 

@@ -12,7 +12,7 @@ public class OneOfTests
     {
         // Arrange & Act
         OneOf<int, string> oneOf = 42;
-        
+
         // Assert
         Assert.IsTrue(oneOf.IsT1);
         Assert.IsFalse(oneOf.IsT2);
@@ -24,7 +24,7 @@ public class OneOfTests
     {
         // Arrange & Act
         OneOf<int, string> oneOf = "test";
-        
+
         // Assert
         Assert.IsFalse(oneOf.IsT1);
         Assert.IsTrue(oneOf.IsT2);
@@ -37,7 +37,7 @@ public class OneOfTests
         // Arrange
         OneOf<int, string> intValue = 42;
         OneOf<int, string> stringValue = "test";
-        
+
         // Act
         var intResult = intValue.Match(
             i => $"Int: {i}",
@@ -45,7 +45,7 @@ public class OneOfTests
         var stringResult = stringValue.Match(
             i => $"Int: {i}",
             s => $"String: {s}");
-        
+
         // Assert
         Assert.AreEqual("Int: 42", intResult);
         Assert.AreEqual("String: test", stringResult);
@@ -56,7 +56,7 @@ public class OneOfTests
     {
         // Arrange
         OneOf<int, string> oneOf = 42;
-        
+
         // Act & Assert
         Assert.ThrowsException<InvalidOperationException>(() => { var value = oneOf.AsT2; });
     }
@@ -68,7 +68,7 @@ public class OneOfTests
         OneOf<int, string, bool> intValue = 42;
         OneOf<int, string, bool> stringValue = "test";
         OneOf<int, string, bool> boolValue = true;
-        
+
         // Assert
         Assert.IsTrue(intValue.IsT1);
         Assert.IsTrue(stringValue.IsT2);
@@ -81,7 +81,7 @@ public class OneOfTests
         // Arrange & Act
         OneOf<int, string, bool, double> intValue = 42;
         OneOf<int, string, bool, double> doubleValue = 3.14;
-        
+
         // Assert
         Assert.IsTrue(intValue.IsT1);
         Assert.IsTrue(doubleValue.IsT4);
@@ -92,7 +92,7 @@ public class OneOfTests
     {
         // Arrange
         OneOf<int, string> oneOf = 42;
-        
+
         // Act & Assert
         Assert.IsTrue(oneOf.Is<int>());
         Assert.IsFalse(oneOf.Is<string>());
@@ -103,10 +103,10 @@ public class OneOfTests
     {
         // Arrange
         OneOf<int, string> oneOf = 42;
-        
+
         // Act
         var success = oneOf.TryGet<int>(out var value);
-        
+
         // Assert
         Assert.IsTrue(success);
         Assert.AreEqual(42, value);
@@ -117,7 +117,7 @@ public class OneOfTests
     {
         // Arrange
         OneOf<int, string> oneOf = 42;
-        
+
         // Act & Assert
         Assert.ThrowsException<InvalidOperationException>(() => oneOf.As<string>());
     }

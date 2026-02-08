@@ -130,7 +130,7 @@ public readonly struct OneOf<T1, T2> : IOneOf
     /// Implicitly converts a value of type T1 to a OneOf
     /// </summary>
     public static implicit operator OneOf<T1, T2>(T1 value) => FromT1(value);
-    
+
     /// <summary>
     /// Implicitly converts a value of type T2 to a OneOf
     /// </summary>
@@ -302,12 +302,12 @@ public readonly struct OneOf<T1, T2, T3> : IOneOf
     /// Implicitly converts a value of type T1 to a OneOf
     /// </summary>
     public static implicit operator OneOf<T1, T2, T3>(T1 value) => FromT1(value);
-    
+
     /// <summary>
     /// Implicitly converts a value of type T2 to a OneOf
     /// </summary>
     public static implicit operator OneOf<T1, T2, T3>(T2 value) => FromT2(value);
-    
+
     /// <summary>
     /// Implicitly converts a value of type T3 to a OneOf
     /// </summary>
@@ -512,17 +512,17 @@ public readonly struct OneOf<T1, T2, T3, T4> : IOneOf
     /// Implicitly converts a value of type T1 to a OneOf
     /// </summary>
     public static implicit operator OneOf<T1, T2, T3, T4>(T1 value) => FromT1(value);
-    
+
     /// <summary>
     /// Implicitly converts a value of type T2 to a OneOf
     /// </summary>
     public static implicit operator OneOf<T1, T2, T3, T4>(T2 value) => FromT2(value);
-    
+
     /// <summary>
     /// Implicitly converts a value of type T3 to a OneOf
     /// </summary>
     public static implicit operator OneOf<T1, T2, T3, T4>(T3 value) => FromT3(value);
-    
+
     /// <summary>
     /// Implicitly converts a value of type T4 to a OneOf
     /// </summary>

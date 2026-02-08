@@ -12,7 +12,7 @@ public class ResultTests
     {
         // Arrange & Act
         var result = Result<int>.Success(42);
-        
+
         // Assert
         Assert.IsTrue(result.IsSuccessful);
         Assert.IsFalse(result.IsFailure);
@@ -25,10 +25,10 @@ public class ResultTests
     {
         // Arrange
         var error = new Exception("Test error");
-        
+
         // Act
         var result = Result<int>.Failure(error);
-        
+
         // Assert
         Assert.IsFalse(result.IsSuccessful);
         Assert.IsTrue(result.IsFailure);
@@ -40,7 +40,7 @@ public class ResultTests
     {
         // Arrange & Act
         Result<int> result = 42;
-        
+
         // Assert
         Assert.IsTrue(result.IsSuccessful);
         Assert.AreEqual(42, result.Value);
@@ -51,10 +51,10 @@ public class ResultTests
     {
         // Arrange
         var error = new Exception("Test error");
-        
+
         // Act
         Result<int> result = error;
-        
+
         // Assert
         Assert.IsTrue(result.IsFailure);
         Assert.AreEqual(error, result.Error);
@@ -65,12 +65,12 @@ public class ResultTests
     {
         // Arrange
         var result = Result<int>.Success(42);
-        
+
         // Act
         var output = result.Match(
             success: x => $"Value: {x}",
             failure: ex => $"Error: {ex?.Message}");
-        
+
         // Assert
         Assert.AreEqual("Value: 42", output);
     }
@@ -81,12 +81,12 @@ public class ResultTests
         // Arrange
         var error = new Exception("Test error");
         var result = Result<int>.Failure(error);
-        
+
         // Act
         var output = result.Match(
             success: x => $"Value: {x}",
             failure: ex => $"Error: {ex?.Message}");
-        
+
         // Assert
         Assert.AreEqual("Error: Test error", output);
     }
@@ -96,7 +96,7 @@ public class ResultTests
     {
         // Arrange
         var result = Result<int>.Failure(new Exception("Test error"));
-        
+
         // Act & Assert
         Assert.ThrowsException<Exception>(() => { var value = result.Value; });
     }
@@ -117,7 +117,7 @@ public class ResultEnumTests
     {
         // Arrange & Act
         var result = Result<int, ErrorCode>.Success(42);
-        
+
         // Assert
         Assert.IsTrue(result.IsSuccessful);
         Assert.IsFalse(result.IsFailure);
@@ -129,7 +129,7 @@ public class ResultEnumTests
     {
         // Arrange & Act
         var result = Result<int, ErrorCode>.Failure(ErrorCode.NotFound, "Item not found");
-        
+
         // Assert
         Assert.IsFalse(result.IsSuccessful);
         Assert.IsTrue(result.IsFailure);
@@ -142,7 +142,7 @@ public class ResultEnumTests
     {
         // Arrange & Act
         Result<int, ErrorCode> result = 42;
-        
+
         // Assert
         Assert.IsTrue(result.IsSuccessful);
         Assert.AreEqual(42, result.Value);
@@ -153,7 +153,7 @@ public class ResultEnumTests
     {
         // Arrange & Act
         Result<int, ErrorCode> result = ErrorCode.NotFound;
-        
+
         // Assert
         Assert.IsTrue(result.IsFailure);
         Assert.AreEqual(ErrorCode.NotFound, result.Error.Code);
@@ -165,7 +165,7 @@ public class ResultEnumTests
         // Arrange
         var success = Result<int, ErrorCode>.Success(42);
         var failure = Result<int, ErrorCode>.Failure(ErrorCode.Invalid);
-        
+
         // Act
         var successOutput = success.Match(
             success: x => $"Value: {x}",
@@ -173,7 +173,7 @@ public class ResultEnumTests
         var failureOutput = failure.Match(
             success: x => $"Value: {x}",
             failure: err => $"Error: {err.Code}");
-        
+
         // Assert
         Assert.AreEqual("Value: 42", successOutput);
         Assert.AreEqual("Error: Invalid", failureOutput);
@@ -188,10 +188,10 @@ public class ResultExtensionsTests
     {
         // Arrange
         var result = Result<int>.Success(42);
-        
+
         // Act
         var mapped = result.Map(x => x.ToString());
-        
+
         // Assert
         Assert.IsTrue(mapped.IsSuccessful);
         Assert.AreEqual("42", mapped.Value);
@@ -203,10 +203,10 @@ public class ResultExtensionsTests
         // Arrange
         var error = new Exception("Test error");
         var result = Result<int>.Failure(error);
-        
+
         // Act
         var mapped = result.Map(x => x.ToString());
-        
+
         // Assert
         Assert.IsTrue(mapped.IsFailure);
         Assert.AreEqual(error, mapped.Error);
@@ -217,10 +217,10 @@ public class ResultExtensionsTests
     {
         // Arrange
         var result = Result<int>.Success(42);
-        
+
         // Act
         var bound = result.Bind(x => Result<string>.Success(x.ToString()));
-        
+
         // Assert
         Assert.IsTrue(bound.IsSuccessful);
         Assert.AreEqual("42", bound.Value);
@@ -232,10 +232,10 @@ public class ResultExtensionsTests
         // Arrange
         var error = new Exception("Test error");
         var result = Result<int>.Failure(error);
-        
+
         // Act
         var bound = result.Bind(x => Result<string>.Success(x.ToString()));
-        
+
         // Assert
         Assert.IsTrue(bound.IsFailure);
         Assert.AreEqual(error, bound.Error);
@@ -246,10 +246,10 @@ public class ResultExtensionsTests
     {
         // Arrange
         var result = Result<int>.Success(42);
-        
+
         // Act
         var value = result.GetValueOrDefault(0);
-        
+
         // Assert
         Assert.AreEqual(42, value);
     }
@@ -259,10 +259,10 @@ public class ResultExtensionsTests
     {
         // Arrange
         var result = Result<int>.Failure(new Exception());
-        
+
         // Act
         var value = result.GetValueOrDefault(0);
-        
+
         // Assert
         Assert.AreEqual(0, value);
     }

@@ -41,7 +41,7 @@ public static class StringExtensions
     {
         if (value == null) throw new ArgumentNullException(nameof(value));
         if (maxLength < 0) throw new ArgumentOutOfRangeException(nameof(maxLength), "Max length cannot be negative");
-        
+
         return value.Length <= maxLength ? value : value.Substring(0, maxLength);
     }
 
@@ -60,10 +60,10 @@ public static class StringExtensions
         if (suffix == null) throw new ArgumentNullException(nameof(suffix));
         if (maxLength < 0) throw new ArgumentOutOfRangeException(nameof(maxLength), "Max length cannot be negative");
         if (maxLength < suffix.Length) throw new ArgumentOutOfRangeException(nameof(maxLength), "Max length must be at least as long as the suffix");
-        
+
         if (value.Length <= maxLength)
             return value;
-        
+
         return value.Substring(0, maxLength - suffix.Length) + suffix;
     }
 
@@ -77,7 +77,7 @@ public static class StringExtensions
     public static string ToTitleCase(this string value, CultureInfo? culture = null)
     {
         if (value == null) throw new ArgumentNullException(nameof(value));
-        
+
         culture = culture ?? CultureInfo.CurrentCulture;
         return culture.TextInfo.ToTitleCase(value.ToLower());
     }
@@ -94,7 +94,7 @@ public static class StringExtensions
     public static TEnum ToEnum<TEnum>(this string value, bool ignoreCase = true) where TEnum : struct, Enum
     {
         if (value == null) throw new ArgumentNullException(nameof(value));
-        
+
         return (TEnum)Enum.Parse(typeof(TEnum), value, ignoreCase);
     }
 
@@ -113,7 +113,7 @@ public static class StringExtensions
             result = default;
             return false;
         }
-        
+
         try
         {
             result = (TEnum)Enum.Parse(typeof(TEnum), value, ignoreCase);
@@ -135,7 +135,7 @@ public static class StringExtensions
     public static string Reverse(this string value)
     {
         if (value == null) throw new ArgumentNullException(nameof(value));
-        
+
         char[] charArray = value.ToCharArray();
         Array.Reverse(charArray);
         return new string(charArray);
@@ -150,7 +150,7 @@ public static class StringExtensions
     public static string RemoveWhitespace(this string value)
     {
         if (value == null) throw new ArgumentNullException(nameof(value));
-        
+
         return string.Concat(value.Where(c => !char.IsWhiteSpace(c)));
     }
 
@@ -165,7 +165,7 @@ public static class StringExtensions
     {
         if (value == null) throw new ArgumentNullException(nameof(value));
         if (values == null) throw new ArgumentNullException(nameof(values));
-        
+
         return values.Any(v => value.Contains(v));
     }
 
@@ -181,7 +181,7 @@ public static class StringExtensions
     {
         if (value == null) throw new ArgumentNullException(nameof(value));
         if (values == null) throw new ArgumentNullException(nameof(values));
-        
+
         return values.Any(v => value.Equals(v, comparison));
     }
 }

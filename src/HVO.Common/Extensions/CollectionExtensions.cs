@@ -42,7 +42,7 @@ public static class CollectionExtensions
     {
         if (source == null) throw new ArgumentNullException(nameof(source));
         if (action == null) throw new ArgumentNullException(nameof(action));
-        
+
         foreach (var item in source)
         {
             action(item);
@@ -60,7 +60,7 @@ public static class CollectionExtensions
     {
         if (source == null) throw new ArgumentNullException(nameof(source));
         if (action == null) throw new ArgumentNullException(nameof(action));
-        
+
         int index = 0;
         foreach (var item in source)
         {
@@ -80,7 +80,7 @@ public static class CollectionExtensions
     {
         if (source == null) throw new ArgumentNullException(nameof(source));
         if (predicate == null) throw new ArgumentNullException(nameof(predicate));
-        
+
         int index = 0;
         foreach (var item in source)
         {
@@ -88,7 +88,7 @@ public static class CollectionExtensions
                 return index;
             index++;
         }
-        
+
         return -1;
     }
 
@@ -102,11 +102,11 @@ public static class CollectionExtensions
     public static IEnumerable<T> Shuffle<T>(this IEnumerable<T> source)
     {
         if (source == null) throw new ArgumentNullException(nameof(source));
-        
+
         var list = source.ToList();
         var rng = new Random();
         int n = list.Count;
-        
+
         while (n > 1)
         {
             n--;
@@ -115,7 +115,7 @@ public static class CollectionExtensions
             list[k] = list[n];
             list[n] = value;
         }
-        
+
         return list;
     }
 }

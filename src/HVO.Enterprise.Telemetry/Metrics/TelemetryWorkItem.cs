@@ -11,7 +11,7 @@ namespace HVO.Enterprise.Telemetry.Metrics
         /// Gets the operation type for monitoring and logging purposes.
         /// </summary>
         public abstract string OperationType { get; }
-        
+
         /// <summary>
         /// Executes the work item. Called on the background worker thread.
         /// </summary>

@@ -122,7 +122,7 @@ public class CollectionExtensionsTests
     {
         var collection = new[] { 1, 2, 3, 4, 5 };
         var chunks = collection.Chunk(2).ToList();
-        
+
         Assert.AreEqual(3, chunks.Count);
         CollectionAssert.AreEqual(new[] { 1, 2 }, chunks[0].ToArray());
         CollectionAssert.AreEqual(new[] { 3, 4 }, chunks[1].ToArray());
@@ -138,9 +138,9 @@ public class CollectionExtensionsTests
             new { Id = 2, Name = "B" },
             new { Id = 1, Name = "C" }
         };
-        
+
         var distinct = items.DistinctBy(x => x.Id).ToList();
-        
+
         Assert.AreEqual(2, distinct.Count);
         Assert.AreEqual(1, distinct[0].Id);
         Assert.AreEqual(2, distinct[1].Id);

@@ -20,7 +20,7 @@ public static class ResultExtensions
     public static Result<TResult> Map<T, TResult>(this Result<T> result, Func<T, TResult> mapper)
     {
         if (mapper == null) throw new ArgumentNullException(nameof(mapper));
-        
+
         return result.IsSuccessful
             ? Result<TResult>.Success(mapper(result.Value))
             : Result<TResult>.Failure(result.Error!);
@@ -37,7 +37,7 @@ public static class ResultExtensions
     public static Result<TResult> Bind<T, TResult>(this Result<T> result, Func<T, Result<TResult>> binder)
     {
         if (binder == null) throw new ArgumentNullException(nameof(binder));
-        
+
         return result.IsSuccessful
             ? binder(result.Value)
             : Result<TResult>.Failure(result.Error!);
@@ -53,12 +53,12 @@ public static class ResultExtensions
     public static Result<T> OnSuccess<T>(this Result<T> result, Action<T> action)
     {
         if (action == null) throw new ArgumentNullException(nameof(action));
-        
+
         if (result.IsSuccessful)
         {
             action(result.Value);
         }
-        
+
         return result;
     }
 
@@ -72,12 +72,12 @@ public static class ResultExtensions
     public static Result<T> OnFailure<T>(this Result<T> result, Action<Exception?> action)
     {
         if (action == null) throw new ArgumentNullException(nameof(action));
-        
+
         if (result.IsFailure)
         {
             action(result.Error);
         }
-        
+
         return result;
     }
 
@@ -90,7 +90,7 @@ public static class ResultExtensions
     public static IEnumerable<T> WhereSuccess<T>(this IEnumerable<Result<T>> results)
     {
         if (results == null) throw new ArgumentNullException(nameof(results));
-        
+
         return results.Where(r => r.IsSuccessful).Select(r => r.Value);
     }
 
@@ -103,7 +103,7 @@ public static class ResultExtensions
     public static IEnumerable<Exception> WhereFailure<T>(this IEnumerable<Result<T>> results)
     {
         if (results == null) throw new ArgumentNullException(nameof(results));
-        
+
         return results.Where(r => r.IsFailure).Select(r => r.Error!);
     }
 
@@ -129,7 +129,7 @@ public static class ResultExtensions
     public static T GetValueOrDefault<T>(this Result<T> result, Func<T> defaultFactory)
     {
         if (defaultFactory == null) throw new ArgumentNullException(nameof(defaultFactory));
-        
+
         return result.IsSuccessful ? result.Value : defaultFactory();
     }
 }
