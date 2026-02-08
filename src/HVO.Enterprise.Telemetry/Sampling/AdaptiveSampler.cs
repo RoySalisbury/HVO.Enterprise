@@ -73,17 +73,41 @@ namespace HVO.Enterprise.Telemetry.Sampling
                 AdjustSamplingRate(new TimeSpan(elapsedTicks), nowTicks);
             }
 
-            var sampler = new ProbabilisticSampler(CurrentSamplingRate);
-            var result = sampler.ShouldSample(context);
+            // Inline probabilistic sampling logic to avoid allocation
+            var currentRate = CurrentSamplingRate;
+            SamplingDecision decision;
+            string reason;
 
-            if (result.Decision == SamplingDecision.RecordAndSample)
+            if (currentRate >= 1.0)
+            {
+                decision = SamplingDecision.RecordAndSample;
+                reason = "100% sampling";
+            }
+            else if (currentRate <= 0.0)
+            {
+                decision = SamplingDecision.Drop;
+                reason = "0% sampling";
+            }
+            else
+            {
+                var threshold = (ulong)(currentRate * ulong.MaxValue);
+                var traceIdValue = ProbabilisticSampler.ExtractTraceIdValueInternal(context.TraceId);
+                var shouldSample = traceIdValue <= threshold;
+                
+                decision = shouldSample ? SamplingDecision.RecordAndSample : SamplingDecision.Drop;
+                reason = shouldSample 
+                    ? "TraceId hash below threshold (rate: " + currentRate.ToString("P1") + ")"
+                    : "TraceId hash above threshold (rate: " + currentRate.ToString("P1") + ")";
+            }
+
+            if (decision == SamplingDecision.RecordAndSample)
             {
                 Interlocked.Increment(ref _sampledOperations);
             }
 
             return new SamplingResult(
-                result.Decision,
-                "Adaptive: " + result.Reason + " (current rate: " + CurrentSamplingRate.ToString("P1") + ")");
+                decision,
+                "Adaptive: " + reason + " (current rate: " + CurrentSamplingRate.ToString("P1") + ")");
         }
 
         private void AdjustSamplingRate(TimeSpan elapsed, long nowTicks)
@@ -100,15 +124,20 @@ namespace HVO.Enterprise.Telemetry.Sampling
                 var actualOpsPerSecond = totalOps / elapsed.TotalSeconds;
                 var sampledOpsPerSecond = sampledOps / elapsed.TotalSeconds;
 
+                var currentRate = Volatile.Read(ref _currentSamplingRate);
+                var newRate = currentRate;
+
                 if (sampledOpsPerSecond > _targetOperationsPerSecond && actualOpsPerSecond > 0)
                 {
                     var targetRate = _targetOperationsPerSecond / actualOpsPerSecond;
-                    _currentSamplingRate = Math.Max(_minSamplingRate, targetRate);
+                    newRate = Math.Max(_minSamplingRate, targetRate);
                 }
                 else if (sampledOpsPerSecond < _targetOperationsPerSecond * 0.8)
                 {
-                    _currentSamplingRate = Math.Min(_maxSamplingRate, _currentSamplingRate * 1.2);
+                    newRate = Math.Min(_maxSamplingRate, currentRate * 1.2);
                 }
+
+                Volatile.Write(ref _currentSamplingRate, newRate);
 
                 Interlocked.Exchange(ref _totalOperations, 0);
                 Interlocked.Exchange(ref _sampledOperations, 0);

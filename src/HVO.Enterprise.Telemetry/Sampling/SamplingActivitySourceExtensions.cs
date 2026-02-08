@@ -14,6 +14,10 @@ namespace HVO.Enterprise.Telemetry.Sampling
     {
         private static readonly object ListenerLock = new object();
         private static ISampler _globalSampler = new ProbabilisticSampler(1.0);
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ActivitySource> _activitySources 
+            = new System.Collections.Concurrent.ConcurrentDictionary<string, ActivitySource>();
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ActivityListener> _listeners 
+            = new System.Collections.Concurrent.ConcurrentDictionary<string, ActivityListener>();
 
         /// <summary>
         /// Configures the global sampler.
@@ -37,7 +41,17 @@ namespace HVO.Enterprise.Telemetry.Sampling
 
             var provider = configurationProvider ?? ConfigurationProvider.Instance;
             var globalConfig = provider.GetEffectiveConfiguration();
-            var defaultRate = globalConfig.SamplingRate ?? options.DefaultSamplingRate;
+            
+            // Only use configuration provider rate if a global override is explicitly configured
+            double defaultRate;
+            if (globalConfig.SamplingRate.HasValue)
+            {
+                defaultRate = globalConfig.SamplingRate.Value;
+            }
+            else
+            {
+                defaultRate = options.DefaultSamplingRate;
+            }
 
             var perSourceSampler = new PerSourceSampler(new ProbabilisticSampler(defaultRate));
 
@@ -111,6 +125,7 @@ namespace HVO.Enterprise.Telemetry.Sampling
 
         /// <summary>
         /// Creates an ActivitySource with sampling configuration.
+        /// Caches ActivitySource instances by name to avoid listener leaks.
         /// </summary>
         /// <param name="name">ActivitySource name.</param>
         /// <param name="version">Optional version.</param>
@@ -123,46 +138,63 @@ namespace HVO.Enterprise.Telemetry.Sampling
             ISampler? sampler = null,
             ILogger? logger = null)
         {
+            var key = name + ":" + (version ?? string.Empty);
+            
+            // Return cached ActivitySource if it exists
+            if (_activitySources.TryGetValue(key, out var existingSource))
+            {
+                return existingSource;
+            }
+
             var source = new ActivitySource(name, version);
             var effectiveLogger = logger ?? NullLogger.Instance;
 
-            lock (ListenerLock)
+            // Only add listener once per ActivitySource name
+            if (!_listeners.ContainsKey(name))
             {
-                var listener = new ActivityListener
+                lock (ListenerLock)
                 {
-                    ShouldListenTo = activitySource => string.Equals(activitySource.Name, name, StringComparison.Ordinal),
-                    Sample = (ref ActivityCreationOptions<ActivityContext> options) =>
+                    if (!_listeners.ContainsKey(name))
                     {
-                        var effectiveSampler = sampler ?? _globalSampler;
-                        var context = new SamplingContext(
-                            options.TraceId,
-                            options.Name,
-                            name,
-                            options.Kind,
-                            options.Tags);
-
-                        var result = effectiveSampler.ShouldSample(context);
-                        SamplingMetrics.RecordDecision(result, name);
-
-                        if (effectiveLogger.IsEnabled(LogLevel.Debug))
+                        var listener = new ActivityListener
                         {
-                            effectiveLogger.LogDebug(
-                                "Sampling decision {Decision} for {ActivityName} ({Source}): {Reason}",
-                                result.Decision,
-                                options.Name,
-                                name,
-                                result.Reason ?? string.Empty);
-                        }
+                            ShouldListenTo = activitySource => string.Equals(activitySource.Name, name, StringComparison.Ordinal),
+                            Sample = (ref ActivityCreationOptions<ActivityContext> options) =>
+                            {
+                                var effectiveSampler = sampler ?? _globalSampler;
+                                var context = new SamplingContext(
+                                    options.TraceId,
+                                    options.Name,
+                                    name,
+                                    options.Kind,
+                                    options.Tags);
 
-                        return result.Decision == SamplingDecision.RecordAndSample
-                            ? ActivitySamplingResult.AllDataAndRecorded
-                            : ActivitySamplingResult.None;
+                                var result = effectiveSampler.ShouldSample(context);
+                                SamplingMetrics.RecordDecision(result, name);
+
+                                if (effectiveLogger.IsEnabled(LogLevel.Debug))
+                                {
+                                    effectiveLogger.LogDebug(
+                                        "Sampling decision {Decision} for {ActivityName} ({Source}): {Reason}",
+                                        result.Decision,
+                                        options.Name,
+                                        name,
+                                        result.Reason ?? string.Empty);
+                                }
+
+                                return result.Decision == SamplingDecision.RecordAndSample
+                                    ? ActivitySamplingResult.AllDataAndRecorded
+                                    : ActivitySamplingResult.PropagationData;
+                            }
+                        };
+
+                        ActivitySource.AddActivityListener(listener);
+                        _listeners.TryAdd(name, listener);
                     }
-                };
-
-                ActivitySource.AddActivityListener(listener);
+                }
             }
 
+            _activitySources.TryAdd(key, source);
             return source;
         }
 

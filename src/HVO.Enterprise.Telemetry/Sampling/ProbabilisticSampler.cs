@@ -45,6 +45,30 @@ namespace HVO.Enterprise.Telemetry.Sampling
 
         private static ulong ExtractTraceIdValue(ActivityTraceId traceId)
         {
+            return ExtractTraceIdValueInternal(traceId);
+        }
+
+        /// <summary>
+        /// Extracts a deterministic numeric value from a TraceId for probabilistic sampling.
+        /// Internal for use by AdaptiveSampler.
+        /// </summary>
+        internal static ulong ExtractTraceIdValueInternal(ActivityTraceId traceId)
+        {
+#if NET8_0_OR_GREATER
+            // On .NET 8+, use Span-based parsing to avoid allocations
+            Span<byte> bytes = stackalloc byte[16];
+            traceId.CopyTo(bytes);
+
+            // Interpret the lower 8 bytes as a big-endian unsigned integer
+            ulong value = 0;
+            for (int i = 8; i < 16; i++)
+            {
+                value = (value << 8) | bytes[i];
+            }
+
+            return value;
+#else
+            // Fallback for .NET Standard 2.0: use string parsing
             var hex = traceId.ToString();
             if (string.IsNullOrEmpty(hex) || hex.Length < 16)
                 return 0;
@@ -52,10 +76,11 @@ namespace HVO.Enterprise.Telemetry.Sampling
             var start = hex.Length - 16;
             var slice = hex.Substring(start, 16);
 
-            if (ulong.TryParse(slice, System.Globalization.NumberStyles.HexNumber, null, out var value))
+            if (ulong.TryParse(slice, System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture, out var value))
                 return value;
 
             return 0;
+#endif
         }
     }
 }
