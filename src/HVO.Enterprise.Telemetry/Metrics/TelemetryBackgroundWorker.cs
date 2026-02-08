@@ -33,6 +33,7 @@ namespace HVO.Enterprise.Telemetry.Metrics
         private long _droppedCount;
         private long _failedCount;
         private long _restartCount;
+        private int _queueDepth;
         private readonly ConcurrentDictionary<string, bool> _dropWarningsLogged;
 
         /// <summary>
@@ -87,7 +88,7 @@ namespace HVO.Enterprise.Telemetry.Metrics
         /// <summary>
         /// Gets current queue depth.
         /// </summary>
-        public int QueueDepth => _channel.Reader.Count;
+        public int QueueDepth => Volatile.Read(ref _queueDepth);
 
         /// <summary>
         /// Gets total items dropped due to backpressure.
@@ -138,10 +139,6 @@ namespace HVO.Enterprise.Telemetry.Metrics
                 return false;
             }
 
-            // With DropOldest mode, TryWrite always returns true but may drop oldest item.
-            // Check if queue is at capacity before writing to detect drops.
-            var wasAtCapacity = _channel.Reader.Count >= _capacity;
-
             // Capture TryWrite result - returns false if channel is completed/disposed
             if (!_channel.Writer.TryWrite(item))
             {
@@ -149,9 +146,11 @@ namespace HVO.Enterprise.Telemetry.Metrics
                 return false;
             }
 
-            if (wasAtCapacity)
+            var newDepth = Interlocked.Increment(ref _queueDepth);
+            if (newDepth > _capacity)
             {
                 // An old item was dropped to make room
+                Interlocked.Decrement(ref _queueDepth);
                 Interlocked.Increment(ref _droppedCount);
                 LogDropWarning(item.OperationType);
                 return false;
@@ -333,6 +332,7 @@ namespace HVO.Enterprise.Telemetry.Metrics
                     // Process all available items
                     while (reader.TryRead(out var item))
                     {
+                        Interlocked.Decrement(ref _queueDepth);
                         ProcessWorkItem(item);
                     }
                 }

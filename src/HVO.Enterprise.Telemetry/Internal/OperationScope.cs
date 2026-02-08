@@ -16,14 +16,16 @@ namespace HVO.Enterprise.Telemetry.Internal
     /// </summary>
     internal sealed class OperationScope : IOperationScope
     {
+        private static readonly PiiRedactor SharedPiiRedactor = new PiiRedactor();
+        private static readonly double StopwatchTickFrequency = (double)TimeSpan.TicksPerSecond / Stopwatch.Frequency;
+
         private readonly string _name;
         private readonly OperationScopeOptions _options;
         private readonly ActivitySource? _activitySource;
         private readonly ILogger? _logger;
         private readonly IContextEnricher? _enricher;
-        private readonly PiiRedactor _piiRedactor;
         private readonly EnrichmentOptions _piiOptions;
-        private readonly Stopwatch _stopwatch;
+        private readonly long _startTimestamp;
         private readonly Activity? _activity;
 
         private Dictionary<string, object?>? _tags;
@@ -51,7 +53,6 @@ namespace HVO.Enterprise.Telemetry.Internal
             _activitySource = activitySource;
             _logger = logger;
             _enricher = enricher;
-            _piiRedactor = new PiiRedactor();
             _piiOptions = options.PiiOptions ?? new EnrichmentOptions();
             _piiOptions.EnsureDefaults();
 
@@ -77,7 +78,7 @@ namespace HVO.Enterprise.Telemetry.Internal
                 }
             }
 
-            _stopwatch = Stopwatch.StartNew();
+            _startTimestamp = Stopwatch.GetTimestamp();
 
             if (_options.LogEvents && _logger != null)
             {
@@ -91,7 +92,7 @@ namespace HVO.Enterprise.Telemetry.Internal
 
         public Activity? Activity => _activity;
 
-        public TimeSpan Elapsed => _stopwatch.Elapsed;
+        public TimeSpan Elapsed => GetElapsedTime();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IOperationScope WithTag(string key, object? value)
@@ -213,8 +214,7 @@ namespace HVO.Enterprise.Telemetry.Internal
 
             _disposed = true;
 
-            _stopwatch.Stop();
-            var duration = _stopwatch.Elapsed;
+            var duration = GetElapsedTime();
 
             EvaluateLazyProperties();
 
@@ -328,7 +328,7 @@ namespace HVO.Enterprise.Telemetry.Internal
 
         private string? RedactIfNeeded(string key, string value)
         {
-            if (_piiRedactor.TryRedact(key, value, _piiOptions, out var redacted))
+            if (SharedPiiRedactor.TryRedact(key, value, _piiOptions, out var redacted))
                 return redacted;
 
             return value;
@@ -363,6 +363,12 @@ namespace HVO.Enterprise.Telemetry.Internal
                 || value is DateTimeOffset
                 || value is TimeSpan
                 || value is Guid;
+        }
+
+        private TimeSpan GetElapsedTime()
+        {
+            var elapsed = Stopwatch.GetTimestamp() - _startTimestamp;
+            return new TimeSpan((long)(elapsed * StopwatchTickFrequency));
         }
 
         private readonly struct LazyProperty

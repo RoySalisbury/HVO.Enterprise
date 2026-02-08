@@ -27,7 +27,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Sampling
             };
 
             var sampler = SamplingActivitySourceExtensions.BuildSampler(options, provider);
-            
+
             // Use a fixed TraceId to ensure deterministic behavior (32 hex chars)
             var traceId = System.Diagnostics.ActivityTraceId.CreateFromString("00000000000000000000000000000001");
             var context = new SamplingContext(traceId, "op", "source", System.Diagnostics.ActivityKind.Internal);

@@ -3,6 +3,7 @@
         "gh": true,
         "git checkout": true,
         "dotnet test": true,
-        "dotnet build": true
+        "dotnet build": true,
+        "dotnet run": true
     }
 }

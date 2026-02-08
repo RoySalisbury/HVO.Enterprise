@@ -32,6 +32,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="HVO.Enterprise.Telemetry.Tests" />
+    <InternalsVisibleTo Include="HVO.Enterprise.Telemetry.Benchmarks" />
   </ItemGroup>
 
 </Project>

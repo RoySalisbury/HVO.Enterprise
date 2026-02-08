@@ -19,6 +19,15 @@ namespace HVO.Enterprise.Telemetry.Sampling
         private long _lastAdjustmentTicks;
         private double _currentSamplingRate;
 
+        // Cached reason strings to avoid per-call allocations
+        private static readonly SamplingResult AlwaysSampleResult = new SamplingResult(
+            SamplingDecision.RecordAndSample, "Adaptive: 100% sampling");
+        private static readonly SamplingResult AlwaysDropResult = new SamplingResult(
+            SamplingDecision.Drop, "Adaptive: 0% sampling");
+        private double _cachedReasonRate = double.NaN;
+        private SamplingResult _cachedSampleResult;
+        private SamplingResult _cachedDropResult;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="AdaptiveSampler"/> class.
         /// </summary>
@@ -73,41 +82,53 @@ namespace HVO.Enterprise.Telemetry.Sampling
                 AdjustSamplingRate(new TimeSpan(elapsedTicks), nowTicks);
             }
 
-            // Inline probabilistic sampling logic to avoid allocation
             var currentRate = CurrentSamplingRate;
-            SamplingDecision decision;
-            string reason;
 
             if (currentRate >= 1.0)
             {
-                decision = SamplingDecision.RecordAndSample;
-                reason = "100% sampling";
-            }
-            else if (currentRate <= 0.0)
-            {
-                decision = SamplingDecision.Drop;
-                reason = "0% sampling";
-            }
-            else
-            {
-                var threshold = (ulong)(currentRate * ulong.MaxValue);
-                var traceIdValue = ProbabilisticSampler.ExtractTraceIdValueInternal(context.TraceId);
-                var shouldSample = traceIdValue <= threshold;
-                
-                decision = shouldSample ? SamplingDecision.RecordAndSample : SamplingDecision.Drop;
-                reason = shouldSample 
-                    ? string.Format("TraceId hash below threshold (rate: {0:P1})", currentRate)
-                    : string.Format("TraceId hash above threshold (rate: {0:P1})", currentRate);
+                Interlocked.Increment(ref _sampledOperations);
+                return AlwaysSampleResult;
             }
 
-            if (decision == SamplingDecision.RecordAndSample)
+            if (currentRate <= 0.0)
+            {
+                return AlwaysDropResult;
+            }
+
+            var threshold = (ulong)(currentRate * ulong.MaxValue);
+            var traceIdValue = ProbabilisticSampler.ExtractTraceIdValueInternal(context.TraceId);
+            var shouldSample = traceIdValue <= threshold;
+
+            if (shouldSample)
             {
                 Interlocked.Increment(ref _sampledOperations);
             }
 
-            return new SamplingResult(
-                decision,
-                string.Format("Adaptive: {0} (current rate: {1:P1})", reason, currentRate));
+            // Cache reason strings per rate to avoid repeated string allocations
+            var cached = GetOrCreateCachedResult(currentRate, shouldSample);
+            return cached;
+        }
+
+        private SamplingResult GetOrCreateCachedResult(double rate, bool shouldSample)
+        {
+            if (rate == Volatile.Read(ref _cachedReasonRate))
+            {
+                return shouldSample ? _cachedSampleResult : _cachedDropResult;
+            }
+
+            var rateStr = rate.ToString("P1");
+            var sampleResult = new SamplingResult(
+                SamplingDecision.RecordAndSample,
+                "Adaptive: sampled (rate: " + rateStr + ")");
+            var dropResult = new SamplingResult(
+                SamplingDecision.Drop,
+                "Adaptive: dropped (rate: " + rateStr + ")");
+
+            _cachedSampleResult = sampleResult;
+            _cachedDropResult = dropResult;
+            Volatile.Write(ref _cachedReasonRate, rate);
+
+            return shouldSample ? sampleResult : dropResult;
         }
 
         private void AdjustSamplingRate(TimeSpan elapsed, long nowTicks)

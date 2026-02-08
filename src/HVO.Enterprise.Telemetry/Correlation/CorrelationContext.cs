@@ -27,10 +27,11 @@ namespace HVO.Enterprise.Telemetry.Correlation
         {
             get
             {
-                // Check AsyncLocal first
-                if (!string.IsNullOrEmpty(_correlationId.Value))
+                // Fast path: check AsyncLocal directly (avoid IsNullOrEmpty overhead)
+                var value = _correlationId.Value;
+                if (value != null)
                 {
-                    return _correlationId.Value!;
+                    return value;
                 }
 
                 // Fallback to Activity.Current?.TraceId

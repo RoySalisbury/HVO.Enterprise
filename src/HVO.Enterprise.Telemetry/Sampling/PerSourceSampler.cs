@@ -77,14 +77,12 @@ namespace HVO.Enterprise.Telemetry.Sampling
             if (_operationSamplers.TryGetValue(context.ActivitySourceName, out var operations)
                 && operations.TryGetValue(context.ActivityName, out var operationSampler))
             {
-                var result = operationSampler.ShouldSample(context);
-                return new SamplingResult(result.Decision, "Operation-specific: " + result.Reason);
+                return operationSampler.ShouldSample(context);
             }
 
             if (_sourceSamplers.TryGetValue(context.ActivitySourceName, out var sampler))
             {
-                var result = sampler.ShouldSample(context);
-                return new SamplingResult(result.Decision, "Source-specific: " + result.Reason);
+                return sampler.ShouldSample(context);
             }
 
             return _defaultSampler.ShouldSample(context);

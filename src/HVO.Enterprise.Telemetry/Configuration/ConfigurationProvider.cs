@@ -23,6 +23,7 @@ namespace HVO.Enterprise.Telemetry.Configuration
         private readonly ConcurrentDictionary<MethodInfo, OperationConfiguration>[] _methodConfigurations;
         private readonly OperationConfiguration?[] _globalConfigurations;
         private OperationConfiguration _defaultConfiguration;
+        private readonly ConcurrentDictionary<ConfigCacheKey, OperationConfiguration> _effectiveCache;
 
         /// <summary>
         /// Gets the singleton instance.
@@ -38,6 +39,7 @@ namespace HVO.Enterprise.Telemetry.Configuration
             _typeConfigurations = CreateDictionaryArray<Type>();
             _methodConfigurations = CreateDictionaryArray<MethodInfo>();
             _globalConfigurations = new OperationConfiguration?[4];
+            _effectiveCache = new ConcurrentDictionary<ConfigCacheKey, OperationConfiguration>();
 
             _defaultConfiguration = new OperationConfiguration
             {
@@ -60,6 +62,7 @@ namespace HVO.Enterprise.Telemetry.Configuration
             ValidateSource(source);
             var normalizedConfig = NormalizeConfiguration(config);
             Volatile.Write(ref _globalConfigurations[(int)source], normalizedConfig);
+            InvalidateCache();
         }
 
         /// <summary>
@@ -78,6 +81,7 @@ namespace HVO.Enterprise.Telemetry.Configuration
 
             ValidateSource(source);
             _namespaceConfigurations[(int)source][namespacePattern] = NormalizeConfiguration(config);
+            InvalidateCache();
         }
 
         /// <summary>
@@ -96,6 +100,7 @@ namespace HVO.Enterprise.Telemetry.Configuration
 
             ValidateSource(source);
             _typeConfigurations[(int)source][type] = NormalizeConfiguration(config);
+            InvalidateCache();
         }
 
         /// <summary>
@@ -114,6 +119,7 @@ namespace HVO.Enterprise.Telemetry.Configuration
 
             ValidateSource(source);
             _methodConfigurations[(int)source][method] = NormalizeConfiguration(config);
+            InvalidateCache();
         }
 
         /// <summary>
@@ -160,6 +166,26 @@ namespace HVO.Enterprise.Telemetry.Configuration
             Type? targetType = null,
             MethodInfo? method = null,
             OperationConfiguration? callConfig = null)
+        {
+            // Use cache for non-call-specific lookups
+            if (callConfig == null)
+            {
+                var cacheKey = new ConfigCacheKey(targetType, method);
+                if (_effectiveCache.TryGetValue(cacheKey, out var cached))
+                    return cached.Clone();
+
+                var result = ComputeEffectiveConfiguration(targetType, method, null);
+                _effectiveCache.TryAdd(cacheKey, result);
+                return result.Clone();
+            }
+
+            return ComputeEffectiveConfiguration(targetType, method, callConfig);
+        }
+
+        private OperationConfiguration ComputeEffectiveConfiguration(
+            Type? targetType,
+            MethodInfo? method,
+            OperationConfiguration? callConfig)
         {
             var effective = _defaultConfiguration.Clone();
 
@@ -251,6 +277,7 @@ namespace HVO.Enterprise.Telemetry.Configuration
                 RecordExceptions = true
             };
             Volatile.Write(ref _defaultConfiguration, defaultConfig);
+            InvalidateCache();
         }
 
         internal IReadOnlyList<ConfigurationLayer> GetConfigurationLayers(
@@ -398,6 +425,41 @@ namespace HVO.Enterprise.Telemetry.Configuration
                 new ConcurrentDictionary<TKey, OperationConfiguration>(comparer ?? EqualityComparer<TKey>.Default),
                 new ConcurrentDictionary<TKey, OperationConfiguration>(comparer ?? EqualityComparer<TKey>.Default)
             };
+        }
+
+        private void InvalidateCache()
+        {
+            _effectiveCache.Clear();
+        }
+
+        private readonly struct ConfigCacheKey : IEquatable<ConfigCacheKey>
+        {
+            public readonly Type? TargetType;
+            public readonly MethodInfo? Method;
+
+            public ConfigCacheKey(Type? targetType, MethodInfo? method)
+            {
+                TargetType = targetType;
+                Method = method;
+            }
+
+            public bool Equals(ConfigCacheKey other)
+            {
+                return TargetType == other.TargetType && Method == other.Method;
+            }
+
+            public override bool Equals(object? obj)
+            {
+                return obj is ConfigCacheKey other && Equals(other);
+            }
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    return ((TargetType?.GetHashCode() ?? 0) * 397) ^ (Method?.GetHashCode() ?? 0);
+                }
+            }
         }
     }
 }
