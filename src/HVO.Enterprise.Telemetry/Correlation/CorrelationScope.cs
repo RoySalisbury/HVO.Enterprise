@@ -42,8 +42,8 @@ namespace HVO.Enterprise.Telemetry.Correlation
                 throw new ArgumentNullException(nameof(correlationId));
             }
 
-            _previousId = CorrelationContext.Current;
-            CorrelationContext.Current = correlationId;
+            _previousId = CorrelationContext.GetRawValue();
+            CorrelationContext.SetRawValue(correlationId);
         }
 
         /// <summary>
@@ -65,7 +65,7 @@ namespace HVO.Enterprise.Telemetry.Correlation
                 return;
             }
 
-            CorrelationContext.Current = _previousId;
+            CorrelationContext.SetRawValue(_previousId);
             _disposed = true;
         }
     }

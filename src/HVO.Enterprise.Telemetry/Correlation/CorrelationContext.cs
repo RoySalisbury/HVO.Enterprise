@@ -92,5 +92,23 @@ namespace HVO.Enterprise.Telemetry.Correlation
         {
             _correlationId.Value = null;
         }
+
+        /// <summary>
+        /// Gets the raw AsyncLocal value without triggering fallback logic.
+        /// Used internally by CorrelationScope to capture the true previous state.
+        /// </summary>
+        internal static string? GetRawValue()
+        {
+            return _correlationId.Value;
+        }
+
+        /// <summary>
+        /// Sets the raw AsyncLocal value without any processing.
+        /// Used internally by CorrelationScope to restore the previous state.
+        /// </summary>
+        internal static void SetRawValue(string? value)
+        {
+            _correlationId.Value = value;
+        }
     }
 }
