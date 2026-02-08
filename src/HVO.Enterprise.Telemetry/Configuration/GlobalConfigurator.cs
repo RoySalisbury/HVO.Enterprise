@@ -12,7 +12,7 @@ namespace HVO.Enterprise.Telemetry.Configuration
 
         internal GlobalConfigurator(ConfigurationProvider provider)
         {
-            _provider = provider;
+            _provider = provider ?? throw new ArgumentNullException(nameof(provider));
         }
 
         /// <summary>
