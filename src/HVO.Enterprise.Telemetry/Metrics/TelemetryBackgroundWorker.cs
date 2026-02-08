@@ -22,6 +22,7 @@ namespace HVO.Enterprise.Telemetry.Metrics
         private readonly int _maxRestartAttempts;
         private readonly TimeSpan _baseRestartDelay;
         private volatile bool _disposed;
+        private volatile bool _circuitOpen;
         
         // Thread management
         private Thread? _workerThread;
@@ -53,10 +54,17 @@ namespace HVO.Enterprise.Telemetry.Metrics
             if (maxRestartAttempts < 0)
                 throw new ArgumentException("Max restart attempts must be non-negative", nameof(maxRestartAttempts));
             
+            var effectiveDelay = baseRestartDelay ?? TimeSpan.FromSeconds(1);
+            if (effectiveDelay < TimeSpan.Zero)
+                throw new ArgumentException("Base restart delay must be non-negative", nameof(baseRestartDelay));
+            
+            if (effectiveDelay > TimeSpan.FromMinutes(5))
+                throw new ArgumentException("Base restart delay must not exceed 5 minutes", nameof(baseRestartDelay));
+            
             _logger = logger ?? NullLogger<TelemetryBackgroundWorker>.Instance;
             _capacity = capacity;
             _maxRestartAttempts = maxRestartAttempts;
-            _baseRestartDelay = baseRestartDelay ?? TimeSpan.FromSeconds(1);
+            _baseRestartDelay = effectiveDelay;
             
             _channel = Channel.CreateBounded<TelemetryWorkItem>(
                 new BoundedChannelOptions(capacity)
@@ -97,9 +105,15 @@ namespace HVO.Enterprise.Telemetry.Metrics
         public long FailedCount => Interlocked.Read(ref _failedCount);
         
         /// <summary>
-        /// Gets the number of times the worker thread has been restarted.
+        /// Gets the number of times the worker processing loop has been restarted due to unexpected failures.
         /// </summary>
         public long RestartCount => Interlocked.Read(ref _restartCount);
+        
+        /// <summary>
+        /// Gets a value indicating whether the circuit breaker is open (worker has stopped due to repeated failures).
+        /// When true, no new items will be processed.
+        /// </summary>
+        public bool IsCircuitOpen => _circuitOpen;
         
         /// <summary>
         /// Enqueues work item for background processing.
@@ -115,6 +129,12 @@ namespace HVO.Enterprise.Telemetry.Metrics
             if (_disposed)
             {
                 _logger.LogWarning("Attempted to enqueue item after worker disposed");
+                return false;
+            }
+            
+            if (_circuitOpen)
+            {
+                _logger.LogWarning("Attempted to enqueue item after circuit breaker opened. Worker has stopped.");
                 return false;
             }
             
@@ -248,18 +268,23 @@ namespace HVO.Enterprise.Telemetry.Metrics
                     
                     if (consecutiveFailures > _maxRestartAttempts)
                     {
+                        _circuitOpen = true;
+                        _channel.Writer.TryComplete(); // Complete channel to fail future enqueues gracefully
+                        
                         _logger.LogCritical(ex, 
-                            "Worker thread crashed after {Failures} consecutive failures. Circuit breaker open - worker will not restart.",
+                            "Worker processing loop crashed after {Failures} consecutive failures. Circuit breaker open - worker will not restart.",
                             consecutiveFailures);
                         break;
                     }
                     
-                    // Calculate exponential backoff delay
-                    var delayMs = (int)(_baseRestartDelay.TotalMilliseconds * Math.Pow(2, consecutiveFailures - 1));
-                    var delay = TimeSpan.FromMilliseconds(Math.Min(delayMs, 30000)); // Cap at 30 seconds
+                    // Calculate exponential backoff delay using non-overflowing arithmetic
+                    const double maxBackoffMs = 30000d;
+                    double rawDelayMs = _baseRestartDelay.TotalMilliseconds * Math.Pow(2d, consecutiveFailures - 1);
+                    double clampedDelayMs = Math.Min(Math.Max(rawDelayMs, 0d), maxBackoffMs);
+                    var delay = TimeSpan.FromMilliseconds(clampedDelayMs);
                     
                     _logger.LogError(ex,
-                        "Worker thread crashed unexpectedly (failure {Failure}/{MaxFailures}). Restarting after {Delay}ms...",
+                        "Worker processing loop crashed unexpectedly (failure {Failure}/{MaxFailures}). Restarting after {Delay}ms...",
                         consecutiveFailures, _maxRestartAttempts, delay.TotalMilliseconds);
                     
                     // Wait before restart (allow cancellation during wait)
@@ -276,7 +301,7 @@ namespace HVO.Enterprise.Telemetry.Metrics
                     if (!_disposed)
                     {
                         Interlocked.Increment(ref _restartCount);
-                        _logger.LogInformation("Worker thread restarting (attempt {Attempt})", consecutiveFailures + 1);
+                        _logger.LogInformation("Worker processing loop restarting (attempt {Attempt})", consecutiveFailures + 1);
                     }
                 }
             }

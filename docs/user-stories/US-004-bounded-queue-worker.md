@@ -41,9 +41,9 @@ So that **expensive telemetry operations don't block application threads and the
 5. **Error Handling**
    - [x] Processing exceptions don't crash worker thread
    - [x] Failed items logged and counted
-   - [x] Worker thread auto-restart on unexpected crashes with circuit breaker pattern
-   - [x] Exponential backoff between restart attempts
-   - [x] Configurable maximum restart attempts before circuit breaker opens
+   - [x] Processing loop auto-restarts on unexpected failures within the same worker thread, using a circuit breaker pattern
+   - [x] Exponential backoff between processing-loop restart attempts
+   - [x] Configurable maximum processing-loop restart attempts before circuit breaker opens
 
 ## Technical Requirements
 
