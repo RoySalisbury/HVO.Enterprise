@@ -7,7 +7,7 @@ This directory contains user stories for implementing the HVO.Enterprise telemet
 ## Current Status
 
 **Created**: 6 of 30 user stories (20% complete)  
-**Status**: Initial planning phase complete, detailed stories being created
+**Status**: Initial planning phase complete, US-001, US-002, US-003, US-019 implemented
 
 ### Completed Stories
 
@@ -16,17 +16,17 @@ This directory contains user stories for implementing the HVO.Enterprise telemet
 | US-001 | Core Package Setup | ✅ Complete | 3 SP | Core |
 | US-002 | Auto-Managed Correlation | ✅ Complete | 5 SP | Core |
 | US-003 | Background Job Correlation | ✅ Complete | 5 SP | Core |
-| US-004 | Bounded Queue Worker | ✅ Complete | 8 SP | Core |
 | US-019 | HVO.Common Library | ✅ Complete | 5 SP | Foundation |
 | - | Creation Guide | ✅ Complete | - | Documentation |
 
-**Total Documented**: 26 story points of ~150-200 total
+**Total Documented**: 18 story points of ~150-200 total
 
 ### Remaining Stories
 
 #### High Priority (Phase 1-2)
 
 **Core Infrastructure** (Complete Foundation First):
+- US-004: Bounded Queue Worker (8 SP) - Channel-based worker with backpressure
 - US-005: Lifecycle Management (5 SP) - AppDomain hooks, graceful shutdown
 - US-006: Runtime-Adaptive Metrics (8 SP) - Meter vs EventCounters
 - US-009: Multi-Level Configuration (5 SP) - Precedence system
@@ -81,7 +81,7 @@ This directory contains user stories for implementing the HVO.Enterprise telemet
 - US-005: Lifecycle management
 
 **Sprint 2** - Background Processing:
-- US-004: Bounded queue ✅
+- US-004: Bounded queue ❌ Not Started
 - US-006: Runtime metrics
 - US-009: Configuration
 
@@ -287,9 +287,12 @@ The following stories can be developed in parallel:
 | 2026-02-07 | Initial user story structure created | Project kickoff |
 | 2026-02-07 | 6 detailed stories completed | Establish pattern and depth |
 | 2026-02-07 | Creation guide added | Enable team to complete remaining stories |
+| 2026-02-07 | US-001, US-002, US-003, US-019 implemented | PR #36 merged |
+| 2026-02-08 | Fixed US-004 status in SUMMARY.md | US-004 incorrectly marked complete, only folders exist |
+| 2026-02-08 | Updated US-002 documentation | Added implementation summary per copilot-instructions.md |
 
 ---
 
-**Last Updated**: 2026-02-07  
+**Last Updated**: 2026-02-08  
 **Next Review**: After Sprint 1 completion  
 **Document Owner**: Development Team
