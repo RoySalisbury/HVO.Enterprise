@@ -13,6 +13,7 @@ namespace HVO.Enterprise.Telemetry.Exceptions
     {
         private readonly ConcurrentDictionary<string, ExceptionGroup> _groups;
         private readonly TimeSpan _expirationWindow;
+        private readonly Func<DateTimeOffset> _nowProvider;
         private long _totalCount;
         private long _firstOccurrenceTicks;
         private long _lastOccurrenceTicks;
@@ -20,11 +21,27 @@ namespace HVO.Enterprise.Telemetry.Exceptions
         /// <summary>
         /// Initializes a new instance of the <see cref="ExceptionAggregator"/> class.
         /// </summary>
-        /// <param name="expirationWindow">Optional expiration window for groups.</param>
+        /// <param name="expirationWindow">
+        /// Optional expiration window for exception groups. Groups with no activity within this window
+        /// are removed during cleanup. Defaults to 24 hours.
+        /// </param>
+        /// <remarks>
+        /// Defaults to a 24-hour window. Pass a different <paramref name="expirationWindow"/> value
+        /// to control memory growth in high-volume scenarios.
+        /// </remarks>
         public ExceptionAggregator(TimeSpan? expirationWindow = null)
+            : this(() => DateTimeOffset.UtcNow, expirationWindow)
         {
+        }
+
+        internal ExceptionAggregator(Func<DateTimeOffset> nowProvider, TimeSpan? expirationWindow = null)
+        {
+            if (nowProvider == null)
+                throw new ArgumentNullException(nameof(nowProvider));
+
             _groups = new ConcurrentDictionary<string, ExceptionGroup>();
             _expirationWindow = expirationWindow ?? TimeSpan.FromHours(24);
+            _nowProvider = nowProvider;
         }
 
         /// <summary>
@@ -47,14 +64,14 @@ namespace HVO.Enterprise.Telemetry.Exceptions
 
             var group = _groups.AddOrUpdate(
                 fingerprint,
-                key => new ExceptionGroup(fingerprint, exception),
+                key => new ExceptionGroup(fingerprint, exception, _nowProvider),
                 (key, existing) =>
                 {
                     existing.RecordOccurrence(exception);
                     return existing;
                 });
 
-            var nowTicks = DateTimeOffset.UtcNow.Ticks;
+            var nowTicks = _nowProvider().Ticks;
             Interlocked.Increment(ref _totalCount);
             Interlocked.Exchange(ref _lastOccurrenceTicks, nowTicks);
             if (Interlocked.Read(ref _firstOccurrenceTicks) == 0)
@@ -154,15 +171,15 @@ namespace HVO.Enterprise.Telemetry.Exceptions
         /// </summary>
         private void CleanupExpiredGroups()
         {
-            var now = DateTimeOffset.UtcNow;
+            var now = _nowProvider();
             var expired = _groups
                 .Where(kvp => now - kvp.Value.LastOccurrence > _expirationWindow)
                 .Select(kvp => kvp.Key)
                 .ToList();
 
-            for (int i = 0; i < expired.Count; i++)
+            foreach (var key in expired)
             {
-                _groups.TryRemove(expired[i], out _);
+                _groups.TryRemove(key, out _);
             }
         }
     }

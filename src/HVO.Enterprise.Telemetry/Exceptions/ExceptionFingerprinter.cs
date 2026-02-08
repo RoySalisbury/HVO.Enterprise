@@ -33,6 +33,11 @@ namespace HVO.Enterprise.Telemetry.Exceptions
         /// </summary>
         /// <param name="exception">Exception to fingerprint.</param>
         /// <returns>SHA256 hash representing the exception fingerprint.</returns>
+        /// <remarks>
+        /// Uses the exception type, normalized message, and the first three stack frames. For
+        /// <see cref="AggregateException"/>, only the first three inner exceptions are included
+        /// to limit fingerprint variability and processing overhead.
+        /// </remarks>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="exception"/> is null.</exception>
         public static string GenerateFingerprint(Exception exception)
         {
@@ -51,8 +56,7 @@ namespace HVO.Enterprise.Telemetry.Exceptions
                 components.Add(GenerateFingerprint(exception.InnerException));
             }
 
-            var aggregateException = exception as AggregateException;
-            if (aggregateException != null)
+            if (exception is AggregateException aggregateException)
             {
                 foreach (var inner in aggregateException.InnerExceptions.Take(3))
                 {
@@ -82,8 +86,7 @@ namespace HVO.Enterprise.Telemetry.Exceptions
             if (string.IsNullOrEmpty(stackTrace))
                 return string.Empty;
 
-            var trace = stackTrace ?? string.Empty;
-            var frames = trace
+            var frames = stackTrace!
                 .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
                 .Take(3);
 
@@ -101,12 +104,10 @@ namespace HVO.Enterprise.Telemetry.Exceptions
 
         private static string ComputeHash(string input)
         {
-            using (var sha256 = SHA256.Create())
-            {
-                var bytes = Encoding.UTF8.GetBytes(input);
-                var hash = sha256.ComputeHash(bytes);
-                return BitConverter.ToString(hash).Replace("-", string.Empty).ToLowerInvariant();
-            }
+            using var sha256 = SHA256.Create();
+            var bytes = Encoding.UTF8.GetBytes(input);
+            var hash = sha256.ComputeHash(bytes);
+            return BitConverter.ToString(hash).Replace("-", string.Empty).ToLowerInvariant();
         }
     }
 }

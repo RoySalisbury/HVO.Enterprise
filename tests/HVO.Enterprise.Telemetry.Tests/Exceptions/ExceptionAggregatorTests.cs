@@ -1,5 +1,4 @@
 using System;
-using System.Threading;
 using HVO.Enterprise.Telemetry.Exceptions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -42,18 +41,44 @@ namespace HVO.Enterprise.Telemetry.Tests.Exceptions
         [TestMethod]
         public void ExceptionGroup_CalculatesErrorRate()
         {
-            var aggregator = new ExceptionAggregator();
+            var clock = new TestClock(DateTimeOffset.UtcNow);
+            var aggregator = new ExceptionAggregator(clock.GetNow);
             var exception = new InvalidOperationException("Test");
 
             var group = aggregator.RecordException(exception);
-            Thread.Sleep(1000);
+            clock.Advance(TimeSpan.FromSeconds(1));
 
             aggregator.RecordException(exception);
             aggregator.RecordException(exception);
 
             var errorRate = group.GetErrorRate();
 
-            Assert.IsTrue(errorRate >= 60 && errorRate <= 240, "Error rate should be within expected range.");
+            const double MinExpectedErrorRate = 60;
+            const double MaxExpectedErrorRate = 240;
+
+            Assert.IsTrue(
+                errorRate >= MinExpectedErrorRate && errorRate <= MaxExpectedErrorRate,
+                "Error rate should be within expected range.");
+        }
+
+        private sealed class TestClock
+        {
+            private DateTimeOffset _current;
+
+            public TestClock(DateTimeOffset start)
+            {
+                _current = start;
+            }
+
+            public DateTimeOffset GetNow()
+            {
+                return _current;
+            }
+
+            public void Advance(TimeSpan delta)
+            {
+                _current = _current.Add(delta);
+            }
         }
     }
 }

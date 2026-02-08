@@ -9,23 +9,28 @@ namespace HVO.Enterprise.Telemetry.Exceptions
     public sealed class ExceptionGroup
     {
         private long _count;
+        private readonly Func<DateTimeOffset> _nowProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ExceptionGroup"/> class.
         /// </summary>
         /// <param name="fingerprint">Fingerprint for the exception group.</param>
         /// <param name="exception">Representative exception.</param>
+        /// <param name="nowProvider">Provides the current time for tracking.</param>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="exception"/> is null.</exception>
-        internal ExceptionGroup(string fingerprint, Exception exception)
+        internal ExceptionGroup(string fingerprint, Exception exception, Func<DateTimeOffset> nowProvider)
         {
             if (exception == null)
                 throw new ArgumentNullException(nameof(exception));
+            if (nowProvider == null)
+                throw new ArgumentNullException(nameof(nowProvider));
 
+            _nowProvider = nowProvider;
             Fingerprint = fingerprint;
             ExceptionType = exception.GetType().FullName ?? exception.GetType().Name;
             Message = exception.Message;
             StackTrace = exception.StackTrace;
-            FirstOccurrence = DateTimeOffset.UtcNow;
+            FirstOccurrence = _nowProvider();
             LastOccurrence = FirstOccurrence;
             _count = 1;
         }
@@ -75,7 +80,7 @@ namespace HVO.Enterprise.Telemetry.Exceptions
                 throw new ArgumentNullException(nameof(exception));
 
             Interlocked.Increment(ref _count);
-            LastOccurrence = DateTimeOffset.UtcNow;
+            LastOccurrence = _nowProvider();
         }
 
         /// <summary>

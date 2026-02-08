@@ -38,14 +38,7 @@ namespace HVO.Enterprise.Telemetry.Exceptions
                 activity.AddTag("exception.stacktrace", exception.StackTrace);
             }
 
-            var tags = new ActivityTagsCollection
-            {
-                { "exception.type", exception.GetType().FullName ?? exception.GetType().Name },
-                { "exception.message", exception.Message },
-                { "exception.fingerprint", group.Fingerprint }
-            };
-
-            activity.AddEvent(new ActivityEvent("exception", DateTimeOffset.UtcNow, tags));
+            activity.AddEvent(new ActivityEvent("exception", DateTimeOffset.UtcNow));
         }
 
         /// <summary>

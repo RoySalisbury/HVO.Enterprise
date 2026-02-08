@@ -40,9 +40,9 @@ namespace HVO.Enterprise.Telemetry.Exceptions
         public static void RecordException(string exceptionType, string fingerprint)
         {
             if (string.IsNullOrEmpty(exceptionType))
-                throw new ArgumentNullException(nameof(exceptionType));
+                throw new ArgumentException("Exception type must be non-empty.", nameof(exceptionType));
             if (string.IsNullOrEmpty(fingerprint))
-                throw new ArgumentNullException(nameof(fingerprint));
+                throw new ArgumentException("Exception fingerprint must be non-empty.", nameof(fingerprint));
 
             ExceptionCounter.Add(1,
                 new MetricTag("type", exceptionType),
