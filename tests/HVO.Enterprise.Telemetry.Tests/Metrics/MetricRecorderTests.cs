@@ -56,7 +56,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Metrics
         {
             var recorder = MetricRecorderFactory.Instance;
             var counter = recorder.CreateCounter("test.default.tag");
-            
+
             var tag = default(MetricTag);
             counter.Add(1, tag);
         }
@@ -67,7 +67,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Metrics
         {
             var recorder = MetricRecorderFactory.Instance;
             var counter = recorder.CreateCounter("test.default.tag.array");
-            
+
             var tags = new MetricTag[] { new MetricTag("valid", "value"), default(MetricTag) };
             counter.Add(1, tags);
         }
@@ -78,7 +78,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Metrics
         {
             var recorder = MetricRecorderFactory.Instance;
             var histogram = recorder.CreateHistogram("test.default.tag.histogram");
-            
+
             var tag = default(MetricTag);
             histogram.Record(1, tag);
         }
@@ -193,7 +193,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Metrics
             {
                 if (disposed)
                     Assert.Fail("Callback should not be invoked after disposal.");
-                
+
                 Interlocked.Increment(ref observeCount);
                 return 1.0;
             });
@@ -281,7 +281,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Metrics
             // We can't directly assert the totals without exposing internals,
             // but we verify that operations complete without errors and
             // each tag combination is tracked independently by the underlying system
-            
+
             // Add more to verify monotonic behavior is maintained per tag
             counter.Add(30, new MetricTag("region", "east")); // Should be 10+20+30=60 for east
             counter.Add(25, new MetricTag("region", "west")); // Should be 5+15+25=45 for west
