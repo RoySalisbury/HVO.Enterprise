@@ -83,10 +83,13 @@ namespace HVO.Enterprise.Telemetry.Configuration
                 }
                 catch (HttpListenerException) when (_disposed || cancellationToken.IsCancellationRequested)
                 {
+                    // Expected during shutdown — the listener is stopped/disposed while
+                    // GetContextAsync is pending, causing HttpListenerException.
                     break;
                 }
                 catch (ObjectDisposedException) when (_disposed)
                 {
+                    // Expected when Dispose races with the accept loop.
                     break;
                 }
                 catch (Exception ex)

@@ -144,6 +144,9 @@ namespace HVO.Enterprise.Telemetry.Configuration
                 }
                 catch (IOException) when (i < _maxReadRetries - 1)
                 {
+                    // The file may be locked by the writer (editor, CI, etc.).
+                    // Retry after a short delay; the when guard ensures we only
+                    // suppress IOException for intermediate attempts.
                     Thread.Sleep(_retryDelay);
                 }
             }
