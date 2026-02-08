@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using HVO.Enterprise.Telemetry.Correlation;
+using HVO.Enterprise.Telemetry.Sampling;
 
 namespace HVO.Enterprise.Telemetry.BackgroundJobs
 {
@@ -11,7 +12,6 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
     {
         private readonly IDisposable _correlationScope;
         private readonly Activity? _activity;
-        private readonly ActivitySource? _activitySource;
         private bool _disposed;
 
         /// <summary>
@@ -30,7 +30,9 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
             if (!string.IsNullOrEmpty(context.ParentActivityId) &&
                 !string.IsNullOrEmpty(context.ParentSpanId))
             {
-                _activitySource = new ActivitySource("HVO.Enterprise.Telemetry.BackgroundJobs", "1.0.0");
+                var activitySource = SamplingActivitySourceExtensions.CreateWithSampling(
+                    "HVO.Enterprise.Telemetry.BackgroundJobs",
+                    "1.0.0");
 
                 // Parse parent context (using CreateFromString for .NET Standard 2.0 compatibility)
                 try
@@ -43,7 +45,7 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
                         spanId,
                         ActivityTraceFlags.Recorded);
 
-                    _activity = _activitySource.StartActivity(
+                    _activity = activitySource.StartActivity(
                         "BackgroundJob",
                         ActivityKind.Internal,
                         parentContext);
@@ -82,7 +84,6 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
                 return;
 
             _activity?.Dispose();
-            _activitySource?.Dispose();
             _correlationScope.Dispose();
             _disposed = true;
         }

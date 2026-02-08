@@ -85,7 +85,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Configuration
 
             provider.SetNamespaceConfiguration("HVO.Enterprise.*", new OperationConfiguration { SamplingRate = 0.1 });
             provider.SetNamespaceConfiguration("HVO.Enterprise.Telemetry.*", new OperationConfiguration { SamplingRate = 0.4 });
-            provider.SetNamespaceConfiguration(namespaceValue! + ".*", new OperationConfiguration { SamplingRate = 0.7 });
+            provider.SetNamespaceConfiguration(namespaceValue! + "*", new OperationConfiguration { SamplingRate = 0.7 });
 
             var effective = provider.GetEffectiveConfiguration(typeof(SampleService));
 
