@@ -143,7 +143,7 @@ namespace HVO.Enterprise.Telemetry.Exceptions
         {
             var firstTicks = Interlocked.Read(ref _firstOccurrenceTicks);
             var lastTicks = Interlocked.Read(ref _lastOccurrenceTicks);
-            if (lastTicks < firstTicks)
+            if (lastTicks <= firstTicks)
                 return TimeSpan.Zero;
 
             return new TimeSpan(lastTicks - firstTicks);
