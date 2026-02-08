@@ -119,17 +119,14 @@ namespace HVO.Enterprise.Telemetry.Sampling
         /// Creates an ActivitySource with sampling configuration.
         /// Caches ActivitySource instances by name and version (name:version) to avoid listener leaks,
         /// while ensuring listeners are only registered once per ActivitySource name.
+        /// Uses the global sampler configured via <see cref="ConfigureSampling"/> or <see cref="ConfigureFromOptions"/>.
         /// </summary>
         /// <param name="name">ActivitySource name.</param>
         /// <param name="version">Optional version.</param>
-        /// <param name="sampler">Optional sampler override.</param>
-        /// <param name="logger">Optional logger for debug decisions.</param>
         /// <returns>Configured ActivitySource.</returns>
         public static ActivitySource CreateWithSampling(
             string name,
-            string? version = null,
-            ISampler? sampler = null,
-            ILogger? logger = null)
+            string? version = null)
         {
             var key = string.Concat(name, ":", version ?? string.Empty);
             
@@ -140,7 +137,6 @@ namespace HVO.Enterprise.Telemetry.Sampling
             }
 
             var source = new ActivitySource(name, version);
-            var effectiveLogger = logger ?? NullLogger.Instance;
 
             // Only add listener once per ActivitySource name
             if (!_listeners.ContainsKey(name))
@@ -155,7 +151,6 @@ namespace HVO.Enterprise.Telemetry.Sampling
                             ShouldListenTo = activitySource => string.Equals(activitySource.Name, name, StringComparison.Ordinal),
                             Sample = (ref ActivityCreationOptions<ActivityContext> options) =>
                             {
-                                var effectiveSampler = sampler ?? _globalSampler;
                                 var context = new SamplingContext(
                                     options.TraceId,
                                     options.Name,
@@ -163,18 +158,8 @@ namespace HVO.Enterprise.Telemetry.Sampling
                                     options.Kind,
                                     options.Tags);
 
-                                var result = effectiveSampler.ShouldSample(context);
+                                var result = _globalSampler.ShouldSample(context);
                                 SamplingMetrics.RecordDecision(result, name);
-
-                                if (effectiveLogger.IsEnabled(LogLevel.Debug))
-                                {
-                                    effectiveLogger.LogDebug(
-                                        "Sampling decision {Decision} for {ActivityName} ({Source}): {Reason}",
-                                        result.Decision,
-                                        options.Name,
-                                        name,
-                                        result.Reason ?? string.Empty);
-                                }
 
                                 return result.Decision == SamplingDecision.RecordAndSample
                                     ? ActivitySamplingResult.AllDataAndRecorded
@@ -205,6 +190,30 @@ namespace HVO.Enterprise.Telemetry.Sampling
             // Fallback: ensure we do not lose the created source even in unexpected states.
             _activitySources[key] = source;
             return source;
+        }
+
+        /// <summary>
+        /// Clears all cached ActivitySource instances and disposes all registered listeners.
+        /// This should only be called during application shutdown or for testing purposes.
+        /// </summary>
+        public static void ClearCache()
+        {
+            lock (ListenerLock)
+            {
+                // Dispose all listeners
+                foreach (var listener in _listeners.Values)
+                {
+                    listener.Dispose();
+                }
+                _listeners.Clear();
+
+                // Dispose all activity sources
+                foreach (var source in _activitySources.Values)
+                {
+                    source.Dispose();
+                }
+                _activitySources.Clear();
+            }
         }
 
         private sealed class CallbackDisposable : IDisposable

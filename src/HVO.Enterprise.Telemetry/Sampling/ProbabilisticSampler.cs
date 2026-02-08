@@ -54,21 +54,7 @@ namespace HVO.Enterprise.Telemetry.Sampling
         /// </summary>
         internal static ulong ExtractTraceIdValueInternal(ActivityTraceId traceId)
         {
-#if NET8_0_OR_GREATER
-            // On .NET 8+, use Span-based parsing to avoid allocations
-            Span<byte> bytes = stackalloc byte[16];
-            traceId.CopyTo(bytes);
-
-            // Interpret the lower 8 bytes as a big-endian unsigned integer
-            ulong value = 0;
-            for (int i = 8; i < 16; i++)
-            {
-                value = (value << 8) | bytes[i];
-            }
-
-            return value;
-#else
-            // Fallback for .NET Standard 2.0: use string parsing
+            // Use string parsing for .NET Standard 2.0 compatibility
             var hex = traceId.ToString();
             if (string.IsNullOrEmpty(hex) || hex.Length < 16)
                 return 0;
@@ -80,7 +66,6 @@ namespace HVO.Enterprise.Telemetry.Sampling
                 return value;
 
             return 0;
-#endif
         }
     }
 }
