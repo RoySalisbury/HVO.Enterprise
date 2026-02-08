@@ -177,9 +177,9 @@ namespace HVO.Enterprise.Telemetry.Tests.Lifecycle
             }
             else
             {
-                // If no activity was created, just verify shutdown works
+                // No activities were created - this is acceptable behavior when no listener matches
+                // The shutdown logic should handle this gracefully without errors
                 await manager.ShutdownAsync(TimeSpan.FromSeconds(1));
-                Assert.IsTrue(true, "Shutdown completed without active activities");
             }
         }
 
@@ -340,9 +340,9 @@ namespace HVO.Enterprise.Telemetry.Tests.Lifecycle
             }
             else
             {
-                // If no activities were created, just verify shutdown works
+                // No activities were created - this is acceptable behavior when no listener matches
+                // The shutdown logic should handle this gracefully without errors
                 await manager.ShutdownAsync(TimeSpan.FromSeconds(1));
-                Assert.IsTrue(true, "Shutdown completed without active activities");
             }
         }
 

@@ -39,7 +39,7 @@ namespace HVO.Enterprise.Telemetry.Lifecycle
                 // Graceful shutdown - give telemetry time to flush
                 try
                 {
-                    Task.Run(async () => await _lifetimeManager.ShutdownAsync(TimeSpan.FromSeconds(5)))
+                    _lifetimeManager.ShutdownAsync(TimeSpan.FromSeconds(5))
                         .GetAwaiter()
                         .GetResult();
                 }
