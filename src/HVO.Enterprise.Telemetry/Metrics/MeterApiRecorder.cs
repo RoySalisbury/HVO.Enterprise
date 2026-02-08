@@ -61,21 +61,50 @@ namespace HVO.Enterprise.Telemetry.Metrics
 
             MetricNameValidator.ValidateName(name, nameof(name));
 
-            var gauge = _meter.CreateObservableGauge(name, observeValue, unit, description);
-            return new ObservableGaugeHandle(gauge);
+            var state = new ObservableGaugeState(observeValue);
+            _ = _meter.CreateObservableGauge(name, state.Observe, unit, description);
+            return new ObservableGaugeHandle(state);
         }
 
-        private sealed class ObservableGaugeHandle : IDisposable
+        private sealed class ObservableGaugeState
         {
-            private readonly ObservableGauge<double> _gauge;
+            private readonly Func<double> _observeValue;
+            private volatile bool _disposed;
 
-            public ObservableGaugeHandle(ObservableGauge<double> gauge)
+            public ObservableGaugeState(Func<double> observeValue)
             {
-                _gauge = gauge;
+                if (observeValue == null)
+                    throw new ArgumentNullException(nameof(observeValue));
+
+                _observeValue = observeValue;
+            }
+
+            public double Observe()
+            {
+                if (_disposed)
+                    return 0d;
+
+                return _observeValue();
             }
 
             public void Dispose()
             {
+                _disposed = true;
+            }
+        }
+
+        private sealed class ObservableGaugeHandle : IDisposable
+        {
+            private readonly ObservableGaugeState _state;
+
+            public ObservableGaugeHandle(ObservableGaugeState state)
+            {
+                _state = state ?? throw new ArgumentNullException(nameof(state));
+            }
+
+            public void Dispose()
+            {
+                _state.Dispose();
             }
         }
 
@@ -104,6 +133,7 @@ namespace HVO.Enterprise.Telemetry.Metrics
             public void Add(long value, in MetricTag tag1)
             {
                 ValidateNonNegative(value);
+                tag1.Validate();
                 _cardinalityTracker?.Track(_metricName, in tag1);
                 _counter.Add(value, new KeyValuePair<string, object?>(tag1.Key, tag1.Value));
             }
@@ -111,6 +141,8 @@ namespace HVO.Enterprise.Telemetry.Metrics
             public void Add(long value, in MetricTag tag1, in MetricTag tag2)
             {
                 ValidateNonNegative(value);
+                tag1.Validate();
+                tag2.Validate();
                 _cardinalityTracker?.Track(_metricName, in tag1, in tag2);
                 _counter.Add(value,
                     new KeyValuePair<string, object?>(tag1.Key, tag1.Value),
@@ -120,6 +152,9 @@ namespace HVO.Enterprise.Telemetry.Metrics
             public void Add(long value, in MetricTag tag1, in MetricTag tag2, in MetricTag tag3)
             {
                 ValidateNonNegative(value);
+                tag1.Validate();
+                tag2.Validate();
+                tag3.Validate();
                 _cardinalityTracker?.Track(_metricName, in tag1, in tag2, in tag3);
                 _counter.Add(value,
                     new KeyValuePair<string, object?>(tag1.Key, tag1.Value),
@@ -137,6 +172,7 @@ namespace HVO.Enterprise.Telemetry.Metrics
                     return;
                 }
 
+                MetricTag.ValidateTags(tags);
                 _cardinalityTracker?.Track(_metricName, tags);
 
                 var pairs = new KeyValuePair<string, object?>[tags.Length];
@@ -178,12 +214,15 @@ namespace HVO.Enterprise.Telemetry.Metrics
 
             public void Record(long value, in MetricTag tag1)
             {
+                tag1.Validate();
                 _cardinalityTracker?.Track(_metricName, in tag1);
                 _histogram.Record(value, new KeyValuePair<string, object?>(tag1.Key, tag1.Value));
             }
 
             public void Record(long value, in MetricTag tag1, in MetricTag tag2)
             {
+                tag1.Validate();
+                tag2.Validate();
                 _cardinalityTracker?.Track(_metricName, in tag1, in tag2);
                 _histogram.Record(value,
                     new KeyValuePair<string, object?>(tag1.Key, tag1.Value),
@@ -192,6 +231,9 @@ namespace HVO.Enterprise.Telemetry.Metrics
 
             public void Record(long value, in MetricTag tag1, in MetricTag tag2, in MetricTag tag3)
             {
+                tag1.Validate();
+                tag2.Validate();
+                tag3.Validate();
                 _cardinalityTracker?.Track(_metricName, in tag1, in tag2, in tag3);
                 _histogram.Record(value,
                     new KeyValuePair<string, object?>(tag1.Key, tag1.Value),
@@ -207,6 +249,7 @@ namespace HVO.Enterprise.Telemetry.Metrics
                     return;
                 }
 
+                MetricTag.ValidateTags(tags);
                 _cardinalityTracker?.Track(_metricName, tags);
 
                 var pairs = new KeyValuePair<string, object?>[tags.Length];
@@ -242,12 +285,15 @@ namespace HVO.Enterprise.Telemetry.Metrics
 
             public void Record(double value, in MetricTag tag1)
             {
+                tag1.Validate();
                 _cardinalityTracker?.Track(_metricName, in tag1);
                 _histogram.Record(value, new KeyValuePair<string, object?>(tag1.Key, tag1.Value));
             }
 
             public void Record(double value, in MetricTag tag1, in MetricTag tag2)
             {
+                tag1.Validate();
+                tag2.Validate();
                 _cardinalityTracker?.Track(_metricName, in tag1, in tag2);
                 _histogram.Record(value,
                     new KeyValuePair<string, object?>(tag1.Key, tag1.Value),
@@ -256,6 +302,9 @@ namespace HVO.Enterprise.Telemetry.Metrics
 
             public void Record(double value, in MetricTag tag1, in MetricTag tag2, in MetricTag tag3)
             {
+                tag1.Validate();
+                tag2.Validate();
+                tag3.Validate();
                 _cardinalityTracker?.Track(_metricName, in tag1, in tag2, in tag3);
                 _histogram.Record(value,
                     new KeyValuePair<string, object?>(tag1.Key, tag1.Value),
@@ -271,6 +320,7 @@ namespace HVO.Enterprise.Telemetry.Metrics
                     return;
                 }
 
+                MetricTag.ValidateTags(tags);
                 _cardinalityTracker?.Track(_metricName, tags);
 
                 var pairs = new KeyValuePair<string, object?>[tags.Length];

@@ -31,13 +31,21 @@ namespace HVO.Enterprise.Telemetry.Metrics
 
             try
             {
-                using (var meter = new Meter(MeterApiRecorder.MeterName, MeterApiRecorder.MeterVersion))
+                using (new Meter(MeterApiRecorder.MeterName, MeterApiRecorder.MeterVersion))
                 {
                 }
 
                 return true;
             }
-            catch
+            catch (TypeLoadException)
+            {
+                return false;
+            }
+            catch (MissingMethodException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
             {
                 return false;
             }
