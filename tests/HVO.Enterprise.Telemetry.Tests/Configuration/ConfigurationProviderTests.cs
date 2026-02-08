@@ -1,4 +1,3 @@
-using System;
 using System.Reflection;
 using HVO.Enterprise.Telemetry.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

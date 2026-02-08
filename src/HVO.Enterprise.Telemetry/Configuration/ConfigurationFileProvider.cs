@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 
@@ -76,29 +77,33 @@ namespace HVO.Enterprise.Telemetry.Configuration
                 provider.SetNamespaceConfiguration(kvp.Key, kvp.Value, source);
             }
 
-            foreach (var kvp in file.Types)
+            foreach (var kvp in file.Types.Where(kvp =>
             {
                 var type = ResolveType(kvp.Key, typeResolver);
-                if (type == null)
-                    continue;
-
-                provider.SetTypeConfiguration(type, kvp.Value, source);
+                return type != null;
+            }))
+            {
+                var type = ResolveType(kvp.Key, typeResolver);
+                provider.SetTypeConfiguration(type!, kvp.Value, source);
             }
 
-            foreach (var kvp in file.Methods)
+            foreach (var kvp in file.Methods.Where(kvp =>
             {
                 if (!TryParseMethodKey(kvp.Key, out var typeName, out var methodName))
-                    continue;
+                    return false;
 
                 var type = ResolveType(typeName, typeResolver);
                 if (type == null)
-                    continue;
+                    return false;
 
                 var method = ResolveMethod(type, methodName, methodResolver);
-                if (method == null)
-                    continue;
-
-                provider.SetMethodConfiguration(method, kvp.Value, source);
+                return method != null;
+            }))
+            {
+                TryParseMethodKey(kvp.Key, out var typeName, out var methodName);
+                var type = ResolveType(typeName, typeResolver);
+                var method = ResolveMethod(type!, methodName, methodResolver);
+                provider.SetMethodConfiguration(method!, kvp.Value, source);
             }
         }
 

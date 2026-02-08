@@ -17,10 +17,11 @@ So that **I can apply fine-grained telemetry settings without duplicating config
 
 1. **Configuration Precedence System**
     - [x] Global configuration (applies to everything)
+    - [x] Namespace configuration (applies to all types in a namespace)
     - [x] Per-type configuration (applies to all methods in a class)
     - [x] Per-method configuration (applies to specific method)
     - [x] Per-call configuration (applies to single operation)
-    - [x] Precedence: Call > Method > Type > Global
+    - [x] Precedence: Call > Method > Type > Namespace > Global > Default
 
 2. **Supported Configuration Properties**
     - [x] Sampling rate (0.0 to 1.0)

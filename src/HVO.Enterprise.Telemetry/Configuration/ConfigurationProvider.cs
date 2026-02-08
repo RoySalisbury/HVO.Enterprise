@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Threading;
 
@@ -59,7 +58,8 @@ namespace HVO.Enterprise.Telemetry.Configuration
             ConfigurationSourceKind source = ConfigurationSourceKind.Code)
         {
             ValidateSource(source);
-            _globalConfigurations[(int)source] = NormalizeConfiguration(config);
+            var normalizedConfig = NormalizeConfiguration(config);
+            Volatile.Write(ref _globalConfigurations[(int)source], normalizedConfig);
         }
 
         /// <summary>
@@ -240,16 +240,17 @@ namespace HVO.Enterprise.Telemetry.Configuration
                 _namespaceConfigurations[(int)source].Clear();
                 _typeConfigurations[(int)source].Clear();
                 _methodConfigurations[(int)source].Clear();
-                _globalConfigurations[(int)source] = null;
+                Volatile.Write(ref _globalConfigurations[(int)source], null);
             }
 
-            _defaultConfiguration = new OperationConfiguration
+            var defaultConfig = new OperationConfiguration
             {
                 Enabled = true,
                 SamplingRate = 1.0,
                 ParameterCapture = ParameterCaptureMode.NamesOnly,
                 RecordExceptions = true
             };
+            Volatile.Write(ref _defaultConfiguration, defaultConfig);
         }
 
         internal IReadOnlyList<ConfigurationLayer> GetConfigurationLayers(
@@ -318,7 +319,19 @@ namespace HVO.Enterprise.Telemetry.Configuration
         private static void ValidateSource(ConfigurationSourceKind source)
         {
             if (source == ConfigurationSourceKind.Default)
+            {
                 throw new ArgumentOutOfRangeException(nameof(source), "Default source cannot be used for overrides.");
+            }
+
+            switch (source)
+            {
+                case ConfigurationSourceKind.Code:
+                case ConfigurationSourceKind.File:
+                case ConfigurationSourceKind.Runtime:
+                    return;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(source), "Invalid configuration source.");
+            }
         }
 
         private bool TryGetNamespaceConfiguration(
