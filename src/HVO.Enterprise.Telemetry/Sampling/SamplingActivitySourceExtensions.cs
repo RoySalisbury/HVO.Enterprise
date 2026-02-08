@@ -138,7 +138,7 @@ namespace HVO.Enterprise.Telemetry.Sampling
             ISampler? sampler = null,
             ILogger? logger = null)
         {
-            var key = name + ":" + (version ?? string.Empty);
+            var key = string.Concat(name, ":", version ?? string.Empty);
             
             // Return cached ActivitySource if it exists
             if (_activitySources.TryGetValue(key, out var existingSource))
@@ -154,6 +154,7 @@ namespace HVO.Enterprise.Telemetry.Sampling
             {
                 lock (ListenerLock)
                 {
+                    // Use TryAdd to safely handle race conditions
                     if (!_listeners.ContainsKey(name))
                     {
                         var listener = new ActivityListener
@@ -189,6 +190,7 @@ namespace HVO.Enterprise.Telemetry.Sampling
                         };
 
                         ActivitySource.AddActivityListener(listener);
+                        // Only add to dictionary if we successfully added the listener
                         _listeners.TryAdd(name, listener);
                     }
                 }

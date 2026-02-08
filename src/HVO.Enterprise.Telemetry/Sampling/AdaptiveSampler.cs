@@ -96,8 +96,8 @@ namespace HVO.Enterprise.Telemetry.Sampling
                 
                 decision = shouldSample ? SamplingDecision.RecordAndSample : SamplingDecision.Drop;
                 reason = shouldSample 
-                    ? "TraceId hash below threshold (rate: " + currentRate.ToString("P1") + ")"
-                    : "TraceId hash above threshold (rate: " + currentRate.ToString("P1") + ")";
+                    ? string.Format("TraceId hash below threshold (rate: {0:P1})", currentRate)
+                    : string.Format("TraceId hash above threshold (rate: {0:P1})", currentRate);
             }
 
             if (decision == SamplingDecision.RecordAndSample)
@@ -107,7 +107,7 @@ namespace HVO.Enterprise.Telemetry.Sampling
 
             return new SamplingResult(
                 decision,
-                "Adaptive: " + reason + " (current rate: " + CurrentSamplingRate.ToString("P1") + ")");
+                string.Format("Adaptive: {0} (current rate: {1:P1})", reason, CurrentSamplingRate));
         }
 
         private void AdjustSamplingRate(TimeSpan elapsed, long nowTicks)
