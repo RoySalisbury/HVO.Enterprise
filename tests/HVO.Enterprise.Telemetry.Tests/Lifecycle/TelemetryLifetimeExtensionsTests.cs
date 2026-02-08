@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using HVO.Enterprise.Telemetry.Lifecycle;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -28,15 +29,9 @@ namespace HVO.Enterprise.Telemetry.Tests.Lifecycle
 
             // Assert
             // Verify the hosted service is registered in the collection
-            var hasHostedService = false;
-            foreach (var descriptor in services)
-            {
-                if (descriptor.ServiceType == typeof(IHostedService))
-                {
-                    hasHostedService = true;
-                    break;
-                }
-            }
+            var hasHostedService = services
+                .Where(descriptor => descriptor.ServiceType == typeof(IHostedService))
+                .Any();
 
             Assert.IsTrue(hasHostedService, "IHostedService should be registered");
         }
@@ -55,26 +50,21 @@ namespace HVO.Enterprise.Telemetry.Tests.Lifecycle
         }
 
         [TestMethod]
-        public void AddTelemetryLifetime_CanBeCalledMultipleTimes()
+        public void AddTelemetryLifetime_IsIdempotent()
         {
             // Arrange
             var services = new ServiceCollection();
 
-            // Act - Call multiple times (should not throw)
+            // Act - Call multiple times
             services.AddTelemetryLifetime();
             services.AddTelemetryLifetime();
 
-            // Assert - Check that services are registered
-            var hostedServiceCount = 0;
-            foreach (var descriptor in services)
-            {
-                if (descriptor.ServiceType == typeof(IHostedService))
-                {
-                    hostedServiceCount++;
-                }
-            }
+            // Assert - Check that services are registered only once
+            var hostedServiceCount = services
+                .Where(descriptor => descriptor.ServiceType == typeof(IHostedService))
+                .Count();
 
-            Assert.IsTrue(hostedServiceCount >= 2, "Multiple hosted services should be registered");
+            Assert.AreEqual(1, hostedServiceCount, "Only one hosted service should be registered when called multiple times");
         }
 
         [TestMethod]

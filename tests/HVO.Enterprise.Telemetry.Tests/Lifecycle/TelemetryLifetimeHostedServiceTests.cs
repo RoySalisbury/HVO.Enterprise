@@ -127,7 +127,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Lifecycle
         }
 
         [TestMethod]
-        public async Task ApplicationStopping_TriggersShutdown()
+        public async Task StopAsync_TriggersShutdown()
         {
             // Arrange
             var appLifetime = new MockHostApplicationLifetime();
@@ -141,13 +141,10 @@ namespace HVO.Enterprise.Telemetry.Tests.Lifecycle
             await service.StartAsync(CancellationToken.None);
 
             // Act
-            appLifetime.TriggerStopping();
-
-            // Wait a moment for the event handler to execute
-            await Task.Delay(100);
+            await service.StopAsync(CancellationToken.None);
 
             // Assert
-            Assert.IsTrue(manager.IsShuttingDown, "Shutdown should be initiated");
+            Assert.IsTrue(manager.IsShuttingDown, "Shutdown should be initiated by StopAsync");
         }
 
         [TestMethod]

@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using HVO.Enterprise.Telemetry.Metrics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -11,8 +13,9 @@ namespace HVO.Enterprise.Telemetry.Lifecycle
     {
         /// <summary>
         /// Adds telemetry lifetime management to the service collection.
-        /// Registers a hosted service that integrates with IHostApplicationLifetime
-        /// to ensure graceful shutdown of telemetry.
+        /// Registers the background worker, lifetime manager, and hosted service
+        /// that integrates with IHostApplicationLifetime to ensure graceful shutdown of telemetry.
+        /// This method is idempotent - calling it multiple times will not add duplicate registrations.
         /// </summary>
         /// <param name="services">The service collection.</param>
         /// <returns>The service collection for chaining.</returns>
@@ -22,7 +25,18 @@ namespace HVO.Enterprise.Telemetry.Lifecycle
             if (services == null)
                 throw new ArgumentNullException(nameof(services));
 
-            services.AddSingleton<IHostedService, TelemetryLifetimeHostedService>();
+            // Check if already registered to make this method idempotent
+            if (services.Any(s => s.ServiceType == typeof(TelemetryLifetimeManager)))
+            {
+                return services;
+            }
+
+            // Register as singletons to ensure they're shared across the application
+            services.Add(new ServiceDescriptor(typeof(TelemetryBackgroundWorker), typeof(TelemetryBackgroundWorker), ServiceLifetime.Singleton));
+            services.Add(new ServiceDescriptor(typeof(TelemetryLifetimeManager), typeof(TelemetryLifetimeManager), ServiceLifetime.Singleton));
+            services.Add(new ServiceDescriptor(typeof(ITelemetryLifetime), sp => sp.GetRequiredService<TelemetryLifetimeManager>(), ServiceLifetime.Singleton));
+            services.Add(new ServiceDescriptor(typeof(IHostedService), typeof(TelemetryLifetimeHostedService), ServiceLifetime.Singleton));
+            
             return services;
         }
     }

@@ -17,9 +17,8 @@ namespace HVO.Enterprise.Telemetry.Lifecycle
     {
         private readonly TelemetryBackgroundWorker _worker;
         private readonly ILogger<TelemetryLifetimeManager> _logger;
-        private volatile bool _isShuttingDown;
+        private int _isShuttingDown; // 0 = not shutting down, 1 = shutting down
         private volatile bool _disposed;
-        private object? _registeredObject;
 
         // Default shutdown timeout
         private static readonly TimeSpan DefaultShutdownTimeout = TimeSpan.FromSeconds(5);
@@ -46,7 +45,7 @@ namespace HVO.Enterprise.Telemetry.Lifecycle
         /// <summary>
         /// Gets whether shutdown is in progress.
         /// </summary>
-        public bool IsShuttingDown => _isShuttingDown;
+        public bool IsShuttingDown => Interlocked.CompareExchange(ref _isShuttingDown, 0, 0) == 1;
 
         private void RegisterLifecycleHooks()
         {
@@ -63,35 +62,13 @@ namespace HVO.Enterprise.Telemetry.Lifecycle
 
         private void RegisterIISShutdownHook()
         {
-            try
-            {
-                // Check if HostingEnvironment is available (ASP.NET)
-                var hostingEnvironmentType = Type.GetType(
-                    "System.Web.Hosting.HostingEnvironment, System.Web, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
-
-                if (hostingEnvironmentType != null)
-                {
-                    var registerMethod = hostingEnvironmentType.GetMethod(
-                        "RegisterObject",
-                        BindingFlags.Public | BindingFlags.Static);
-
-                    if (registerMethod != null)
-                    {
-                        // Create the registered object
-                        _registeredObject = new TelemetryRegisteredObject(this);
-
-                        // Register with HostingEnvironment
-                        registerMethod.Invoke(null, new object[] { _registeredObject });
-
-                        _logger.LogDebug("Registered with IIS HostingEnvironment");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                // Not fatal - we'll still get AppDomain events
-                _logger.LogWarning(ex, "Failed to register with IIS HostingEnvironment");
-            }
+            // IIS HostingEnvironment integration is disabled in this build because
+            // HostingEnvironment.RegisterObject requires System.Web.Hosting.IRegisteredObject,
+            // which is not available in our .NET Standard 2.0 target. The reflection-based
+            // approach causes a type mismatch when invoking RegisterObject.
+            // AppDomain events (DomainUnload, ProcessExit, UnhandledException) are still
+            // used to trigger telemetry shutdown in all hosting environments, including IIS.
+            _logger.LogDebug("IIS HostingEnvironment integration is not enabled; relying on AppDomain lifecycle events for telemetry shutdown.");
         }
 
         private void OnDomainUnload(object? sender, EventArgs e)
@@ -108,7 +85,8 @@ namespace HVO.Enterprise.Telemetry.Lifecycle
 
         private void OnUnhandledException(object? sender, UnhandledExceptionEventArgs e)
         {
-            _logger.LogError("Unhandled exception - flushing telemetry before termination");
+            var exception = e.ExceptionObject as Exception;
+            _logger.LogError(exception, "Unhandled exception - flushing telemetry before termination");
 
             // Attempt quick flush on unhandled exception
             ShutdownInternal(TimeSpan.FromSeconds(2));
@@ -124,7 +102,8 @@ namespace HVO.Enterprise.Telemetry.Lifecycle
             TimeSpan timeout,
             CancellationToken cancellationToken = default)
         {
-            if (_isShuttingDown)
+            // Use atomic operation to ensure only one shutdown occurs
+            if (Interlocked.CompareExchange(ref _isShuttingDown, 1, 0) == 1)
             {
                 return new ShutdownResult
                 {
@@ -132,8 +111,6 @@ namespace HVO.Enterprise.Telemetry.Lifecycle
                     Reason = "Shutdown already in progress"
                 };
             }
-
-            _isShuttingDown = true;
 
             try
             {
@@ -145,7 +122,7 @@ namespace HVO.Enterprise.Telemetry.Lifecycle
                 CloseOpenActivities();
 
                 // Flush background queue
-                var flushResult = await _worker.FlushAsync(timeout, cancellationToken);
+                var flushResult = await _worker.FlushAsync(timeout, cancellationToken).ConfigureAwait(false);
 
                 sw.Stop();
 
@@ -177,13 +154,15 @@ namespace HVO.Enterprise.Telemetry.Lifecycle
 
         private void ShutdownInternal(TimeSpan timeout)
         {
-            if (_isShuttingDown)
+            // Check if shutdown already in progress
+            if (Interlocked.CompareExchange(ref _isShuttingDown, 0, 0) == 1)
                 return;
 
             try
             {
                 // Synchronous shutdown for event handlers
-                ShutdownAsync(timeout).GetAwaiter().GetResult();
+                // ConfigureAwait(false) is used throughout the async chain to avoid deadlocks
+                ShutdownAsync(timeout).ConfigureAwait(false).GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {
@@ -217,33 +196,6 @@ namespace HVO.Enterprise.Telemetry.Lifecycle
             AppDomain.CurrentDomain.DomainUnload -= OnDomainUnload;
             AppDomain.CurrentDomain.ProcessExit -= OnProcessExit;
             AppDomain.CurrentDomain.UnhandledException -= OnUnhandledException;
-
-            // Unregister from IIS if we registered
-            UnregisterFromIIS();
-        }
-
-        private void UnregisterFromIIS()
-        {
-            if (_registeredObject == null)
-                return;
-
-            try
-            {
-                var hostingEnvironmentType = Type.GetType(
-                    "System.Web.Hosting.HostingEnvironment, System.Web, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
-
-                var unregisterMethod = hostingEnvironmentType?.GetMethod(
-                    "UnregisterObject",
-                    BindingFlags.Public | BindingFlags.Static);
-
-                unregisterMethod?.Invoke(null, new object[] { _registeredObject });
-
-                _logger.LogDebug("Unregistered from IIS HostingEnvironment");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to unregister from IIS HostingEnvironment");
-            }
         }
     }
 }

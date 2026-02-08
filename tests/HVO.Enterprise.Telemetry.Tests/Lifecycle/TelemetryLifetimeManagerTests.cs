@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using HVO.Enterprise.Telemetry.Lifecycle;
 using HVO.Enterprise.Telemetry.Metrics;
-using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HVO.Enterprise.Telemetry.Tests.Lifecycle
@@ -152,7 +151,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Lifecycle
             using var worker = new TelemetryBackgroundWorker();
             using var manager = new TelemetryLifetimeManager(worker);
 
-            var source = new ActivitySource("TestSource");
+            using var source = new ActivitySource("TestSource");
             
             // Create an ActivityListener to enable activity creation
             using var listener = new ActivityListener
@@ -313,7 +312,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Lifecycle
             using var worker = new TelemetryBackgroundWorker();
             using var manager = new TelemetryLifetimeManager(worker);
 
-            var source = new ActivitySource("TestSource");
+            using var source = new ActivitySource("TestSource");
             
             // Create an ActivityListener to enable activity creation
             using var listener = new ActivityListener
