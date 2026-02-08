@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using HVO.Enterprise.Telemetry.Correlation;
+using HVO.Enterprise.Telemetry.Sampling;
 
 namespace HVO.Enterprise.Telemetry.BackgroundJobs
 {
@@ -30,7 +31,9 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
             if (!string.IsNullOrEmpty(context.ParentActivityId) &&
                 !string.IsNullOrEmpty(context.ParentSpanId))
             {
-                _activitySource = new ActivitySource("HVO.Enterprise.Telemetry.BackgroundJobs", "1.0.0");
+                _activitySource = SamplingActivitySourceExtensions.CreateWithSampling(
+                    "HVO.Enterprise.Telemetry.BackgroundJobs",
+                    "1.0.0");
 
                 // Parse parent context (using CreateFromString for .NET Standard 2.0 compatibility)
                 try
