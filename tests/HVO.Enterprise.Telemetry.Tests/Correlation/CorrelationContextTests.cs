@@ -262,7 +262,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Correlation
             var activitySource = new ActivitySource("TestSource");
             using var listener = new ActivityListener
             {
-                ShouldListenTo = _ => true,
+                ShouldListenTo = s => s.Name == "TestSource",
                 Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded
             };
             ActivitySource.AddActivityListener(listener);
