@@ -12,7 +12,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Sampling
         public void SamplingActivitySourceExtensions_BuildSampler_UsesGlobalOverride()
         {
             var provider = new ConfigurationProvider();
-            provider.SetGlobalConfiguration(new OperationConfiguration { SamplingRate = 0.25 });
+            provider.SetGlobalConfiguration(new OperationConfiguration { SamplingRate = 0.0 });
 
             var options = new TelemetryOptions
             {
@@ -20,11 +20,15 @@ namespace HVO.Enterprise.Telemetry.Tests.Sampling
             };
 
             var sampler = SamplingActivitySourceExtensions.BuildSampler(options, provider);
-            var context = new SamplingContext(System.Diagnostics.ActivityTraceId.CreateRandom(), "op", "source", System.Diagnostics.ActivityKind.Internal);
+            
+            // Use a fixed TraceId to ensure deterministic behavior (32 hex chars)
+            var traceId = System.Diagnostics.ActivityTraceId.CreateFromString("00000000000000000000000000000001");
+            var context = new SamplingContext(traceId, "op", "source", System.Diagnostics.ActivityKind.Internal);
 
             var result = sampler.ShouldSample(context);
 
-            Assert.IsNotNull(result);
+            // With 0.0 global override, should always drop (regardless of DefaultSamplingRate = 1.0)
+            Assert.AreEqual(SamplingDecision.Drop, result.Decision);
         }
 
         [TestMethod]

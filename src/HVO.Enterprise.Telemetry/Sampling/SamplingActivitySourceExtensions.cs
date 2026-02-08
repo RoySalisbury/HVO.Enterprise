@@ -14,6 +14,10 @@ namespace HVO.Enterprise.Telemetry.Sampling
     {
         private static readonly object ListenerLock = new object();
         private static ISampler _globalSampler = new ProbabilisticSampler(1.0);
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ActivitySource> _activitySources 
+            = new System.Collections.Concurrent.ConcurrentDictionary<string, ActivitySource>();
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ActivityListener> _listeners 
+            = new System.Collections.Concurrent.ConcurrentDictionary<string, ActivityListener>();
 
         /// <summary>
         /// Configures the global sampler.
@@ -37,6 +41,8 @@ namespace HVO.Enterprise.Telemetry.Sampling
 
             var provider = configurationProvider ?? ConfigurationProvider.Instance;
             var globalConfig = provider.GetEffectiveConfiguration();
+            
+            // Only use configuration provider rate if a global override is explicitly configured
             var defaultRate = globalConfig.SamplingRate ?? options.DefaultSamplingRate;
 
             var perSourceSampler = new PerSourceSampler(new ProbabilisticSampler(defaultRate));
@@ -111,59 +117,108 @@ namespace HVO.Enterprise.Telemetry.Sampling
 
         /// <summary>
         /// Creates an ActivitySource with sampling configuration.
+        /// Caches ActivitySource instances by name and version (name:version) to avoid listener leaks,
+        /// while ensuring listeners are only registered once per ActivitySource name.
+        /// Uses the global sampler configured via <see cref="ConfigureSampling"/> or <see cref="ConfigureFromOptions"/>.
+        /// If no global sampler has been configured, uses the default sampler (100% sampling).
         /// </summary>
         /// <param name="name">ActivitySource name.</param>
         /// <param name="version">Optional version.</param>
-        /// <param name="sampler">Optional sampler override.</param>
-        /// <param name="logger">Optional logger for debug decisions.</param>
         /// <returns>Configured ActivitySource.</returns>
         public static ActivitySource CreateWithSampling(
             string name,
-            string? version = null,
-            ISampler? sampler = null,
-            ILogger? logger = null)
+            string? version = null)
         {
-            var source = new ActivitySource(name, version);
-            var effectiveLogger = logger ?? NullLogger.Instance;
-
-            lock (ListenerLock)
+            var key = string.Concat(name, ":", version ?? string.Empty);
+            
+            // Return cached ActivitySource if it exists
+            if (_activitySources.TryGetValue(key, out var existingSource))
             {
-                var listener = new ActivityListener
-                {
-                    ShouldListenTo = activitySource => string.Equals(activitySource.Name, name, StringComparison.Ordinal),
-                    Sample = (ref ActivityCreationOptions<ActivityContext> options) =>
-                    {
-                        var effectiveSampler = sampler ?? _globalSampler;
-                        var context = new SamplingContext(
-                            options.TraceId,
-                            options.Name,
-                            name,
-                            options.Kind,
-                            options.Tags);
-
-                        var result = effectiveSampler.ShouldSample(context);
-                        SamplingMetrics.RecordDecision(result, name);
-
-                        if (effectiveLogger.IsEnabled(LogLevel.Debug))
-                        {
-                            effectiveLogger.LogDebug(
-                                "Sampling decision {Decision} for {ActivityName} ({Source}): {Reason}",
-                                result.Decision,
-                                options.Name,
-                                name,
-                                result.Reason ?? string.Empty);
-                        }
-
-                        return result.Decision == SamplingDecision.RecordAndSample
-                            ? ActivitySamplingResult.AllDataAndRecorded
-                            : ActivitySamplingResult.None;
-                    }
-                };
-
-                ActivitySource.AddActivityListener(listener);
+                return existingSource;
             }
 
+            var source = new ActivitySource(name, version);
+
+            // Only add listener once per ActivitySource name
+            if (!_listeners.ContainsKey(name))
+            {
+                lock (ListenerLock)
+                {
+                    // Use TryAdd to safely handle race conditions
+                    if (!_listeners.ContainsKey(name))
+                    {
+                        var listener = new ActivityListener
+                        {
+                            ShouldListenTo = activitySource => string.Equals(activitySource.Name, name, StringComparison.Ordinal),
+                            Sample = (ref ActivityCreationOptions<ActivityContext> options) =>
+                            {
+                                var context = new SamplingContext(
+                                    options.TraceId,
+                                    options.Name,
+                                    name,
+                                    options.Kind,
+                                    options.Tags);
+
+                                var result = _globalSampler.ShouldSample(context);
+                                SamplingMetrics.RecordDecision(result, name);
+
+                                return result.Decision == SamplingDecision.RecordAndSample
+                                    ? ActivitySamplingResult.AllDataAndRecorded
+                                    : ActivitySamplingResult.PropagationData;
+                            }
+                        };
+
+                        ActivitySource.AddActivityListener(listener);
+                        // Only add to dictionary if we successfully added the listener
+                        _listeners.TryAdd(name, listener);
+                    }
+                }
+            }
+
+            if (_activitySources.TryAdd(key, source))
+            {
+                return source;
+            }
+
+            // Another thread added an ActivitySource for this key first.
+            // Dispose the newly created instance and return the cached one.
+            if (_activitySources.TryGetValue(key, out var cachedSource))
+            {
+                source.Dispose();
+                return cachedSource;
+            }
+
+            // Fallback: ensure we do not lose the created source even in unexpected states.
+            _activitySources[key] = source;
             return source;
+        }
+
+        /// <summary>
+        /// Clears all cached ActivitySource instances and disposes all registered listeners.
+        /// This should only be called during application shutdown or for testing purposes.
+        /// </summary>
+        /// <remarks>
+        /// This method is not thread-safe with concurrent <see cref="CreateWithSampling"/> calls.
+        /// Do not call this method while ActivitySources are in active use.
+        /// </remarks>
+        public static void ClearCache()
+        {
+            lock (ListenerLock)
+            {
+                // Dispose all listeners
+                foreach (var listener in _listeners.Values)
+                {
+                    listener.Dispose();
+                }
+                _listeners.Clear();
+
+                // Dispose all activity sources
+                foreach (var source in _activitySources.Values)
+                {
+                    source.Dispose();
+                }
+                _activitySources.Clear();
+            }
         }
 
         private sealed class CallbackDisposable : IDisposable
