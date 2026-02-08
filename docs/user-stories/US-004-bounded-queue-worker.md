@@ -1,6 +1,7 @@
 # US-004: Bounded Queue with Channel-Based Worker
 
-**Status**: ❌ Not Started  
+**GitHub Issue**: [#6](https://github.com/RoySalisbury/HVO.Enterprise/issues/6)  
+**Status**: 🚧 In Progress  
 **Category**: Core Package  
 **Effort**: 8 story points  
 **Sprint**: 2
