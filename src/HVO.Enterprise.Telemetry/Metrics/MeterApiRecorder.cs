@@ -9,7 +9,7 @@ namespace HVO.Enterprise.Telemetry.Metrics
     /// <summary>
     /// Metric recorder using System.Diagnostics.Metrics for modern runtimes.
     /// </summary>
-    internal sealed class MeterApiRecorder : IMetricRecorder
+    internal sealed class MeterApiRecorder : IMetricRecorder, IDisposable
     {
         internal const string MeterName = "HVO.Enterprise.Telemetry";
         internal const string MeterVersion = "1.0.0";
@@ -64,6 +64,14 @@ namespace HVO.Enterprise.Telemetry.Metrics
             var state = new ObservableGaugeState(observeValue);
             _ = _meter.CreateObservableGauge(name, state.Observe, unit, description);
             return new ObservableGaugeHandle(state);
+        }
+
+        /// <summary>
+        /// Disposes the underlying <see cref="Meter"/> and releases resources.
+        /// </summary>
+        public void Dispose()
+        {
+            _meter.Dispose();
         }
 
         private sealed class ObservableGaugeState

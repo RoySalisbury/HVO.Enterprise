@@ -160,9 +160,10 @@ namespace HVO.Enterprise.Telemetry.Lifecycle
 
             try
             {
-                // Synchronous shutdown for event handlers
-                // ConfigureAwait(false) is used throughout the async chain to avoid deadlocks
-                ShutdownAsync(timeout).ConfigureAwait(false).GetAwaiter().GetResult();
+                // Use Task.Run to avoid sync-over-async deadlock when a SynchronizationContext
+                // is present (e.g., ASP.NET classic, WPF). Task.Run schedules onto the thread pool,
+                // ensuring ConfigureAwait(false) is not needed to avoid capturing the calling context.
+                Task.Run(() => ShutdownAsync(timeout)).GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {

@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics.Metrics;
+using System.Threading;
 
 namespace HVO.Enterprise.Telemetry.Metrics
 {
@@ -8,13 +9,34 @@ namespace HVO.Enterprise.Telemetry.Metrics
     /// </summary>
     public static class MetricRecorderFactory
     {
-        private static readonly Lazy<IMetricRecorder> InstanceLazy =
-            new Lazy<IMetricRecorder>(CreateRecorder, true);
+        private static IMetricRecorder? _instance;
+        private static readonly object Lock = new object();
 
         /// <summary>
         /// Gets the singleton metric recorder instance optimized for the current runtime.
+        /// Unlike <see cref="Lazy{T}"/>, this factory retries creation on failure
+        /// to avoid permanently caching transient initialization errors.
         /// </summary>
-        public static IMetricRecorder Instance => InstanceLazy.Value;
+        public static IMetricRecorder Instance
+        {
+            get
+            {
+                var instance = Volatile.Read(ref _instance);
+                if (instance != null)
+                    return instance;
+
+                lock (Lock)
+                {
+                    instance = Volatile.Read(ref _instance);
+                    if (instance != null)
+                        return instance;
+
+                    instance = CreateRecorder();
+                    Volatile.Write(ref _instance, instance);
+                    return instance;
+                }
+            }
+        }
 
         private static IMetricRecorder CreateRecorder()
         {
