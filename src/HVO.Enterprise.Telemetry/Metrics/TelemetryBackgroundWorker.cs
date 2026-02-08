@@ -11,34 +11,52 @@ namespace HVO.Enterprise.Telemetry.Metrics
     /// <summary>
     /// Background worker for processing telemetry operations asynchronously.
     /// Uses a bounded channel with drop-oldest backpressure strategy.
+    /// Includes circuit breaker pattern for automatic restart on transient failures.
     /// </summary>
     internal sealed class TelemetryBackgroundWorker : IDisposable
     {
         private readonly Channel<TelemetryWorkItem> _channel;
-        private readonly Thread _workerThread;
         private readonly CancellationTokenSource _shutdownCts;
         private readonly ILogger<TelemetryBackgroundWorker> _logger;
         private readonly int _capacity;
+        private readonly int _maxRestartAttempts;
+        private readonly TimeSpan _baseRestartDelay;
         private volatile bool _disposed;
+        
+        // Thread management
+        private Thread? _workerThread;
+        private readonly object _threadLock = new object();
         
         // Metrics
         private long _processedCount;
         private long _droppedCount;
         private long _failedCount;
+        private long _restartCount;
         private readonly ConcurrentDictionary<string, bool> _dropWarningsLogged;
         
         /// <summary>
         /// Creates a new background worker with the specified capacity.
         /// </summary>
         /// <param name="capacity">Maximum number of items in queue. Default is 10,000.</param>
+        /// <param name="maxRestartAttempts">Maximum number of restart attempts before giving up. Default is 3.</param>
+        /// <param name="baseRestartDelay">Base delay between restart attempts (exponential backoff applied). Default is 1 second.</param>
         /// <param name="logger">Optional logger for diagnostics.</param>
-        public TelemetryBackgroundWorker(int capacity = 10000, ILogger<TelemetryBackgroundWorker>? logger = null)
+        public TelemetryBackgroundWorker(
+            int capacity = 10000, 
+            int maxRestartAttempts = 3,
+            TimeSpan? baseRestartDelay = null,
+            ILogger<TelemetryBackgroundWorker>? logger = null)
         {
             if (capacity <= 0)
                 throw new ArgumentException("Capacity must be positive", nameof(capacity));
             
+            if (maxRestartAttempts < 0)
+                throw new ArgumentException("Max restart attempts must be non-negative", nameof(maxRestartAttempts));
+            
             _logger = logger ?? NullLogger<TelemetryBackgroundWorker>.Instance;
             _capacity = capacity;
+            _maxRestartAttempts = maxRestartAttempts;
+            _baseRestartDelay = baseRestartDelay ?? TimeSpan.FromSeconds(1);
             
             _channel = Channel.CreateBounded<TelemetryWorkItem>(
                 new BoundedChannelOptions(capacity)
@@ -51,15 +69,11 @@ namespace HVO.Enterprise.Telemetry.Metrics
             _shutdownCts = new CancellationTokenSource();
             _dropWarningsLogged = new ConcurrentDictionary<string, bool>();
             
-            _workerThread = new Thread(WorkerLoop)
-            {
-                Name = "TelemetryWorker",
-                IsBackground = true,
-                Priority = ThreadPriority.BelowNormal
-            };
-            _workerThread.Start();
+            StartWorkerThread();
             
-            _logger.LogDebug("TelemetryBackgroundWorker started with capacity {Capacity}", capacity);
+            _logger.LogDebug(
+                "TelemetryBackgroundWorker started with capacity {Capacity}, maxRestarts {MaxRestarts}, baseDelay {BaseDelay}ms",
+                capacity, maxRestartAttempts, _baseRestartDelay.TotalMilliseconds);
         }
         
         /// <summary>
@@ -81,6 +95,11 @@ namespace HVO.Enterprise.Telemetry.Metrics
         /// Gets total items that failed processing.
         /// </summary>
         public long FailedCount => Interlocked.Read(ref _failedCount);
+        
+        /// <summary>
+        /// Gets the number of times the worker thread has been restarted.
+        /// </summary>
+        public long RestartCount => Interlocked.Read(ref _restartCount);
         
         /// <summary>
         /// Enqueues work item for background processing.
@@ -183,42 +202,110 @@ namespace HVO.Enterprise.Telemetry.Metrics
             }
         }
         
+        private void StartWorkerThread()
+        {
+            lock (_threadLock)
+            {
+                if (_disposed)
+                {
+                    _logger.LogWarning("Cannot start worker thread after disposal");
+                    return;
+                }
+                
+                _workerThread = new Thread(WorkerLoop)
+                {
+                    Name = "TelemetryWorker",
+                    IsBackground = true,
+                    Priority = ThreadPriority.BelowNormal
+                };
+                _workerThread.Start();
+            }
+        }
+        
         private void WorkerLoop()
         {
-            try
+            var consecutiveFailures = 0;
+            
+            while (!_disposed && consecutiveFailures <= _maxRestartAttempts)
             {
-                var reader = _channel.Reader;
-                
-                while (!_shutdownCts.Token.IsCancellationRequested)
+                try
                 {
+                    RunProcessingLoop();
+                    
+                    // Normal exit (channel completed, shutdown requested)
+                    _logger.LogDebug("Worker loop exiting normally");
+                    break;
+                }
+                catch (OperationCanceledException)
+                {
+                    // Expected during shutdown
+                    _logger.LogDebug("Worker loop cancelled");
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    consecutiveFailures++;
+                    
+                    if (consecutiveFailures > _maxRestartAttempts)
+                    {
+                        _logger.LogCritical(ex, 
+                            "Worker thread crashed after {Failures} consecutive failures. Circuit breaker open - worker will not restart.",
+                            consecutiveFailures);
+                        break;
+                    }
+                    
+                    // Calculate exponential backoff delay
+                    var delayMs = (int)(_baseRestartDelay.TotalMilliseconds * Math.Pow(2, consecutiveFailures - 1));
+                    var delay = TimeSpan.FromMilliseconds(Math.Min(delayMs, 30000)); // Cap at 30 seconds
+                    
+                    _logger.LogError(ex,
+                        "Worker thread crashed unexpectedly (failure {Failure}/{MaxFailures}). Restarting after {Delay}ms...",
+                        consecutiveFailures, _maxRestartAttempts, delay.TotalMilliseconds);
+                    
+                    // Wait before restart (allow cancellation during wait)
                     try
                     {
-                        // Wait for items or cancellation
-                        var waitTask = reader.WaitToReadAsync(_shutdownCts.Token);
-                        if (!waitTask.AsTask().Result)
-                            break; // Channel completed
-                        
-                        // Process all available items
-                        while (reader.TryRead(out var item))
-                        {
-                            ProcessWorkItem(item);
-                        }
+                        Task.Delay(delay, _shutdownCts.Token).GetAwaiter().GetResult();
                     }
                     catch (OperationCanceledException)
                     {
-                        // Expected during shutdown
+                        _logger.LogDebug("Restart cancelled during backoff delay");
                         break;
                     }
+                    
+                    if (!_disposed)
+                    {
+                        Interlocked.Increment(ref _restartCount);
+                        _logger.LogInformation("Worker thread restarting (attempt {Attempt})", consecutiveFailures + 1);
+                    }
                 }
-                
-                _logger.LogDebug("Worker loop exiting normally");
             }
-            catch (Exception ex)
+        }
+        
+        private void RunProcessingLoop()
+        {
+            var reader = _channel.Reader;
+            
+            while (!_shutdownCts.Token.IsCancellationRequested)
             {
-                _logger.LogError(ex, "Worker thread crashed unexpectedly");
-                
-                // In production, consider restarting the worker thread here
-                // For now, log the error and exit
+                try
+                {
+                    // Wait for items or cancellation
+                    var waitTask = reader.WaitToReadAsync(_shutdownCts.Token);
+                    if (!waitTask.AsTask().Result)
+                        break; // Channel completed
+                    
+                    // Process all available items
+                    while (reader.TryRead(out var item))
+                    {
+                        ProcessWorkItem(item);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    // Expected during shutdown
+                    break;
+                }
             }
         }
         
@@ -258,15 +345,18 @@ namespace HVO.Enterprise.Telemetry.Metrics
             
             _disposed = true;
             
-            _logger.LogDebug("Disposing TelemetryBackgroundWorker. Processed: {Processed}, Failed: {Failed}, Dropped: {Dropped}",
-                ProcessedCount, FailedCount, DroppedCount);
+            _logger.LogDebug("Disposing TelemetryBackgroundWorker. Processed: {Processed}, Failed: {Failed}, Dropped: {Dropped}, Restarts: {Restarts}",
+                ProcessedCount, FailedCount, DroppedCount, RestartCount);
             
             _shutdownCts.Cancel();
             
             // Wait for worker thread to exit (with timeout)
-            if (!_workerThread.Join(TimeSpan.FromSeconds(5)))
+            lock (_threadLock)
             {
-                _logger.LogWarning("Worker thread did not exit gracefully within timeout");
+                if (_workerThread != null && !_workerThread.Join(TimeSpan.FromSeconds(5)))
+                {
+                    _logger.LogWarning("Worker thread did not exit gracefully within timeout");
+                }
             }
             
             _shutdownCts.Dispose();

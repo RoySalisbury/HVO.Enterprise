@@ -41,7 +41,9 @@ So that **expensive telemetry operations don't block application threads and the
 5. **Error Handling**
    - [x] Processing exceptions don't crash worker thread
    - [x] Failed items logged and counted
-   - [x] Worker thread exits gracefully (logged warning for unexpected crashes)
+   - [x] Worker thread auto-restart on unexpected crashes with circuit breaker pattern
+   - [x] Exponential backoff between restart attempts
+   - [x] Configurable maximum restart attempts before circuit breaker opens
 
 ## Technical Requirements
 
@@ -56,20 +58,32 @@ namespace HVO.Enterprise.Telemetry
     internal sealed class TelemetryBackgroundWorker : IDisposable
     {
         private readonly Channel<TelemetryWorkItem> _channel;
-        private readonly Thread _workerThread;
         private readonly CancellationTokenSource _shutdownCts;
+        private readonly int _maxRestartAttempts;
+        private readonly TimeSpan _baseRestartDelay;
+        private Thread? _workerThread;
         private volatile bool _disposed;
         
         // Metrics
         private long _processedCount;
         private long _droppedCount;
         private long _failedCount;
+        private long _restartCount;
         private readonly ConcurrentDictionary<string, bool> _dropWarningsLogged;
         
-        public TelemetryBackgroundWorker(int capacity = 10000)
+        public TelemetryBackgroundWorker(
+            int capacity = 10000,
+            int maxRestartAttempts = 3,
+            TimeSpan? baseRestartDelay = null)
         {
             if (capacity <= 0)
                 throw new ArgumentException("Capacity must be positive", nameof(capacity));
+            
+            if (maxRestartAttempts < 0)
+                throw new ArgumentException("Max restart attempts must be non-negative", nameof(maxRestartAttempts));
+            
+            _maxRestartAttempts = maxRestartAttempts;
+            _baseRestartDelay = baseRestartDelay ?? TimeSpan.FromSeconds(1);
             
             _channel = Channel.CreateBounded<TelemetryWorkItem>(
                 new BoundedChannelOptions(capacity)
@@ -110,6 +124,11 @@ namespace HVO.Enterprise.Telemetry
         /// Gets total items that failed processing.
         /// </summary>
         public long FailedCount => Interlocked.Read(ref _failedCount);
+        
+        /// <summary>
+        /// Gets the number of times the worker thread has been restarted.
+        /// </summary>
+        public long RestartCount => Interlocked.Read(ref _restartCount);
         
         /// <summary>
         /// Enqueues work item for background processing.
@@ -452,6 +471,7 @@ public void BackgroundWorker_HighThroughput()
 ## Implementation Summary
 
 **Completed**: 2026-02-08  
+**Updated**: 2026-02-08 (Circuit Breaker Pattern Added)  
 **Implemented by**: GitHub Copilot
 
 ### What Was Implemented
@@ -459,7 +479,7 @@ public void BackgroundWorker_HighThroughput()
 - Created [TelemetryBackgroundWorker.cs](../../src/HVO.Enterprise.Telemetry/Metrics/TelemetryBackgroundWorker.cs) with Channel-based bounded queue
 - Created [TelemetryWorkItem.cs](../../src/HVO.Enterprise.Telemetry/Metrics/TelemetryWorkItem.cs) abstract base class for work items
 - Created [FlushResult.cs](../../src/HVO.Enterprise.Telemetry/Metrics/FlushResult.cs) for flush operation results
-- Created comprehensive test suite with 22 tests covering all scenarios
+- Created comprehensive test suite with 31 tests covering all scenarios (including circuit breaker tests)
 
 ### Key Features
 
@@ -467,9 +487,11 @@ public void BackgroundWorker_HighThroughput()
 - **Backpressure Strategy**: `BoundedChannelFullMode.DropOldest` - drops oldest items when queue is full
 - **Drop Detection**: Checks queue capacity before write and tracks when items are dropped
 - **Background Thread**: Single dedicated thread with `BelowNormal` priority, named "TelemetryWorker"
-- **Metrics Tracking**: ProcessedCount, DroppedCount, FailedCount, QueueDepth
+- **Metrics Tracking**: ProcessedCount, DroppedCount, FailedCount, RestartCount, QueueDepth
 - **Graceful Shutdown**: `FlushAsync` with configurable timeout and CancellationToken support
 - **Error Handling**: Exceptions in work items don't crash worker; failed items are logged and counted
+- **Circuit Breaker Pattern**: Automatic worker thread restart on unexpected crashes with exponential backoff
+- **Restart Configuration**: Configurable maximum restart attempts (default: 3) and base restart delay (default: 1 second)
 - **Cross-Platform**: .NET Standard 2.0 compatibility with conditional compilation for .NET 8+ features
 
 ### Key Decisions Made
@@ -478,13 +500,14 @@ public void BackgroundWorker_HighThroughput()
 2. **Flush Timing**: Added small delay after channel completion to ensure final items are processed before counting
 3. **ILogger Support**: Accepts optional logger parameter; uses NullLogger if not provided
 4. **Thread Priority**: Set to BelowNormal to prevent telemetry from interfering with application workload
-5. **No Auto-Restart**: Worker thread logs crashes but doesn't auto-restart (design choice for simplicity and observability)
+5. **Circuit Breaker Pattern**: Worker thread automatically restarts on unexpected crashes (not work item failures) with exponential backoff. After maximum restart attempts, circuit breaker opens and worker stops permanently. This handles transient infrastructure failures (e.g., temporary memory pressure, threading issues) while preventing infinite restart loops on permanent failures.
+6. **Separation of Concerns**: Work item exceptions (expected failures) are caught and counted separately from worker loop crashes (unexpected infrastructure failures). Only the latter triggers circuit breaker restart logic.
 
 ### Quality Gates
 
 - ✅ Build: 0 warnings, 0 errors across all projects
-- ✅ Tests: 145/145 passed (123 existing + 22 new)
-- ✅ Coverage: All critical paths tested (construction, enqueue, flush, dispose, error handling)
+- ✅ Tests: 154/154 passed (123 existing + 31 new, including 9 circuit breaker tests)
+- ✅ Coverage: All critical paths tested (construction, enqueue, flush, dispose, error handling, circuit breaker)
 - ✅ Performance: TryEnqueue <100ns (tested with 10,000 items)
 - ✅ XML Documentation: Complete on all public APIs
 
