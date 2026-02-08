@@ -38,6 +38,11 @@ namespace HVO.Enterprise.Telemetry.Configuration
         {
             Global?.Validate();
 
+            // Normalize null collections to empty dictionaries
+            Namespaces ??= new Dictionary<string, OperationConfiguration>(StringComparer.OrdinalIgnoreCase);
+            Types ??= new Dictionary<string, OperationConfiguration>(StringComparer.OrdinalIgnoreCase);
+            Methods ??= new Dictionary<string, OperationConfiguration>(StringComparer.OrdinalIgnoreCase);
+
             foreach (var kvp in Namespaces)
             {
                 kvp.Value.Validate();

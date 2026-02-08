@@ -79,26 +79,26 @@ namespace HVO.Enterprise.Telemetry.Configuration
             foreach (var kvp in file.Types)
             {
                 var type = ResolveType(kvp.Key, typeResolver);
-                if (type == null)
-                    continue;
-
-                provider.SetTypeConfiguration(type, kvp.Value, source);
+                if (type != null)
+                {
+                    provider.SetTypeConfiguration(type, kvp.Value, source);
+                }
             }
 
             foreach (var kvp in file.Methods)
             {
-                if (!TryParseMethodKey(kvp.Key, out var typeName, out var methodName))
-                    continue;
-
-                var type = ResolveType(typeName, typeResolver);
-                if (type == null)
-                    continue;
-
-                var method = ResolveMethod(type, methodName, methodResolver);
-                if (method == null)
-                    continue;
-
-                provider.SetMethodConfiguration(method, kvp.Value, source);
+                if (TryParseMethodKey(kvp.Key, out var typeName, out var methodName))
+                {
+                    var type = ResolveType(typeName, typeResolver);
+                    if (type != null)
+                    {
+                        var method = ResolveMethod(type, methodName, methodResolver);
+                        if (method != null)
+                        {
+                            provider.SetMethodConfiguration(method, kvp.Value, source);
+                        }
+                    }
+                }
             }
         }
 
