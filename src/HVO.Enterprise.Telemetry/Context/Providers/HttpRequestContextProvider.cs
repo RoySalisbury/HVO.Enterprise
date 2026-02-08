@@ -89,7 +89,7 @@ namespace HVO.Enterprise.Telemetry.Context.Providers
 
             AddProperty(properties, "http.method", request.Method, options);
             AddProperty(properties, "http.url", request.Url, options);
-            AddProperty(properties, "http.path", request.Path, options);
+            AddProperty(properties, "http.target", request.Path, options);
 
             var queryString = request.QueryString;
             if (queryString != null && queryString.Length > 0)

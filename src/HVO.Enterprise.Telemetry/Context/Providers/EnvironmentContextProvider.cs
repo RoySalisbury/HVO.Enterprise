@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace HVO.Enterprise.Telemetry.Context.Providers
@@ -156,11 +157,23 @@ namespace HVO.Enterprise.Telemetry.Context.Providers
 
         private static string GetRuntimeName()
         {
-#if NET5_0_OR_GREATER
-            return ".NET";
-#else
+            // Use runtime detection instead of compile-time defines
+            var frameworkDescription = RuntimeInformation.FrameworkDescription;
+            
+            if (frameworkDescription.StartsWith(".NET Core", StringComparison.OrdinalIgnoreCase) ||
+                frameworkDescription.StartsWith(".NET 5", StringComparison.OrdinalIgnoreCase) ||
+                frameworkDescription.StartsWith(".NET 6", StringComparison.OrdinalIgnoreCase) ||
+                frameworkDescription.StartsWith(".NET 7", StringComparison.OrdinalIgnoreCase) ||
+                frameworkDescription.StartsWith(".NET 8", StringComparison.OrdinalIgnoreCase) ||
+                frameworkDescription.StartsWith(".NET 9", StringComparison.OrdinalIgnoreCase) ||
+                frameworkDescription.StartsWith(".NET 10", StringComparison.OrdinalIgnoreCase) ||
+                (frameworkDescription.StartsWith(".NET ", StringComparison.OrdinalIgnoreCase) && 
+                 !frameworkDescription.Contains("Framework")))
+            {
+                return ".NET";
+            }
+            
             return ".NET Framework";
-#endif
         }
 
         private static string GetDeploymentEnvironment()
