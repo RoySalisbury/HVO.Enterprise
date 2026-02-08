@@ -21,7 +21,7 @@ public static class Guard
     {
         if (value == null)
             throw new ArgumentNullException(parameterName ?? nameof(value));
-        
+
         return value;
     }
 
@@ -36,7 +36,7 @@ public static class Guard
     {
         if (string.IsNullOrWhiteSpace(value))
             throw new ArgumentException("Value cannot be null, empty, or whitespace", parameterName ?? nameof(value));
-        
+
         return value!;
     }
 
@@ -51,7 +51,7 @@ public static class Guard
     {
         if (string.IsNullOrEmpty(value))
             throw new ArgumentException("Value cannot be null or empty", parameterName ?? nameof(value));
-        
+
         return value!;
     }
 
@@ -67,10 +67,10 @@ public static class Guard
     {
         if (value == null)
             throw new ArgumentNullException(parameterName ?? nameof(value));
-        
+
         if (!value.Any())
             throw new ArgumentException("Collection cannot be empty", parameterName ?? nameof(value));
-        
+
         return value;
     }
 
@@ -89,7 +89,7 @@ public static class Guard
     {
         if (value.CompareTo(min) < 0 || value.CompareTo(max) > 0)
             throw new ArgumentOutOfRangeException(parameterName ?? nameof(value), value, $"Value must be between {min} and {max}");
-        
+
         return value;
     }
 
@@ -107,7 +107,7 @@ public static class Guard
     {
         if (value.CompareTo(min) <= 0)
             throw new ArgumentOutOfRangeException(parameterName ?? nameof(value), value, $"Value must be greater than {min}");
-        
+
         return value;
     }
 
@@ -137,7 +137,7 @@ public static class Guard
     {
         if (!Enum.IsDefined(typeof(TEnum), value))
             throw new ArgumentException($"Value '{value}' is not a valid {typeof(TEnum).Name}", parameterName ?? nameof(value));
-        
+
         return value;
     }
 }

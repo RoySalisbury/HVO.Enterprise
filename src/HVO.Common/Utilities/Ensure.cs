@@ -58,7 +58,7 @@ public static class Ensure
             var details = $"{message} [at {callerMemberName} in {callerFilePath}:{callerLineNumber}]";
             throw new InvalidOperationException(details);
         }
-        
+
         return value!;
     }
 
@@ -86,7 +86,7 @@ public static class Ensure
             var details = $"{message} [at {callerMemberName} in {callerFilePath}:{callerLineNumber}]";
             throw new InvalidOperationException(details);
         }
-        
+
         return value!;
     }
 
@@ -121,7 +121,7 @@ public static class Ensure
             var details = $"{message} [at {callerMemberName} in {callerFilePath}:{callerLineNumber}]";
             throw new InvalidOperationException(details);
         }
-        
+
         return value;
     }
 

@@ -22,7 +22,7 @@ public static class OptionExtensions
         where TResult : notnull
     {
         if (mapper == null) throw new ArgumentNullException(nameof(mapper));
-        
+
         return option.HasValue && option.Value != null
             ? new Option<TResult>(mapper(option.Value))
             : Option<TResult>.None();
@@ -41,7 +41,7 @@ public static class OptionExtensions
         where TResult : notnull
     {
         if (binder == null) throw new ArgumentNullException(nameof(binder));
-        
+
         return (option.HasValue && option.Value != null) ? binder(option.Value) : Option<TResult>.None();
     }
 
@@ -55,12 +55,12 @@ public static class OptionExtensions
     public static Option<T> OnSome<T>(this Option<T> option, Action<T> action) where T : notnull
     {
         if (action == null) throw new ArgumentNullException(nameof(action));
-        
+
         if (option.HasValue && option.Value != null)
         {
             action(option.Value);
         }
-        
+
         return option;
     }
 
@@ -74,12 +74,12 @@ public static class OptionExtensions
     public static Option<T> OnNone<T>(this Option<T> option, Action action) where T : notnull
     {
         if (action == null) throw new ArgumentNullException(nameof(action));
-        
+
         if (!option.HasValue)
         {
             action();
         }
-        
+
         return option;
     }
 
@@ -92,7 +92,7 @@ public static class OptionExtensions
     public static IEnumerable<T> WhereSome<T>(this IEnumerable<Option<T>> options) where T : notnull
     {
         if (options == null) throw new ArgumentNullException(nameof(options));
-        
+
         return options.Where(o => o.HasValue && o.Value != null).Select(o => o.Value!);
     }
 
@@ -118,7 +118,7 @@ public static class OptionExtensions
     public static T GetValueOrDefault<T>(this Option<T> option, Func<T> defaultFactory) where T : notnull
     {
         if (defaultFactory == null) throw new ArgumentNullException(nameof(defaultFactory));
-        
+
         return (option.HasValue && option.Value != null) ? option.Value : defaultFactory();
     }
 
