@@ -13,7 +13,7 @@ namespace HVO.Enterprise.Telemetry.Tests.BackgroundJobs
     {
         private ActivitySource _activitySource = null!;
         private ActivityListener _activityListener = null!;
-        
+
         [TestInitialize]
         public void Setup()
         {
@@ -26,45 +26,45 @@ namespace HVO.Enterprise.Telemetry.Tests.BackgroundJobs
             };
             ActivitySource.AddActivityListener(_activityListener);
         }
-        
+
         [TestCleanup]
         public void Cleanup()
         {
             _activitySource?.Dispose();
             _activityListener?.Dispose();
         }
-        
+
         [TestMethod]
         public void Capture_CapturesCurrentCorrelationId()
         {
             // Arrange
             var expectedCorrelationId = Guid.NewGuid().ToString("N");
             CorrelationContext.Current = expectedCorrelationId;
-            
+
             // Act
             var context = BackgroundJobContext.Capture();
-            
+
             // Assert
             Assert.IsNotNull(context);
             Assert.AreEqual(expectedCorrelationId, context.CorrelationId);
         }
-        
+
         [TestMethod]
         public void Capture_CapturesParentActivity()
         {
             // Arrange
             using var activity = _activitySource.StartActivity("TestActivity");
             Assert.IsNotNull(activity);
-            
+
             // Act
             var context = BackgroundJobContext.Capture();
-            
+
             // Assert
             Assert.IsNotNull(context);
             Assert.AreEqual(activity.TraceId.ToString(), context.ParentActivityId);
             Assert.AreEqual(activity.SpanId.ToString(), context.ParentSpanId);
         }
-        
+
         [TestMethod]
         public void Capture_WithNoActivity_StillCapturesCorrelation()
         {
@@ -72,33 +72,33 @@ namespace HVO.Enterprise.Telemetry.Tests.BackgroundJobs
             Assert.IsNull(Activity.Current);
             var expectedCorrelationId = Guid.NewGuid().ToString("N");
             CorrelationContext.Current = expectedCorrelationId;
-            
+
             // Act
             var context = BackgroundJobContext.Capture();
-            
+
             // Assert
             Assert.IsNotNull(context);
             Assert.AreEqual(expectedCorrelationId, context.CorrelationId);
             Assert.IsNull(context.ParentActivityId);
             Assert.IsNull(context.ParentSpanId);
         }
-        
+
         [TestMethod]
         public void Capture_RecordsEnqueueTimestamp()
         {
             // Arrange
             var before = DateTimeOffset.UtcNow;
-            
+
             // Act
             var context = BackgroundJobContext.Capture();
             var after = DateTimeOffset.UtcNow;
-            
+
             // Assert
             Assert.IsNotNull(context);
             Assert.IsTrue(context.EnqueuedAt >= before);
             Assert.IsTrue(context.EnqueuedAt <= after);
         }
-        
+
         [TestMethod]
         public void Capture_WithCustomMetadata_IncludesMetadata()
         {
@@ -108,10 +108,10 @@ namespace HVO.Enterprise.Telemetry.Tests.BackgroundJobs
                 ["JobType"] = "EmailSender",
                 ["Priority"] = 5
             };
-            
+
             // Act
             var context = BackgroundJobContext.Capture(metadata);
-            
+
             // Assert
             Assert.IsNotNull(context);
             Assert.IsNotNull(context.CustomMetadata);
@@ -119,7 +119,7 @@ namespace HVO.Enterprise.Telemetry.Tests.BackgroundJobs
             Assert.AreEqual("EmailSender", context.CustomMetadata["JobType"]);
             Assert.AreEqual(5, context.CustomMetadata["Priority"]);
         }
-        
+
         [TestMethod]
         public void Restore_RestoresCorrelationId()
         {
@@ -127,24 +127,24 @@ namespace HVO.Enterprise.Telemetry.Tests.BackgroundJobs
             var jobCorrelationId = Guid.NewGuid().ToString("N");
             var differentCorrelationId = Guid.NewGuid().ToString("N");
             CorrelationContext.Current = differentCorrelationId;
-            
+
             var context = new BackgroundJobContext
             {
                 CorrelationId = jobCorrelationId,
                 EnqueuedAt = DateTimeOffset.UtcNow
             };
-            
+
             // Act
             using (context.Restore())
             {
                 // Assert - inside scope
                 Assert.AreEqual(jobCorrelationId, CorrelationContext.Current);
             }
-            
+
             // Assert - after scope disposed
             Assert.AreEqual(differentCorrelationId, CorrelationContext.Current);
         }
-        
+
         [TestMethod]
         public async Task Restore_FlowsAcrossAsyncBoundaries()
         {
@@ -155,47 +155,47 @@ namespace HVO.Enterprise.Telemetry.Tests.BackgroundJobs
                 CorrelationId = jobCorrelationId,
                 EnqueuedAt = DateTimeOffset.UtcNow
             };
-            
+
             // Act & Assert
             using (context.Restore())
             {
                 Assert.AreEqual(jobCorrelationId, CorrelationContext.Current);
-                
+
                 await Task.Run(() =>
                 {
                     // Should have same correlation ID in async context
                     Assert.AreEqual(jobCorrelationId, CorrelationContext.Current);
                 });
-                
+
                 Assert.AreEqual(jobCorrelationId, CorrelationContext.Current);
             }
         }
-        
+
         [TestMethod]
         public void Restore_CreatesActivityWithParentLink()
         {
             // Arrange
             using var parentActivity = _activitySource.StartActivity("ParentActivity");
             Assert.IsNotNull(parentActivity);
-            
+
             var context = BackgroundJobContext.Capture();
             parentActivity.Stop();
-            
+
             // Clear current activity
             Assert.IsNull(Activity.Current);
-            
+
             // Act
             using (context.Restore())
             {
                 // Assert
                 var currentActivity = Activity.Current;
                 Assert.IsNotNull(currentActivity, "Activity should be created during restore");
-                
+
                 // Check parent link
                 Assert.AreEqual(parentActivity.TraceId, currentActivity.TraceId, "TraceId should match parent");
             }
         }
-        
+
         [TestMethod]
         public void FromValues_CreatesValidContext()
         {
@@ -204,14 +204,14 @@ namespace HVO.Enterprise.Telemetry.Tests.BackgroundJobs
             var traceId = ActivityTraceId.CreateRandom().ToString();
             var spanId = ActivitySpanId.CreateRandom().ToString();
             var enqueuedAt = DateTimeOffset.UtcNow.AddMinutes(-5);
-            
+
             // Act
             var context = BackgroundJobContext.FromValues(
                 correlationId,
                 traceId,
                 spanId,
                 enqueuedAt);
-            
+
             // Assert
             Assert.IsNotNull(context);
             Assert.AreEqual(correlationId, context.CorrelationId);
@@ -219,7 +219,7 @@ namespace HVO.Enterprise.Telemetry.Tests.BackgroundJobs
             Assert.AreEqual(spanId, context.ParentSpanId);
             Assert.AreEqual(enqueuedAt, context.EnqueuedAt);
         }
-        
+
         [TestMethod]
         [ExpectedException(typeof(ArgumentNullException))]
         public void FromValues_WithNullCorrelationId_ThrowsException()
@@ -227,10 +227,10 @@ namespace HVO.Enterprise.Telemetry.Tests.BackgroundJobs
             // Act
             BackgroundJobContext.FromValues(null!);
         }
-        
+
         // Note: Restore_WithNullContext test removed - calling an instance method on null 
         // always throws NullReferenceException before the method can validate arguments
-        
+
         [TestMethod]
         public void Restore_MultipleTimes_WorksCorrectly()
         {
@@ -241,20 +241,20 @@ namespace HVO.Enterprise.Telemetry.Tests.BackgroundJobs
                 CorrelationId = jobCorrelationId,
                 EnqueuedAt = DateTimeOffset.UtcNow
             };
-            
+
             // Act & Assert - First restore
             using (context.Restore())
             {
                 Assert.AreEqual(jobCorrelationId, CorrelationContext.Current);
             }
-            
+
             // Act & Assert - Second restore (context can be reused)
             using (context.Restore())
             {
                 Assert.AreEqual(jobCorrelationId, CorrelationContext.Current);
             }
         }
-        
+
         [TestMethod]
         public void Restore_WithCustomMetadata_AddsTagsToActivity()
         {
@@ -264,18 +264,18 @@ namespace HVO.Enterprise.Telemetry.Tests.BackgroundJobs
                 ["JobType"] = "EmailSender",
                 ["Priority"] = 5
             };
-            
+
             using var parentActivity = _activitySource.StartActivity("ParentActivity");
             var context = BackgroundJobContext.Capture(metadata);
             parentActivity?.Stop();
-            
+
             // Act
             using (context.Restore())
             {
                 // Assert
                 var currentActivity = Activity.Current;
                 Assert.IsNotNull(currentActivity);
-                
+
                 // Check for metadata tags
                 var found = false;
                 foreach (var tag in currentActivity.Tags)

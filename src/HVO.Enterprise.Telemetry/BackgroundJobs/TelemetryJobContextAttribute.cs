@@ -18,12 +18,12 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
         /// Gets or sets the name of the parameter containing BackgroundJobContext.
         /// </summary>
         public string ContextParameterName { get; set; } = "context";
-        
+
         /// <summary>
         /// Gets or sets whether to create a new Activity for the job.
         /// </summary>
         public bool CreateActivity { get; set; } = true;
-        
+
         /// <summary>
         /// Gets or sets whether to automatically restore correlation context.
         /// </summary>

@@ -15,32 +15,32 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
         /// Gets the correlation ID captured at enqueue time.
         /// </summary>
         public string CorrelationId { get; set; } = null!;
-        
-       /// <summary>
+
+        /// <summary>
         /// Gets the parent Activity TraceId if available.
         /// </summary>
         public string? ParentActivityId { get; set; }
-        
+
         /// <summary>
         /// Gets the parent Activity SpanId if available.
         /// </summary>
         public string? ParentSpanId { get; set; }
-        
+
         /// <summary>
         /// Gets the user context information (if available).
         /// </summary>
         public Dictionary<string, string>? UserContext { get; set; }
-        
+
         /// <summary>
         /// Gets the timestamp when the job was enqueued.
         /// </summary>
         public DateTimeOffset EnqueuedAt { get; set; }
-        
+
         /// <summary>
         /// Gets optional custom metadata for the job.
         /// </summary>
         public Dictionary<string, object>? CustomMetadata { get; set; }
-        
+
         /// <summary>
         /// Captures the current telemetry context.
         /// </summary>
@@ -48,7 +48,7 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
         public static BackgroundJobContext Capture()
         {
             var activity = Activity.Current;
-            
+
             return new BackgroundJobContext
             {
                 CorrelationId = CorrelationContext.Current,
@@ -59,7 +59,7 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
                 CustomMetadata = null
             };
         }
-        
+
         /// <summary>
         /// Captures the current telemetry context with custom metadata.
         /// </summary>
@@ -78,7 +78,7 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
                 CustomMetadata = customMetadata
             };
         }
-        
+
         /// <summary>
         /// Restores the captured telemetry context.
         /// </summary>
@@ -87,14 +87,14 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
         {
             return new BackgroundJobContextScope(this);
         }
-        
+
         private static Dictionary<string, string>? CaptureUserContext()
         {
             // Implementation will be enhanced when UserContextEnricher is available (US-011)
             // For now, we return null as user context enrichment is a future feature
             return null;
         }
-        
+
         /// <summary>
         /// Creates a BackgroundJobContext from serialized values.
         /// Useful for deserializing from job storage.
@@ -109,7 +109,7 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
         {
             if (string.IsNullOrEmpty(correlationId))
                 throw new ArgumentNullException(nameof(correlationId));
-            
+
             return new BackgroundJobContext
             {
                 CorrelationId = correlationId,

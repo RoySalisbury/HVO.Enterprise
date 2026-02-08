@@ -22,9 +22,9 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
         {
             if (action == null)
                 throw new ArgumentNullException(nameof(action));
-            
+
             var context = BackgroundJobContext.Capture();
-            
+
             ThreadPool.QueueUserWorkItem(_ =>
             {
                 using (context.Restore())
@@ -41,7 +41,7 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
                 }
             });
         }
-        
+
         /// <summary>
         /// Enqueues an async background job with current correlation context.
         /// </summary>
@@ -56,9 +56,9 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
         {
             if (action == null)
                 throw new ArgumentNullException(nameof(action));
-            
+
             var context = BackgroundJobContext.Capture();
-            
+
             return Task.Run(async () =>
             {
                 using (context.Restore())
@@ -67,7 +67,7 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
                 }
             });
         }
-        
+
         /// <summary>
         /// Enqueues an async background job with current correlation context and returns a result.
         /// </summary>
@@ -83,9 +83,9 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
         {
             if (func == null)
                 throw new ArgumentNullException(nameof(func));
-            
+
             var context = BackgroundJobContext.Capture();
-            
+
             return Task.Run(async () =>
             {
                 using (context.Restore())

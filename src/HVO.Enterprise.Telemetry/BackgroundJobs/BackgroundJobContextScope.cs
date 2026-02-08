@@ -13,7 +13,7 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
         private readonly Activity? _activity;
         private readonly ActivitySource? _activitySource;
         private bool _disposed;
-        
+
         /// <summary>
         /// Creates a new background job context scope.
         /// </summary>
@@ -22,40 +22,40 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
         {
             if (context == null)
                 throw new ArgumentNullException(nameof(context));
-            
+
             // Restore correlation ID
             _correlationScope = CorrelationContext.BeginScope(context.CorrelationId);
-            
+
             // Create Activity with parent link if parent context is available
-            if (!string.IsNullOrEmpty(context.ParentActivityId) && 
+            if (!string.IsNullOrEmpty(context.ParentActivityId) &&
                 !string.IsNullOrEmpty(context.ParentSpanId))
             {
                 _activitySource = new ActivitySource("HVO.Enterprise.Telemetry.BackgroundJobs", "1.0.0");
-                
+
                 // Parse parent context (using CreateFromString for .NET Standard 2.0 compatibility)
                 try
                 {
                     var traceId = ActivityTraceId.CreateFromString(context.ParentActivityId.AsSpan());
                     var spanId = ActivitySpanId.CreateFromString(context.ParentSpanId.AsSpan());
-                    
+
                     var parentContext = new ActivityContext(
                         traceId,
                         spanId,
                         ActivityTraceFlags.Recorded);
-                    
+
                     _activity = _activitySource.StartActivity(
                         "BackgroundJob",
                         ActivityKind.Internal,
                         parentContext);
-                    
+
                     // Add job metadata to Activity
                     if (_activity != null)
                     {
                         _activity.SetTag("job.enqueued_at", context.EnqueuedAt.ToString("O"));
-                        
+
                         var executionDelay = DateTimeOffset.UtcNow - context.EnqueuedAt;
                         _activity.SetTag("job.execution_delay_ms", executionDelay.TotalMilliseconds);
-                        
+
                         // Add custom metadata as tags
                         if (context.CustomMetadata != null)
                         {
@@ -72,7 +72,7 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
                 }
             }
         }
-        
+
         /// <summary>
         /// Disposes the scope, stopping the Activity and restoring the previous correlation context.
         /// </summary>
@@ -80,7 +80,7 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
         {
             if (_disposed)
                 return;
-            
+
             _activity?.Dispose();
             _activitySource?.Dispose();
             _correlationScope.Dispose();

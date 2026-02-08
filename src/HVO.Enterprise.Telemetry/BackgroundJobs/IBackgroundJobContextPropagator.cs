@@ -14,7 +14,7 @@ namespace HVO.Enterprise.Telemetry.BackgroundJobs
         /// <typeparam name="TJob">The job type.</typeparam>
         /// <param name="job">The job instance.</param>
         void PropagateContext<TJob>(TJob job) where TJob : class;
-        
+
         /// <summary>
         /// Restores context from job data before execution.
         /// </summary>
