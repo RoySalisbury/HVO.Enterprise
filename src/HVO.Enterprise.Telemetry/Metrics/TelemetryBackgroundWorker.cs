@@ -142,7 +142,12 @@ namespace HVO.Enterprise.Telemetry.Metrics
             // Check if queue is at capacity before writing to detect drops.
             var wasAtCapacity = _channel.Reader.Count >= _capacity;
 
-            _channel.Writer.TryWrite(item);
+            // Capture TryWrite result - returns false if channel is completed/disposed
+            if (!_channel.Writer.TryWrite(item))
+            {
+                _logger.LogWarning("Failed to enqueue item: channel is completed or disposed");
+                return false;
+            }
 
             if (wasAtCapacity)
             {
@@ -170,7 +175,6 @@ namespace HVO.Enterprise.Telemetry.Metrics
             cts.CancelAfter(timeout);
 
             var startCount = ProcessedCount;
-            var startQueueDepth = QueueDepth;
 
             // Mark channel as complete (no more writes)
             _channel.Writer.Complete();
@@ -316,8 +320,10 @@ namespace HVO.Enterprise.Telemetry.Metrics
                 try
                 {
                     // Wait for items or cancellation
+                    // Use GetAwaiter().GetResult() to unwrap AggregateException properly
+                    // so OperationCanceledException is caught by the handler below
                     var waitTask = reader.WaitToReadAsync(_shutdownCts.Token);
-                    if (!waitTask.AsTask().Result)
+                    if (!waitTask.AsTask().GetAwaiter().GetResult())
                         break; // Channel completed
 
                     // Process all available items
