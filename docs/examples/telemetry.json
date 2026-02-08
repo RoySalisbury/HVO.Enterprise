@@ -1,0 +1,35 @@
+{
+  "Enabled": true,
+  "DefaultSamplingRate": 0.1,
+  "Sampling": {
+    "MyApp.Critical": {
+      "Rate": 1.0,
+      "AlwaysSampleErrors": true
+    },
+    "MyApp.Background": {
+      "Rate": 0.01,
+      "AlwaysSampleErrors": true
+    }
+  },
+  "Logging": {
+    "EnableCorrelationEnrichment": true,
+    "MinimumLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning"
+    }
+  },
+  "Metrics": {
+    "Enabled": true,
+    "CollectionIntervalSeconds": 10
+  },
+  "Queue": {
+    "Capacity": 10000,
+    "BatchSize": 100
+  },
+  "Features": {
+    "EnableHttpInstrumentation": true,
+    "EnableProxyInstrumentation": true,
+    "EnableExceptionTracking": true,
+    "EnableParameterCapture": false
+  }
+}
