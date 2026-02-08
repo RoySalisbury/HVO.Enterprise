@@ -188,7 +188,21 @@ namespace HVO.Enterprise.Telemetry.Sampling
                 }
             }
 
-            _activitySources.TryAdd(key, source);
+            if (_activitySources.TryAdd(key, source))
+            {
+                return source;
+            }
+
+            // Another thread added an ActivitySource for this key first.
+            // Dispose the newly created instance and return the cached one.
+            if (_activitySources.TryGetValue(key, out var cachedSource))
+            {
+                source.Dispose();
+                return cachedSource;
+            }
+
+            // Fallback: ensure we do not lose the created source even in unexpected states.
+            _activitySources[key] = source;
             return source;
         }
 
