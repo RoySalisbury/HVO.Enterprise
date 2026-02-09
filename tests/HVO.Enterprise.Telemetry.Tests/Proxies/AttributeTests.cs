@@ -59,6 +59,17 @@ namespace HVO.Enterprise.Telemetry.Tests.Proxies
         }
 
         [TestMethod]
+        public void InstrumentClassAttribute_OnlyAllowedOnInterfaces()
+        {
+            var usage = (AttributeUsageAttribute)Attribute.GetCustomAttribute(
+                typeof(InstrumentClassAttribute), typeof(AttributeUsageAttribute))!;
+
+            Assert.AreEqual(AttributeTargets.Interface, usage.ValidOn);
+            Assert.IsTrue(usage.Inherited);
+            Assert.IsFalse(usage.AllowMultiple);
+        }
+
+        [TestMethod]
         public void InstrumentClassAttribute_CustomValues_AreRetained()
         {
             var attr = new InstrumentClassAttribute

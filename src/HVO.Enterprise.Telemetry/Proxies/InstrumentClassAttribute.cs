@@ -4,12 +4,17 @@ using System.Diagnostics;
 namespace HVO.Enterprise.Telemetry.Proxies
 {
     /// <summary>
-    /// Marks an interface or class for automatic telemetry instrumentation of all public methods.
+    /// Marks an interface for automatic telemetry instrumentation of all public methods.
     /// When applied to an interface wrapped by <see cref="TelemetryDispatchProxy{T}"/>,
     /// every method that does not have a <see cref="NoTelemetryAttribute"/> will be automatically instrumented.
     /// Method-level <see cref="InstrumentMethodAttribute"/> settings override these defaults.
     /// </summary>
-    [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Class, Inherited = true, AllowMultiple = false)]
+    /// <remarks>
+    /// This attribute is only inspected on interface types (including inherited interfaces).
+    /// The <see cref="TelemetryDispatchProxy{T}"/> uses <c>typeof(T)</c> and its base interfaces
+    /// to discover this attribute. Applying it to a concrete class has no effect.
+    /// </remarks>
+    [AttributeUsage(AttributeTargets.Interface, Inherited = true, AllowMultiple = false)]
     public sealed class InstrumentClassAttribute : Attribute
     {
         /// <summary>

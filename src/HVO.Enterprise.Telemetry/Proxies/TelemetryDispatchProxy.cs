@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,7 +23,6 @@ namespace HVO.Enterprise.Telemetry.Proxies
     {
         private T? _target;
         private IOperationScopeFactory? _scopeFactory;
-        private ILogger? _logger;
         private InstrumentationOptions? _options;
         private readonly ConcurrentDictionary<MethodInfo, MethodInstrumentationInfo> _methodCache = new ConcurrentDictionary<MethodInfo, MethodInstrumentationInfo>();
 
@@ -44,17 +44,14 @@ namespace HVO.Enterprise.Telemetry.Proxies
         /// </summary>
         /// <param name="target">The real implementation to delegate to.</param>
         /// <param name="scopeFactory">Factory for creating operation scopes.</param>
-        /// <param name="logger">Optional logger for diagnostics.</param>
         /// <param name="options">Instrumentation options.</param>
         internal void Initialize(
             T target,
             IOperationScopeFactory scopeFactory,
-            ILogger? logger,
             InstrumentationOptions options)
         {
             _target = target ?? throw new ArgumentNullException(nameof(target));
             _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
-            _logger = logger;
             _options = options ?? new InstrumentationOptions();
         }
 
@@ -114,7 +111,8 @@ namespace HVO.Enterprise.Telemetry.Proxies
                 {
                     var inner = ex.InnerException ?? ex;
                     scope.Fail(inner);
-                    throw inner;
+                    ExceptionDispatchInfo.Capture(inner).Throw();
+                    throw; // unreachable — satisfies compiler
                 }
                 catch (Exception ex)
                 {
@@ -131,24 +129,6 @@ namespace HVO.Enterprise.Telemetry.Proxies
             object?[]? args,
             MethodInstrumentationInfo methodInfo)
         {
-            // Invoke the real method to obtain the Task / Task<T>.
-            object? rawResult;
-            try
-            {
-                rawResult = InvokeTarget(method, args);
-            }
-            catch (TargetInvocationException ex)
-            {
-                throw ex.InnerException ?? ex;
-            }
-
-            if (rawResult == null)
-            {
-                throw new InvalidOperationException(
-                    $"Async method {method.Name} returned null Task.");
-            }
-
-            var task = (Task)rawResult;
             var returnType = method.ReturnType;
 
             // Task<TResult>
@@ -158,26 +138,35 @@ namespace HVO.Enterprise.Telemetry.Proxies
                 var wrapMethod = typeof(TelemetryDispatchProxy<T>)
                     .GetMethod(nameof(WrapGenericTaskAsync), BindingFlags.NonPublic | BindingFlags.Instance)!
                     .MakeGenericMethod(resultType);
-                return wrapMethod.Invoke(this, new object[] { task, method, args!, methodInfo })!;
+                return wrapMethod.Invoke(this, new object[] { method, args!, methodInfo })!;
             }
 
             // Plain Task
-            return WrapTaskAsync(task, method, args, methodInfo);
+            return WrapTaskAsync(method, args, methodInfo);
         }
 
         private async Task WrapTaskAsync(
-            Task task,
             MethodInfo method,
             object?[]? args,
             MethodInstrumentationInfo methodInfo)
         {
+            // Create scope before invoking target so synchronous exceptions
+            // (e.g., argument validation) are still captured by telemetry.
             using (var scope = _scopeFactory!.Begin(methodInfo.OperationName, CreateScopeOptions(methodInfo)))
             {
                 CaptureParametersIfEnabled(scope, method, args, methodInfo);
 
                 try
                 {
-                    await task.ConfigureAwait(false);
+                    var rawResult = InvokeTarget(method, args);
+
+                    if (rawResult == null)
+                    {
+                        throw new InvalidOperationException(
+                            $"Async method {method.Name} returned null Task.");
+                    }
+
+                    await ((Task)rawResult).ConfigureAwait(false);
                     scope.Succeed();
                 }
                 catch (Exception ex)
@@ -189,19 +178,27 @@ namespace HVO.Enterprise.Telemetry.Proxies
         }
 
         private async Task<TResult> WrapGenericTaskAsync<TResult>(
-            Task task,
             MethodInfo method,
             object?[]? args,
             MethodInstrumentationInfo methodInfo)
         {
+            // Create scope before invoking target so synchronous exceptions
+            // (e.g., argument validation) are still captured by telemetry.
             using (var scope = _scopeFactory!.Begin(methodInfo.OperationName, CreateScopeOptions(methodInfo)))
             {
                 CaptureParametersIfEnabled(scope, method, args, methodInfo);
 
                 try
                 {
-                    var typedTask = (Task<TResult>)task;
-                    var result = await typedTask.ConfigureAwait(false);
+                    var rawResult = InvokeTarget(method, args);
+
+                    if (rawResult == null)
+                    {
+                        throw new InvalidOperationException(
+                            $"Async method {method.Name} returned null Task.");
+                    }
+
+                    var result = await ((Task<TResult>)rawResult).ConfigureAwait(false);
 
                     if (methodInfo.CaptureReturnValue && result != null)
                     {
@@ -228,10 +225,11 @@ namespace HVO.Enterprise.Telemetry.Proxies
             {
                 return method.Invoke(_target, args);
             }
-            catch (TargetInvocationException ex)
+            catch (TargetInvocationException ex) when (ex.InnerException != null)
             {
-                // Unwrap so callers see the real exception.
-                throw ex.InnerException ?? ex;
+                // Unwrap so callers see the real exception, preserving the original stack trace.
+                ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+                throw; // unreachable — satisfies compiler
             }
         }
 
@@ -447,13 +445,14 @@ namespace HVO.Enterprise.Telemetry.Proxies
         private MethodInstrumentationInfo CreateMethodInfo(MethodInfo method)
         {
             // [NoTelemetry] on the method wins immediately.
-            if (method.GetCustomAttribute<NoTelemetryAttribute>() != null)
+            // Check both the direct method and inherited interface methods.
+            if (HasAttributeOnMethodOrInherited<NoTelemetryAttribute>(method))
             {
                 return new MethodInstrumentationInfo { IsInstrumented = false };
             }
 
-            // Check for explicit [InstrumentMethod] on the method.
-            var methodAttr = method.GetCustomAttribute<InstrumentMethodAttribute>();
+            // Check for explicit [InstrumentMethod] on the method (including inherited).
+            var methodAttr = GetAttributeFromMethodOrInherited<InstrumentMethodAttribute>(method);
             if (methodAttr != null)
             {
                 return new MethodInstrumentationInfo
@@ -468,8 +467,8 @@ namespace HVO.Enterprise.Telemetry.Proxies
                 };
             }
 
-            // Check for [InstrumentClass] on the interface.
-            var classAttr = typeof(T).GetCustomAttribute<InstrumentClassAttribute>();
+            // Check for [InstrumentClass] on typeof(T) and its inherited interfaces.
+            var classAttr = GetInstrumentClassAttribute();
             if (classAttr != null)
             {
                 var prefix = string.IsNullOrEmpty(classAttr.OperationPrefix)
@@ -490,6 +489,92 @@ namespace HVO.Enterprise.Telemetry.Proxies
 
             // No instrumentation attributes found.
             return new MethodInstrumentationInfo { IsInstrumented = false };
+        }
+
+        /// <summary>
+        /// Checks whether <typeparamref name="TAttr"/> exists on the given method
+        /// or on the corresponding method in any inherited interface.
+        /// </summary>
+        private static bool HasAttributeOnMethodOrInherited<TAttr>(MethodInfo method)
+            where TAttr : Attribute
+        {
+            if (method.GetCustomAttribute<TAttr>() != null)
+                return true;
+
+            // Walk parent interfaces — for interface types, match by name + parameter signature.
+            foreach (var parentIface in typeof(T).GetInterfaces())
+            {
+                foreach (var parentMethod in parentIface.GetMethods())
+                {
+                    if (parentMethod.Name == method.Name
+                        && ParametersMatch(parentMethod, method)
+                        && parentMethod.GetCustomAttribute<TAttr>() != null)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Returns the first <typeparamref name="TAttr"/> found on the given method
+        /// or on the corresponding method in any inherited interface; <c>null</c> otherwise.
+        /// </summary>
+        private static TAttr? GetAttributeFromMethodOrInherited<TAttr>(MethodInfo method)
+            where TAttr : Attribute
+        {
+            var attr = method.GetCustomAttribute<TAttr>();
+            if (attr != null)
+                return attr;
+
+            foreach (var parentIface in typeof(T).GetInterfaces())
+            {
+                foreach (var parentMethod in parentIface.GetMethods())
+                {
+                    if (parentMethod.Name == method.Name
+                        && ParametersMatch(parentMethod, method))
+                    {
+                        attr = parentMethod.GetCustomAttribute<TAttr>();
+                        if (attr != null)
+                            return attr;
+                    }
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Returns <see cref="InstrumentClassAttribute"/> from <c>typeof(T)</c> or any
+        /// of its inherited interfaces (first found wins).
+        /// </summary>
+        private static InstrumentClassAttribute? GetInstrumentClassAttribute()
+        {
+            var attr = typeof(T).GetCustomAttribute<InstrumentClassAttribute>();
+            if (attr != null)
+                return attr;
+
+            foreach (var parentIface in typeof(T).GetInterfaces())
+            {
+                attr = parentIface.GetCustomAttribute<InstrumentClassAttribute>();
+                if (attr != null)
+                    return attr;
+            }
+            return null;
+        }
+
+        private static bool ParametersMatch(MethodInfo a, MethodInfo b)
+        {
+            var ap = a.GetParameters();
+            var bp = b.GetParameters();
+            if (ap.Length != bp.Length)
+                return false;
+            for (int i = 0; i < ap.Length; i++)
+            {
+                if (ap[i].ParameterType != bp[i].ParameterType)
+                    return false;
+            }
+            return true;
         }
     }
 }

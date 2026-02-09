@@ -32,7 +32,7 @@ So that **I can add telemetry to all interface methods without modifying impleme
    - [x] `ITelemetryProxyFactory` for creating instrumented proxies
    - [x] Support for constructor dependency injection
    - [x] Integration with DI container (IServiceCollection)
-   - [x] Proxy caching for performance
+   - [x] Method metadata caching for performance (proxy instances are created per factory call and not cached)
 
 4. **Parameter Capture**
    - [x] Capture method parameters as Activity tags

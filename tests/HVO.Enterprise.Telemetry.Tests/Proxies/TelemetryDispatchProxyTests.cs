@@ -224,5 +224,65 @@ namespace HVO.Enterprise.Telemetry.Tests.Proxies
 
             Assert.AreEqual(3, _scopeFactory.CreatedScopes.Count);
         }
+
+        // ─── INTERFACE INHERITANCE ──────────────────────────────────────
+
+        [TestMethod]
+        public void InheritedInterface_InstrumentClassOnBase_InstrumentsDerivedMethods()
+        {
+            var proxy = _factory.CreateProxy<IDerivedService>(new DerivedService());
+
+            proxy.GetDerivedValue(1);
+
+            Assert.AreEqual(1, _scopeFactory.CreatedScopes.Count);
+            // Should use base prefix "BaseSvc"
+            Assert.AreEqual("BaseSvc.GetDerivedValue", _scopeFactory.LastScope!.Name);
+        }
+
+        [TestMethod]
+        public void InheritedInterface_MethodAttrOnBase_Inherited()
+        {
+            var proxy = _factory.CreateProxy<IDerivedService>(new DerivedService());
+
+            proxy.GetBaseValue(42);
+
+            Assert.AreEqual(1, _scopeFactory.CreatedScopes.Count);
+            // [InstrumentMethod] on base with CaptureReturnValue=true
+            Assert.IsTrue(_scopeFactory.LastScope!.Tags.ContainsKey("result"));
+            Assert.AreEqual("base-42", _scopeFactory.LastScope.Tags["result"]);
+        }
+
+        [TestMethod]
+        public void InheritedInterface_NoTelemetryOnBase_Inherited()
+        {
+            var proxy = _factory.CreateProxy<IDerivedService>(new DerivedService());
+
+            proxy.BaseHealthCheck();
+
+            // [NoTelemetry] on base interface method should be inherited
+            Assert.AreEqual(0, _scopeFactory.CreatedScopes.Count);
+        }
+
+        // ─── EXCEPTION DISPATCH INFO ────────────────────────────────────
+
+        [TestMethod]
+        public void SyncMethod_ThrowsException_PreservesStackTrace()
+        {
+            var proxy = _factory.CreateProxy<IExceptionService>(new ExceptionService());
+
+            try
+            {
+                proxy.ThrowSync();
+                Assert.Fail("Should have thrown");
+            }
+            catch (InvalidOperationException ex)
+            {
+                // ExceptionDispatchInfo should preserve the original stack trace,
+                // meaning the stack trace should contain ExceptionService.ThrowSync
+                Assert.IsTrue(
+                    ex.StackTrace != null && ex.StackTrace.Contains("ExceptionService"),
+                    "Stack trace should contain original throw site: " + ex.StackTrace);
+            }
+        }
     }
 }

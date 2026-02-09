@@ -176,6 +176,62 @@ namespace HVO.Enterprise.Telemetry.Tests.Proxies
         public int Value { get; set; }
     }
 
+    // ─── Interface inheritance: base interface has [InstrumentClass] ─────
+
+    [InstrumentClass(OperationPrefix = "BaseSvc")]
+    public interface IBaseInstrumentedService
+    {
+        [InstrumentMethod(CaptureReturnValue = true)]
+        string GetBaseValue(int id);
+
+        [NoTelemetry]
+        bool BaseHealthCheck();
+    }
+
+    /// <summary>
+    /// Derived interface inherits from IBaseInstrumentedService.
+    /// The InstrumentClass attribute on the base should be inherited.
+    /// </summary>
+    public interface IDerivedService : IBaseInstrumentedService
+    {
+        string GetDerivedValue(int id);
+    }
+
+    public class DerivedService : IDerivedService
+    {
+        public string GetBaseValue(int id) => $"base-{id}";
+        public bool BaseHealthCheck() => true;
+        public string GetDerivedValue(int id) => $"derived-{id}";
+    }
+
+    // ─── Sync-throwing async service ─────────────────────────────────────
+
+    [InstrumentClass]
+    public interface ISyncThrowingAsyncService
+    {
+        Task<int> ValidatedGetAsync(int id);
+        Task ValidatedDoAsync(int id);
+    }
+
+    /// <summary>
+    /// Implementation that throws synchronously (before producing a Task)
+    /// on argument validation — simulates the common guard-clause pattern.
+    /// </summary>
+    public class SyncThrowingAsyncService : ISyncThrowingAsyncService
+    {
+        public Task<int> ValidatedGetAsync(int id)
+        {
+            if (id <= 0) throw new ArgumentException("ID must be positive", nameof(id));
+            return Task.FromResult(id * 10);
+        }
+
+        public Task ValidatedDoAsync(int id)
+        {
+            if (id <= 0) throw new ArgumentException("ID must be positive", nameof(id));
+            return Task.CompletedTask;
+        }
+    }
+
     // ─── Fake Operation Scope for verification ───────────────────────────
 
     public sealed class FakeOperationScope : IOperationScope

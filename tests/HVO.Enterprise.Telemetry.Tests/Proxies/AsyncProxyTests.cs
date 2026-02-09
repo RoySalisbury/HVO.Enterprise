@@ -165,5 +165,72 @@ namespace HVO.Enterprise.Telemetry.Tests.Proxies
             Assert.AreEqual("ISimpleService.GetValue", _scopeFactory.CreatedScopes[0].Name);
             Assert.AreEqual("Custom.Get", _scopeFactory.CreatedScopes[1].Name);
         }
+
+        // ─── SYNC EXCEPTIONS IN ASYNC METHODS ──────────────────────────
+
+        [TestMethod]
+        public async Task AsyncMethod_SyncThrowInTaskOfT_ScopeRecordsFail()
+        {
+            var proxy = _factory.CreateProxy<ISyncThrowingAsyncService>(
+                new SyncThrowingAsyncService());
+
+            await Assert.ThrowsExceptionAsync<ArgumentException>(
+                async () => await proxy.ValidatedGetAsync(-1));
+
+            // The scope should have been created before invocation and recorded the failure
+            Assert.AreEqual(1, _scopeFactory.CreatedScopes.Count);
+            Assert.IsNotNull(_scopeFactory.LastScope!.FailException);
+            Assert.IsInstanceOfType(_scopeFactory.LastScope.FailException, typeof(ArgumentException));
+        }
+
+        [TestMethod]
+        public async Task AsyncMethod_SyncThrowInPlainTask_ScopeRecordsFail()
+        {
+            var proxy = _factory.CreateProxy<ISyncThrowingAsyncService>(
+                new SyncThrowingAsyncService());
+
+            await Assert.ThrowsExceptionAsync<ArgumentException>(
+                async () => await proxy.ValidatedDoAsync(-1));
+
+            Assert.AreEqual(1, _scopeFactory.CreatedScopes.Count);
+            Assert.IsNotNull(_scopeFactory.LastScope!.FailException);
+            Assert.IsInstanceOfType(_scopeFactory.LastScope.FailException, typeof(ArgumentException));
+        }
+
+        [TestMethod]
+        public async Task AsyncMethod_SyncThrowInTaskOfT_PropagatesOriginalException()
+        {
+            var proxy = _factory.CreateProxy<ISyncThrowingAsyncService>(
+                new SyncThrowingAsyncService());
+
+            var ex = await Assert.ThrowsExceptionAsync<ArgumentException>(
+                async () => await proxy.ValidatedGetAsync(0));
+
+            Assert.AreEqual("id", ex.ParamName);
+        }
+
+        [TestMethod]
+        public async Task AsyncMethod_SyncThrowInTaskOfT_SuccessStillWorks()
+        {
+            var proxy = _factory.CreateProxy<ISyncThrowingAsyncService>(
+                new SyncThrowingAsyncService());
+
+            var result = await proxy.ValidatedGetAsync(5);
+
+            Assert.AreEqual(50, result);
+            Assert.IsTrue(_scopeFactory.LastScope!.DidSucceed);
+        }
+
+        [TestMethod]
+        public async Task AsyncMethod_Exception_PreservesExceptionType()
+        {
+            var proxy = _factory.CreateProxy<IExceptionService>(new ExceptionService());
+
+            // Verify that the exception type and message are preserved through the proxy
+            var ex = await Assert.ThrowsExceptionAsync<InvalidOperationException>(
+                () => proxy.ThrowAsync());
+
+            Assert.AreEqual("async-boom", ex.Message);
+        }
     }
 }

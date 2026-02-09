@@ -1,6 +1,5 @@
 using System;
 using System.Reflection;
-using Microsoft.Extensions.Logging;
 
 namespace HVO.Enterprise.Telemetry.Proxies
 {
@@ -11,20 +10,15 @@ namespace HVO.Enterprise.Telemetry.Proxies
     public sealed class TelemetryProxyFactory : ITelemetryProxyFactory
     {
         private readonly IOperationScopeFactory _scopeFactory;
-        private readonly ILoggerFactory? _loggerFactory;
 
         /// <summary>
         /// Initializes a new instance of <see cref="TelemetryProxyFactory"/>.
         /// </summary>
         /// <param name="scopeFactory">Factory for creating operation scopes.</param>
-        /// <param name="loggerFactory">Optional logger factory for proxy diagnostics.</param>
         /// <exception cref="ArgumentNullException"><paramref name="scopeFactory"/> is <c>null</c>.</exception>
-        public TelemetryProxyFactory(
-            IOperationScopeFactory scopeFactory,
-            ILoggerFactory? loggerFactory = null)
+        public TelemetryProxyFactory(IOperationScopeFactory scopeFactory)
         {
             _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
-            _loggerFactory = loggerFactory;
         }
 
         /// <inheritdoc />
@@ -56,12 +50,9 @@ namespace HVO.Enterprise.Telemetry.Proxies
                     $"Created proxy is not a TelemetryDispatchProxy<{typeof(T).Name}>.");
             }
 
-            var logger = _loggerFactory?.CreateLogger($"Proxy.{typeof(T).Name}");
-
             telemetryProxy.Initialize(
                 target,
                 _scopeFactory,
-                logger,
                 options ?? new InstrumentationOptions());
 
             return (T)(object)telemetryProxy;
