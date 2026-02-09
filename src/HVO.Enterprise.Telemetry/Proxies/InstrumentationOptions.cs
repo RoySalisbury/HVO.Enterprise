@@ -1,3 +1,5 @@
+using HVO.Enterprise.Telemetry.Capture;
+
 namespace HVO.Enterprise.Telemetry.Proxies
 {
     /// <summary>
@@ -32,5 +34,22 @@ namespace HVO.Enterprise.Telemetry.Proxies
         /// Defaults to <c>true</c>.
         /// </summary>
         public bool AutoDetectPii { get; set; } = true;
+
+        /// <summary>
+        /// Converts these options to a <see cref="ParameterCaptureOptions"/> instance
+        /// for use with the <see cref="IParameterCapture"/> abstraction.
+        /// </summary>
+        /// <returns>Equivalent <see cref="ParameterCaptureOptions"/>.</returns>
+        public ParameterCaptureOptions ToParameterCaptureOptions()
+        {
+            return new ParameterCaptureOptions
+            {
+                Level = CaptureComplexTypes ? CaptureLevel.Verbose : CaptureLevel.Standard,
+                AutoDetectSensitiveData = AutoDetectPii,
+                MaxDepth = MaxCaptureDepth,
+                MaxCollectionItems = MaxCollectionItems,
+                RedactionStrategy = RedactionStrategy.Mask
+            };
+        }
     }
 }

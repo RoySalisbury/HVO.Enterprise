@@ -9,6 +9,7 @@ using System.Runtime.ExceptionServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using HVO.Enterprise.Telemetry.Capture;
 using Microsoft.Extensions.Logging;
 
 namespace HVO.Enterprise.Telemetry.Proxies
@@ -24,19 +25,9 @@ namespace HVO.Enterprise.Telemetry.Proxies
         private T? _target;
         private IOperationScopeFactory? _scopeFactory;
         private InstrumentationOptions? _options;
+        private IParameterCapture? _parameterCapture;
+        private ParameterCaptureOptions? _captureOptions;
         private readonly ConcurrentDictionary<MethodInfo, MethodInstrumentationInfo> _methodCache = new ConcurrentDictionary<MethodInfo, MethodInstrumentationInfo>();
-
-        // Well-known PII field name patterns for auto-detection.
-        private static readonly string[] PiiPatterns = new[]
-        {
-            "password", "passwd", "pwd",
-            "token", "apikey", "api_key",
-            "secret", "credential",
-            "ssn", "socialsecurity",
-            "creditcard", "credit_card", "cardnumber", "card_number",
-            "cvv", "cvc",
-            "authorization"
-        };
 
         /// <summary>
         /// Initializes the proxy with the target instance and dependencies.
@@ -45,14 +36,21 @@ namespace HVO.Enterprise.Telemetry.Proxies
         /// <param name="target">The real implementation to delegate to.</param>
         /// <param name="scopeFactory">Factory for creating operation scopes.</param>
         /// <param name="options">Instrumentation options.</param>
+        /// <param name="parameterCapture">
+        /// Optional parameter capture implementation. When <c>null</c>, a default
+        /// <see cref="Capture.ParameterCapture"/> is created.
+        /// </param>
         internal void Initialize(
             T target,
             IOperationScopeFactory scopeFactory,
-            InstrumentationOptions options)
+            InstrumentationOptions options,
+            IParameterCapture? parameterCapture = null)
         {
             _target = target ?? throw new ArgumentNullException(nameof(target));
             _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
             _options = options ?? new InstrumentationOptions();
+            _parameterCapture = parameterCapture ?? new Capture.ParameterCapture();
+            _captureOptions = _options.ToParameterCaptureOptions();
         }
 
         /// <summary>
@@ -259,185 +257,19 @@ namespace HVO.Enterprise.Telemetry.Proxies
             }
 
             var parameters = method.GetParameters();
-            for (int i = 0; i < parameters.Length && i < args.Length; i++)
+            var captured = _parameterCapture!.CaptureParameters(parameters, args, _captureOptions!);
+
+            foreach (var kvp in captured)
             {
-                var param = parameters[i];
-                var value = args[i];
-                var tagKey = $"param.{param.Name}";
-
-                // Check [SensitiveData] attribute on the parameter.
-                var sensitiveAttr = param.GetCustomAttribute<SensitiveDataAttribute>();
-                if (sensitiveAttr != null)
-                {
-                    scope.WithTag(tagKey, ApplyRedaction(value, sensitiveAttr.Strategy));
-                    continue;
-                }
-
-                // Auto-detect PII by parameter name.
-                if (_options!.AutoDetectPii && IsPiiName(param.Name))
-                {
-                    scope.WithTag(tagKey, "***");
-                    continue;
-                }
-
-                if (value == null)
-                {
-                    scope.WithTag(tagKey, null);
-                }
-                else
-                {
-                    var captured = CaptureValue(value, _options!.MaxCaptureDepth);
-                    scope.WithTag(tagKey, captured);
-                }
+                scope.WithTag($"param.{kvp.Key}", kvp.Value);
             }
         }
 
         private void CaptureReturnValue(IOperationScope scope, object value)
         {
-            var captured = CaptureValue(value, _options!.MaxCaptureDepth);
+            var captured = _parameterCapture!.CaptureParameter(
+                "return", value, value.GetType(), _captureOptions!);
             scope.WithTag("result", captured);
-        }
-
-        /// <summary>
-        /// Recursively captures a value for tagging, respecting depth and collection limits.
-        /// </summary>
-        private object? CaptureValue(object? value, int remainingDepth)
-        {
-            if (value == null)
-            {
-                return null;
-            }
-
-            if (remainingDepth <= 0)
-            {
-                return value.GetType().Name;
-            }
-
-            var type = value.GetType();
-
-            // Primitives, strings, well-known value types → capture as-is.
-            if (type.IsPrimitive
-                || type == typeof(string)
-                || type == typeof(decimal)
-                || type == typeof(DateTime)
-                || type == typeof(DateTimeOffset)
-                || type == typeof(Guid)
-                || type == typeof(TimeSpan)
-                || type.IsEnum)
-            {
-                return value;
-            }
-
-            // Collections (but not string — already handled above).
-            if (value is IEnumerable enumerable)
-            {
-                var items = new List<object?>();
-                int count = 0;
-                foreach (var item in enumerable)
-                {
-                    if (count >= _options!.MaxCollectionItems)
-                    {
-                        items.Add("...(truncated)");
-                        break;
-                    }
-                    items.Add(CaptureValue(item, remainingDepth - 1));
-                    count++;
-                }
-                return items;
-            }
-
-            // Complex types → property dictionary.
-            if (_options!.CaptureComplexTypes)
-            {
-                var dict = new Dictionary<string, object?>();
-                foreach (var prop in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
-                {
-                    if (!prop.CanRead)
-                    {
-                        continue;
-                    }
-
-                    // Skip [SensitiveData]-annotated properties.
-                    if (prop.GetCustomAttribute<SensitiveDataAttribute>() != null)
-                    {
-                        continue;
-                    }
-
-                    // Auto PII detection on property names.
-                    if (_options.AutoDetectPii && IsPiiName(prop.Name))
-                    {
-                        continue;
-                    }
-
-                    try
-                    {
-                        var propValue = prop.GetValue(value);
-                        dict[prop.Name] = CaptureValue(propValue, remainingDepth - 1);
-                    }
-                    catch
-                    {
-                        // Ignore properties that throw on access.
-                    }
-                }
-                return dict;
-            }
-
-            return value.ToString();
-        }
-
-        // ─── Redaction helpers ───────────────────────────────────────────────
-
-        private static object? ApplyRedaction(object? value, RedactionStrategy strategy)
-        {
-            switch (strategy)
-            {
-                case RedactionStrategy.Remove:
-                    return null;
-                case RedactionStrategy.Hash:
-                    return HashValue(value);
-                case RedactionStrategy.Mask:
-                default:
-                    return "***";
-            }
-        }
-
-        private static string HashValue(object? value)
-        {
-            if (value == null)
-            {
-                return "***";
-            }
-
-            var text = value.ToString() ?? string.Empty;
-            using (var sha = SHA256.Create())
-            {
-                var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(text));
-                // Return first 8 hex chars as a short, non-reversible identifier.
-                var sb = new StringBuilder(16);
-                for (int i = 0; i < 4; i++)
-                {
-                    sb.Append(bytes[i].ToString("x2"));
-                }
-                return sb.ToString();
-            }
-        }
-
-        private static bool IsPiiName(string? name)
-        {
-            if (string.IsNullOrEmpty(name))
-            {
-                return false;
-            }
-
-            var lower = name!.ToLowerInvariant();
-            for (int i = 0; i < PiiPatterns.Length; i++)
-            {
-                if (lower.Contains(PiiPatterns[i]))
-                {
-                    return true;
-                }
-            }
-            return false;
         }
 
         // ─── Method info builder ─────────────────────────────────────────────
