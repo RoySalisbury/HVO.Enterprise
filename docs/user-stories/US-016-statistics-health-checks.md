@@ -986,7 +986,7 @@ namespace HVO.Enterprise.Telemetry.Tests
 - [x] Health check integration tested with ASP.NET Core
 - [x] Performance benchmarks meet targets (lock-free Interlocked ops)
 - [x] XML documentation complete
-- [x] Code reviewed and approved
+- [ ] Code reviewed and approved
 - [x] Zero warnings in build
 
 ## Notes

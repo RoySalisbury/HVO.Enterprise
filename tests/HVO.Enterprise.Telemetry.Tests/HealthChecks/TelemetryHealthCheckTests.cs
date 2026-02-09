@@ -175,6 +175,44 @@ namespace HVO.Enterprise.Telemetry.Tests.HealthChecks
         }
 
         [TestMethod]
+        public void Constructor_InvalidOptions_Throws()
+        {
+            var stats = new TelemetryStatistics();
+            var badOptions = new TelemetryHealthCheckOptions
+            {
+                DegradedErrorRateThreshold = -1.0
+            };
+
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+                new TelemetryHealthCheck(stats, badOptions));
+        }
+
+        [TestMethod]
+        public void Constructor_DefensivelyCopiesOptions()
+        {
+            var stats = new TelemetryStatistics();
+            var options = new TelemetryHealthCheckOptions
+            {
+                DegradedErrorRateThreshold = 5.0
+            };
+            var healthCheck = new TelemetryHealthCheck(stats, options);
+
+            // Mutate original options after construction
+            options.DegradedErrorRateThreshold = 0.0;
+
+            // Health check should still use the original copied value (5.0),
+            // so a rate of 2.0 should be healthy (below 5.0)
+            for (int i = 0; i < 120; i++)
+            {
+                stats.IncrementExceptionsTracked();
+            }
+            // Rate is ~2.0/sec (120 events / 60s window)
+            var result = healthCheck.CheckHealthAsync(CreateContext()).Result;
+            // With the copied threshold of 5.0, 2.0/sec should be healthy
+            Assert.AreEqual(HealthStatus.Healthy, result.Status);
+        }
+
+        [TestMethod]
         public async Task CheckHealth_DefaultOptions_WorksCorrectly()
         {
             var stats = new TelemetryStatistics();

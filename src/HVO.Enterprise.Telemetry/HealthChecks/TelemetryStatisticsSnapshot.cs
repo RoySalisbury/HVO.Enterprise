@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
+using HVO.Enterprise.Telemetry.Abstractions;
 
 namespace HVO.Enterprise.Telemetry.HealthChecks
 {
     /// <summary>
-    /// Immutable snapshot of telemetry statistics captured at a specific point in time.
-    /// Thread-safe to read and suitable for serialization to monitoring systems.
+    /// Point-in-time snapshot of telemetry statistics.
+    /// Created internally by <see cref="ITelemetryStatistics.GetSnapshot()"/>.
+    /// Properties use public setters for .NET Standard 2.0 compatibility (no <c>init</c> accessors).
     /// </summary>
     public sealed class TelemetryStatisticsSnapshot
     {
@@ -120,33 +123,34 @@ namespace HVO.Enterprise.Telemetry.HealthChecks
         /// <returns>A formatted multi-line string containing all statistics.</returns>
         public string ToFormattedString()
         {
+            var ic = CultureInfo.InvariantCulture;
             var sb = new StringBuilder();
-            sb.AppendLine(string.Format("Telemetry Statistics ({0:yyyy-MM-dd HH:mm:ss})", Timestamp));
+            sb.AppendLine(string.Format(ic, "Telemetry Statistics ({0:yyyy-MM-dd HH:mm:ss})", Timestamp));
             sb.AppendLine("========================================");
-            sb.AppendLine(string.Format("Uptime: {0:F2}h", Uptime.TotalHours));
+            sb.AppendLine(string.Format(ic, "Uptime: {0:F2}h", Uptime.TotalHours));
             sb.AppendLine();
             sb.AppendLine("Activities:");
-            sb.AppendLine(string.Format("  Created: {0:N0}", ActivitiesCreated));
-            sb.AppendLine(string.Format("  Completed: {0:N0}", ActivitiesCompleted));
-            sb.AppendLine(string.Format("  Active: {0:N0}", ActiveActivities));
+            sb.AppendLine(string.Format(ic, "  Created: {0:N0}", ActivitiesCreated));
+            sb.AppendLine(string.Format(ic, "  Completed: {0:N0}", ActivitiesCompleted));
+            sb.AppendLine(string.Format(ic, "  Active: {0:N0}", ActiveActivities));
             sb.AppendLine();
             sb.AppendLine("Queue:");
-            sb.AppendLine(string.Format("  Current Depth: {0:N0}", QueueDepth));
-            sb.AppendLine(string.Format("  Max Depth: {0:N0}", MaxQueueDepth));
-            sb.AppendLine(string.Format("  Enqueued: {0:N0}", ItemsEnqueued));
-            sb.AppendLine(string.Format("  Processed: {0:N0}", ItemsProcessed));
-            sb.AppendLine(string.Format("  Dropped: {0:N0}", ItemsDropped));
-            sb.AppendLine(string.Format("  Avg Processing: {0:F2}ms", AverageProcessingTimeMs));
+            sb.AppendLine(string.Format(ic, "  Current Depth: {0:N0}", QueueDepth));
+            sb.AppendLine(string.Format(ic, "  Max Depth: {0:N0}", MaxQueueDepth));
+            sb.AppendLine(string.Format(ic, "  Enqueued: {0:N0}", ItemsEnqueued));
+            sb.AppendLine(string.Format(ic, "  Processed: {0:N0}", ItemsProcessed));
+            sb.AppendLine(string.Format(ic, "  Dropped: {0:N0}", ItemsDropped));
+            sb.AppendLine(string.Format(ic, "  Avg Processing: {0:F2}ms", AverageProcessingTimeMs));
             sb.AppendLine();
             sb.AppendLine("Errors & Events:");
-            sb.AppendLine(string.Format("  Exceptions: {0:N0}", ExceptionsTracked));
-            sb.AppendLine(string.Format("  Events: {0:N0}", EventsRecorded));
-            sb.AppendLine(string.Format("  Metrics: {0:N0}", MetricsRecorded));
-            sb.AppendLine(string.Format("  Processing Errors: {0:N0}", ProcessingErrors));
+            sb.AppendLine(string.Format(ic, "  Exceptions: {0:N0}", ExceptionsTracked));
+            sb.AppendLine(string.Format(ic, "  Events: {0:N0}", EventsRecorded));
+            sb.AppendLine(string.Format(ic, "  Metrics: {0:N0}", MetricsRecorded));
+            sb.AppendLine(string.Format(ic, "  Processing Errors: {0:N0}", ProcessingErrors));
             sb.AppendLine();
             sb.AppendLine("Rates:");
-            sb.AppendLine(string.Format("  Error Rate: {0:F2}/sec", CurrentErrorRate));
-            sb.Append(string.Format("  Throughput: {0:F2}/sec", CurrentThroughput));
+            sb.AppendLine(string.Format(ic, "  Error Rate: {0:F2}/sec", CurrentErrorRate));
+            sb.Append(string.Format(ic, "  Throughput: {0:F2}/sec", CurrentThroughput));
 
             return sb.ToString();
         }

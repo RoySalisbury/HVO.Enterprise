@@ -56,9 +56,14 @@ namespace HVO.Enterprise.Telemetry.HealthChecks
             if (services == null)
                 throw new ArgumentNullException(nameof(services));
 
+            // Validate and clone options during registration to prevent
+            // external mutation from affecting the health check after setup.
+            var effectiveOptions = options != null ? options.Clone() : null;
+            effectiveOptions?.Validate();
+
             services.AddSingleton(sp => new TelemetryHealthCheck(
                 sp.GetRequiredService<ITelemetryStatistics>(),
-                options));
+                effectiveOptions));
 
             return services;
         }

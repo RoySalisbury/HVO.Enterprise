@@ -14,7 +14,7 @@ namespace HVO.Enterprise.Telemetry.HealthChecks
     /// </summary>
     internal sealed class TelemetryStatistics : ITelemetryStatistics
     {
-        private DateTimeOffset _startTime;
+        private long _startTimeTicks;
         private readonly ConcurrentDictionary<string, SourceStats> _sourceStats;
         private readonly RollingWindow _errorWindow;
         private readonly RollingWindow _throughputWindow;
@@ -52,7 +52,7 @@ namespace HVO.Enterprise.Telemetry.HealthChecks
         /// <param name="startTime">The start time for statistics collection.</param>
         internal TelemetryStatistics(DateTimeOffset startTime)
         {
-            _startTime = startTime;
+            _startTimeTicks = startTime.UtcTicks;
             _sourceStats = new ConcurrentDictionary<string, SourceStats>(StringComparer.OrdinalIgnoreCase);
             _errorWindow = new RollingWindow(TimeSpan.FromMinutes(1));
             _throughputWindow = new RollingWindow(TimeSpan.FromMinutes(1));
@@ -61,7 +61,7 @@ namespace HVO.Enterprise.Telemetry.HealthChecks
         /// <inheritdoc />
         public DateTimeOffset StartTime
         {
-            get { return _startTime; }
+            get { return new DateTimeOffset(Interlocked.Read(ref _startTimeTicks), TimeSpan.Zero); }
         }
 
         /// <inheritdoc />
@@ -169,6 +169,11 @@ namespace HVO.Enterprise.Telemetry.HealthChecks
         }
 
         /// <inheritdoc />
+        /// <remarks>
+        /// Each access creates a new dictionary snapshot with new <see cref="ActivitySourceStatistics"/>
+        /// instances to provide isolation from live counters. For frequent reads, prefer
+        /// <see cref="GetSnapshot"/> which captures all statistics in a single call.
+        /// </remarks>
         public IReadOnlyDictionary<string, ActivitySourceStatistics> PerSourceStatistics
         {
             get
@@ -355,7 +360,7 @@ namespace HVO.Enterprise.Telemetry.HealthChecks
             _errorWindow.Clear();
             _throughputWindow.Clear();
 
-            _startTime = DateTimeOffset.UtcNow;
+            Interlocked.Exchange(ref _startTimeTicks, DateTimeOffset.UtcNow.UtcTicks);
         }
 
         /// <summary>

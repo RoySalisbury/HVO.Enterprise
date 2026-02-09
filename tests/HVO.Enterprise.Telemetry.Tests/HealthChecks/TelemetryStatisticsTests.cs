@@ -255,19 +255,17 @@ namespace HVO.Enterprise.Telemetry.Tests.HealthChecks
         public void UpdateQueueDepth_ThreadSafe_TracksMaxCorrectly()
         {
             var stats = new TelemetryStatistics();
-            var maxSeen = 0;
             const int threadCount = 10;
 
+            // Each thread sets its depth sequentially: 100, 200, ... 1000
+            // The maximum should be threadCount * 100 = 1000
             Parallel.For(0, threadCount, i =>
             {
                 var depth = (i + 1) * 100;
                 stats.UpdateQueueDepth(depth);
-                Interlocked.CompareExchange(ref maxSeen, depth, 0);
             });
 
-            // Max should be at least the largest depth set
-            Assert.IsTrue(stats.MaxQueueDepth >= 100);
-            Assert.IsTrue(stats.MaxQueueDepth <= threadCount * 100);
+            Assert.AreEqual(threadCount * 100, stats.MaxQueueDepth);
         }
 
         [TestMethod]
@@ -431,10 +429,11 @@ namespace HVO.Enterprise.Telemetry.Tests.HealthChecks
         [TestMethod]
         public void Reset_UpdatesStartTime()
         {
-            var stats = new TelemetryStatistics();
-            var originalStartTime = stats.StartTime;
+            var originalStartTime = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+            var stats = new TelemetryStatistics(originalStartTime);
 
-            Thread.Sleep(10);
+            Assert.AreEqual(originalStartTime, stats.StartTime);
+
             stats.Reset();
 
             Assert.IsTrue(stats.StartTime > originalStartTime);

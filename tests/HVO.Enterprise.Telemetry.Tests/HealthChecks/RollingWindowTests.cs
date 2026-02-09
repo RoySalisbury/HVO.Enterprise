@@ -1,5 +1,4 @@
 using System;
-using System.Threading;
 using HVO.Enterprise.Telemetry.HealthChecks;
 
 namespace HVO.Enterprise.Telemetry.Tests.HealthChecks
@@ -33,16 +32,14 @@ namespace HVO.Enterprise.Telemetry.Tests.HealthChecks
         public void GetRate_OldEventsExpire()
         {
             // Use a short window
-            var window = new TelemetryStatistics.RollingWindow(TimeSpan.FromMilliseconds(200));
+            var window = new TelemetryStatistics.RollingWindow(TimeSpan.FromMinutes(1));
 
-            // Record events
-            window.Record(DateTimeOffset.UtcNow);
-            window.Record(DateTimeOffset.UtcNow);
+            // Record events with timestamps already outside the window
+            var pastTime = DateTimeOffset.UtcNow.AddMinutes(-2);
+            window.Record(pastTime);
+            window.Record(pastTime);
 
-            // Wait for them to expire
-            Thread.Sleep(300);
-
-            // Should be zero now
+            // CleanOld is called during GetRate, so old events will be removed
             Assert.AreEqual(0.0, window.GetRate());
         }
 

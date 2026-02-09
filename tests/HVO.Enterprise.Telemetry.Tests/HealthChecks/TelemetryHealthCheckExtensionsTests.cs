@@ -107,5 +107,19 @@ namespace HVO.Enterprise.Telemetry.Tests.HealthChecks
             Assert.ThrowsException<InvalidOperationException>(
                 () => provider.GetRequiredService<TelemetryHealthCheck>());
         }
+
+        [TestMethod]
+        public void AddTelemetryHealthCheck_InvalidOptions_ThrowsOnRegistration()
+        {
+            var services = new ServiceCollection();
+            services.AddTelemetryStatistics();
+            var badOptions = new TelemetryHealthCheckOptions
+            {
+                DegradedErrorRateThreshold = -1.0
+            };
+
+            Assert.ThrowsException<ArgumentOutOfRangeException>(
+                () => services.AddTelemetryHealthCheck(badOptions));
+        }
     }
 }

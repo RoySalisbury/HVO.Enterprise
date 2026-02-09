@@ -10,9 +10,10 @@ namespace HVO.Enterprise.Telemetry.HealthChecks
     public sealed class TelemetryHealthCheckOptions
     {
         /// <summary>
-        /// Default options with sensible thresholds for most applications.
+        /// Creates a new instance with default sensible thresholds for most applications.
+        /// Each access returns a fresh instance to prevent shared mutable state.
         /// </summary>
-        public static readonly TelemetryHealthCheckOptions Default = new TelemetryHealthCheckOptions();
+        public static TelemetryHealthCheckOptions Default => new TelemetryHealthCheckOptions();
 
         /// <summary>
         /// Gets or sets the error rate (errors/sec) above which system is considered degraded.
@@ -55,6 +56,24 @@ namespace HVO.Enterprise.Telemetry.HealthChecks
         /// Calculated as (dropped / enqueued * 100). Default is 1.0%.
         /// </summary>
         public double UnhealthyDropRatePercent { get; set; } = 1.0;
+
+        /// <summary>
+        /// Creates a defensive copy of this options instance.
+        /// </summary>
+        /// <returns>A new <see cref="TelemetryHealthCheckOptions"/> with the same threshold values.</returns>
+        internal TelemetryHealthCheckOptions Clone()
+        {
+            return new TelemetryHealthCheckOptions
+            {
+                DegradedErrorRateThreshold = DegradedErrorRateThreshold,
+                UnhealthyErrorRateThreshold = UnhealthyErrorRateThreshold,
+                MaxExpectedQueueDepth = MaxExpectedQueueDepth,
+                DegradedQueueDepthPercent = DegradedQueueDepthPercent,
+                UnhealthyQueueDepthPercent = UnhealthyQueueDepthPercent,
+                DegradedDropRatePercent = DegradedDropRatePercent,
+                UnhealthyDropRatePercent = UnhealthyDropRatePercent
+            };
+        }
 
         /// <summary>
         /// Validates the configuration options and throws if invalid.

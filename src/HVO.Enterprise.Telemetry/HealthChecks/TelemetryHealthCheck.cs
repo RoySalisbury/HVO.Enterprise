@@ -20,10 +20,12 @@ namespace HVO.Enterprise.Telemetry.HealthChecks
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TelemetryHealthCheck"/> class.
+        /// Options are validated and defensively copied to prevent external mutation.
         /// </summary>
         /// <param name="statistics">The telemetry statistics provider.</param>
         /// <param name="options">Optional health check configuration. Uses defaults if null.</param>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="statistics"/> is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="options"/> contains invalid thresholds.</exception>
         public TelemetryHealthCheck(
             ITelemetryStatistics statistics,
             TelemetryHealthCheckOptions? options = null)
@@ -32,7 +34,10 @@ namespace HVO.Enterprise.Telemetry.HealthChecks
                 throw new ArgumentNullException(nameof(statistics));
 
             _statistics = statistics;
-            _options = options ?? TelemetryHealthCheckOptions.Default;
+
+            var effectiveOptions = options ?? TelemetryHealthCheckOptions.Default;
+            effectiveOptions.Validate();
+            _options = effectiveOptions.Clone();
         }
 
         /// <summary>
@@ -98,7 +103,7 @@ namespace HVO.Enterprise.Telemetry.HealthChecks
         {
             return new Dictionary<string, object>
             {
-                ["uptime"] = snapshot.Uptime.ToString(),
+                ["uptime"] = snapshot.Uptime,
                 ["activitiesCreated"] = snapshot.ActivitiesCreated,
                 ["activitiesActive"] = snapshot.ActiveActivities,
                 ["queueDepth"] = snapshot.QueueDepth,
