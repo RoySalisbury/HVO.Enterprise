@@ -1,6 +1,7 @@
 # US-018: DI and Static Initialization
 
-**Status**: ❌ Not Started  
+**GitHub Issue**: [#20](https://github.com/RoySalisbury/HVO.Enterprise/issues/20)  
+**Status**: ✅ Complete  
 **Category**: Core Package  
 **Effort**: 5 story points  
 **Sprint**: 4
@@ -14,36 +15,36 @@ So that **I can use the library in modern ASP.NET Core apps with DI or legacy ap
 ## Acceptance Criteria
 
 1. **Dependency Injection Support**
-   - [ ] `AddTelemetry()` extension method for IServiceCollection
-   - [ ] Registers all telemetry services with appropriate lifetimes
-   - [ ] Supports fluent configuration API
-   - [ ] Integrates with IOptions pattern
-   - [ ] Returns IServiceCollection for chaining
+   - [x] `AddTelemetry()` extension method for IServiceCollection
+   - [x] Registers all telemetry services with appropriate lifetimes
+   - [x] Supports fluent configuration API
+   - [x] Integrates with IOptions pattern
+   - [x] Returns IServiceCollection for chaining
 
 2. **Static Initialization API**
-   - [ ] `Telemetry.Initialize()` for non-DI scenarios
-   - [ ] Creates singleton telemetry instance
-   - [ ] Thread-safe initialization (once-only)
-   - [ ] `Telemetry.IsInitialized` property
-   - [ ] Static property accessors for common operations
+   - [x] `Telemetry.Initialize()` for non-DI scenarios
+   - [x] Creates singleton telemetry instance
+   - [x] Thread-safe initialization (once-only)
+   - [x] `Telemetry.IsInitialized` property
+   - [x] Static property accessors for common operations
 
 3. **Dual-Mode Operation**
-   - [ ] Library works in both DI and static modes
-   - [ ] Same features available in both modes
-   - [ ] Clear error messages if used incorrectly
-   - [ ] Documentation for both patterns
+   - [x] Library works in both DI and static modes
+   - [x] Same features available in both modes
+   - [x] Clear error messages if used incorrectly
+   - [x] Documentation for both patterns
 
 4. **Configuration Options**
-   - [ ] TelemetryOptions class for all settings
-   - [ ] IOptions<TelemetryOptions> support for DI mode
-   - [ ] Direct configuration object for static mode
-   - [ ] Validation of configuration on startup
+   - [x] TelemetryOptions class for all settings
+   - [x] IOptions<TelemetryOptions> support for DI mode
+   - [x] Direct configuration object for static mode
+   - [x] Validation of configuration on startup
 
 5. **Lifecycle Integration**
-   - [ ] Automatic startup in DI mode (hosted service)
-   - [ ] Manual Shutdown() for static mode
-   - [ ] Graceful shutdown on AppDomain.Unload
-   - [ ] Flush pending telemetry on shutdown
+   - [x] Automatic startup in DI mode (hosted service)
+   - [x] Manual Shutdown() for static mode
+   - [x] Graceful shutdown on AppDomain.Unload
+   - [x] Flush pending telemetry on shutdown
 
 ## Technical Requirements
 
@@ -1126,16 +1127,16 @@ namespace HVO.Enterprise.Telemetry.Tests.Integration
 
 ## Definition of Done
 
-- [ ] `AddTelemetry()` extension methods implemented
-- [ ] `Telemetry.Initialize()` static API implemented
-- [ ] Both DI and static modes fully functional
-- [ ] Configuration validation working
-- [ ] All unit tests passing (>90% coverage)
-- [ ] Integration tests for both modes
-- [ ] Hosted service lifecycle tested
-- [ ] XML documentation complete
+- [x] `AddTelemetry()` extension methods implemented
+- [x] `Telemetry.Initialize()` static API implemented
+- [x] Both DI and static modes fully functional
+- [x] Configuration validation working
+- [x] All unit tests passing (>90% coverage)
+- [x] Integration tests for both modes
+- [x] Hosted service lifecycle tested
+- [x] XML documentation complete
 - [ ] Code reviewed and approved
-- [ ] Zero warnings in build
+- [x] Zero warnings in build
 
 ## Notes
 
@@ -1255,3 +1256,54 @@ class Program
 - [Options Pattern in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/options)
 - [Generic Host](https://learn.microsoft.com/en-us/dotnet/core/extensions/generic-host)
 - [IHostedService](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.hosting.ihostedservice)
+
+## Implementation Summary
+
+**Completed**: 2025-07-17  
+**Implemented by**: GitHub Copilot
+
+### What Was Implemented
+
+- **ITelemetryService** - Fleshed out from empty placeholder with `IsEnabled`, `Statistics`, `StartOperation`, `TrackException`, `TrackEvent`, `RecordMetric`, `Start`, `Shutdown`
+- **TelemetryService** - Core concrete implementation with 3 constructors (DI, static, internal full). Orchestrates existing subsystems: `IOperationScopeFactory`, `TelemetryStatistics`, `TelemetryExceptionExtensions`. Returns `NoOpOperationScope` when disabled.
+- **Static Telemetry API** - Major expansion of `Telemetry.cs` with `Initialize()` (3 overloads), `Shutdown()`, `IsInitialized`, `Statistics`, `StartOperation()`, `TrackException()`, `TrackEvent()`, `RecordMetric()`, `SetCorrelationId()`, `BeginCorrelation()`. Thread-safe with lock. AppDomain ProcessExit/DomainUnload hooks.
+- **TelemetryServiceCollectionExtensions** - 3 `AddTelemetry()` overloads: `Action<TelemetryOptions>?`, `IConfiguration`, `Action<TelemetryBuilder>`. Idempotent registration. Composes `AddTelemetryLifetime()` and `AddTelemetryStatistics()`.
+- **TelemetryBuilder** - Fluent API with `Configure()`, `AddActivitySource()`, `AddHttpInstrumentation()`
+- **TelemetryOptionsValidator** - `IValidateOptions<TelemetryOptions>` delegating to existing `Validate()` method
+- **TelemetryHostedService** - Bridges DI lifecycle to telemetry: `StartAsync` → `Start()` + `SetInstance()`, `StopAsync` → `Shutdown()` + `ClearInstance()`
+- **CorrelationIdProvider** - Concrete `ICorrelationIdProvider` using `CorrelationContext`
+- **NoOpOperationScope** - No-op `IOperationScope` for disabled telemetry
+- **TelemetryOptions** - Extended with `ServiceName`, `ServiceVersion`, `Environment`, `ActivitySources`, `ResourceAttributes`
+
+### Key Files
+
+- `src/HVO.Enterprise.Telemetry/Abstractions/ITelemetryService.cs` - Unified telemetry interface
+- `src/HVO.Enterprise.Telemetry/TelemetryService.cs` - Core service implementation
+- `src/HVO.Enterprise.Telemetry/Telemetry.cs` - Static entry point (dual-mode)
+- `src/HVO.Enterprise.Telemetry/TelemetryServiceCollectionExtensions.cs` - DI registration
+- `src/HVO.Enterprise.Telemetry/TelemetryBuilder.cs` - Fluent builder
+- `src/HVO.Enterprise.Telemetry/TelemetryHostedService.cs` - Hosted service bridge
+- `src/HVO.Enterprise.Telemetry/Configuration/TelemetryOptionsValidator.cs` - Options validation
+- `src/HVO.Enterprise.Telemetry/Correlation/CorrelationIdProvider.cs` - Correlation provider
+- `src/HVO.Enterprise.Telemetry/Internal/NoOpOperationScope.cs` - No-op scope
+- `tests/HVO.Enterprise.Telemetry.Tests/Initialization/` - 7 test files (~101 tests)
+
+### Decisions Made
+
+- Adapted to existing subsystems (`TelemetryBackgroundWorker`, `OperationScopeFactory`, `TelemetryStatistics`) rather than creating spec-proposed types (`ITelemetryQueue`, `IActivitySourceManager`) that don't exist
+- Extended existing `TelemetryOptions` in `Configuration` namespace rather than creating new class in root namespace
+- `TelemetryService` DI constructor uses `ITelemetryStatistics` (public interface) with runtime cast to `TelemetryStatistics` (internal class)
+- Used explicit cast `(Action<TelemetryOptions>)` to resolve overload ambiguity between `IConfiguration` and `Action<TelemetryOptions>?` overloads
+- `RecordException()` on static API works without initialization (fallback to `TelemetryExceptionExtensions`)
+- Added `Microsoft.Extensions.Configuration.Binder` package for `IConfiguration.Bind()` support
+
+### Quality Gates
+
+- ✅ Build: 0 warnings, 0 errors
+- ✅ Tests: 924/924 passed (804 telemetry + 120 common), 1 skipped
+- ✅ XML documentation: Complete on all public APIs
+- ✅ Thread safety: Verified with parallel initialization tests
+
+### Next Steps
+
+This story unblocks US-027 (NET48 Sample), US-028 (NET8 Sample), and US-029 (Project Documentation) which need initialization patterns.

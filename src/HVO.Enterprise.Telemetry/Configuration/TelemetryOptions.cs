@@ -9,6 +9,21 @@ namespace HVO.Enterprise.Telemetry.Configuration
     public sealed class TelemetryOptions
     {
         /// <summary>
+        /// Gets or sets the service name for telemetry identification.
+        /// </summary>
+        public string ServiceName { get; set; } = "Unknown";
+
+        /// <summary>
+        /// Gets or sets the service version.
+        /// </summary>
+        public string? ServiceVersion { get; set; }
+
+        /// <summary>
+        /// Gets or sets the environment name (e.g., Production, Staging, Development).
+        /// </summary>
+        public string? Environment { get; set; }
+
+        /// <summary>
         /// Gets or sets whether telemetry is enabled globally.
         /// </summary>
         public bool Enabled { get; set; } = true;
@@ -45,6 +60,19 @@ namespace HVO.Enterprise.Telemetry.Configuration
         public FeatureFlags Features { get; set; } = new FeatureFlags();
 
         /// <summary>
+        /// Gets or sets activity source names to enable.
+        /// </summary>
+        public List<string> ActivitySources { get; set; } = new List<string>
+        {
+            "HVO.Enterprise.Telemetry"
+        };
+
+        /// <summary>
+        /// Gets or sets resource attributes (key-value pairs) for the service.
+        /// </summary>
+        public Dictionary<string, object> ResourceAttributes { get; set; } = new Dictionary<string, object>();
+
+        /// <summary>
         /// Validates the configuration.
         /// </summary>
         /// <exception cref="InvalidOperationException">
@@ -53,6 +81,9 @@ namespace HVO.Enterprise.Telemetry.Configuration
         public void Validate()
         {
             EnsureDefaults();
+
+            if (string.IsNullOrWhiteSpace(ServiceName))
+                throw new InvalidOperationException("ServiceName is required.");
 
             if (DefaultSamplingRate < 0.0 || DefaultSamplingRate > 1.0)
                 throw new InvalidOperationException("DefaultSamplingRate must be between 0.0 and 1.0");
@@ -83,6 +114,8 @@ namespace HVO.Enterprise.Telemetry.Configuration
             Metrics ??= new MetricsOptions();
             Queue ??= new QueueOptions();
             Features ??= new FeatureFlags();
+            ActivitySources ??= new List<string> { "HVO.Enterprise.Telemetry" };
+            ResourceAttributes ??= new Dictionary<string, object>();
 
             Logging.MinimumLevel ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         }
