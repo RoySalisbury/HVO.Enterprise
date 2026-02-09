@@ -33,6 +33,7 @@ namespace HVO.Enterprise.Telemetry.IIS
         {
             _telemetryService = telemetryService;
             _options = options ?? new IisExtensionOptions();
+            _options.Validate();
             _logger = logger ?? (ILogger)NullLogger<IisShutdownHandler>.Instance;
         }
 

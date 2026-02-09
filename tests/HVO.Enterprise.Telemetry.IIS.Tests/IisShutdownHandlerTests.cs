@@ -166,7 +166,7 @@ namespace HVO.Enterprise.Telemetry.IIS.Tests
         public async Task OnGracefulShutdownAsync_RespectsCancellation()
         {
             // Arrange
-            var cts = new CancellationTokenSource();
+            using var cts = new CancellationTokenSource();
             cts.Cancel(); // Pre-cancel
 
             var options = new IisExtensionOptions

@@ -25,12 +25,11 @@ namespace HVO.Enterprise.Telemetry.IIS
     /// </remarks>
     public sealed class IisLifecycleManager : IDisposable
     {
-        private readonly ITelemetryService? _telemetryService;
         private readonly IisShutdownHandler _shutdownHandler;
         private readonly IisExtensionOptions _options;
         private readonly ILogger _logger;
         private object? _registeredProxy;
-        private volatile bool _initialized;
+        private int _initialized;
         private int _disposed;
 
         /// <summary>
@@ -68,7 +67,6 @@ namespace HVO.Enterprise.Telemetry.IIS
                     "Use IisHostingEnvironment.IsIisHosted to check before creating.");
             }
 
-            _telemetryService = telemetryService;
             _options = options ?? new IisExtensionOptions();
             _options.Validate();
             _logger = logger ?? (ILogger)NullLogger<IisLifecycleManager>.Instance;
@@ -83,7 +81,7 @@ namespace HVO.Enterprise.Telemetry.IIS
         /// <summary>
         /// Gets whether the lifecycle manager has been initialized.
         /// </summary>
-        public bool IsInitialized => _initialized;
+        public bool IsInitialized => Interlocked.CompareExchange(ref _initialized, 0, 0) == 1;
 
         /// <summary>
         /// Initializes IIS integration and registers for shutdown notifications.
@@ -91,7 +89,7 @@ namespace HVO.Enterprise.Telemetry.IIS
         /// <exception cref="InvalidOperationException">Thrown when already initialized.</exception>
         public void Initialize()
         {
-            if (_initialized)
+            if (Interlocked.CompareExchange(ref _initialized, 1, 0) == 1)
                 throw new InvalidOperationException("IIS lifecycle manager is already initialized.");
 
             _logger.LogInformation(
@@ -107,7 +105,6 @@ namespace HVO.Enterprise.Telemetry.IIS
                 RegisterWithHostingEnvironment();
             }
 
-            _initialized = true;
             _logger.LogInformation("HVO.Enterprise.Telemetry IIS extension initialized");
         }
 
@@ -152,10 +149,12 @@ namespace HVO.Enterprise.Telemetry.IIS
 
             try
             {
-                var cts = new CancellationTokenSource(_options.ShutdownTimeout);
-                _shutdownHandler.OnGracefulShutdownAsync(cts.Token)
-                    .GetAwaiter()
-                    .GetResult();
+                using (var cts = new CancellationTokenSource(_options.ShutdownTimeout))
+                {
+                    _shutdownHandler.OnGracefulShutdownAsync(cts.Token)
+                        .GetAwaiter()
+                        .GetResult();
+                }
             }
             catch (OperationCanceledException)
             {

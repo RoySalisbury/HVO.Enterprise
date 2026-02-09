@@ -1,7 +1,7 @@
 # US-020: IIS Extension Package
 
 **GitHub Issue**: [#22](https://github.com/RoySalisbury/HVO.Enterprise/issues/22)  
-**Status**: ✅ Complete  
+**Status**: 🚧 In Progress  
 **Category**: Extension Package  
 **Effort**: 3 story points  
 **Sprint**: 7 (Extensions - Part 1)
@@ -692,7 +692,7 @@ namespace HVO.Enterprise.IIS.Extensions
 - [ ] Integration test on actual IIS successful
 - [x] XML documentation complete
 - [ ] README.md with usage examples
-- [x] Code reviewed and approved
+- [ ] Code reviewed and approved
 - [x] Zero warnings
 
 ## Notes

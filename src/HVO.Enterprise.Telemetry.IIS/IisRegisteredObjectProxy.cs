@@ -67,10 +67,12 @@ namespace HVO.Enterprise.Telemetry.IIS
             try
             {
                 // Graceful shutdown - flush telemetry within timeout
-                var cts = new CancellationTokenSource(ShutdownTimeout);
-                ShutdownHandler?.OnGracefulShutdownAsync(cts.Token)
-                    .GetAwaiter()
-                    .GetResult();
+                using (var cts = new CancellationTokenSource(ShutdownTimeout))
+                {
+                    ShutdownHandler?.OnGracefulShutdownAsync(cts.Token)
+                        .GetAwaiter()
+                        .GetResult();
+                }
             }
             catch (OperationCanceledException)
             {

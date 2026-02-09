@@ -57,7 +57,10 @@ namespace HVO.Enterprise.Telemetry.IIS
         /// <param name="shutdownHandler">The shutdown handler to delegate to.</param>
         /// <param name="shutdownTimeout">The timeout for graceful shutdown.</param>
         /// <param name="proxy">When this method returns, contains the created proxy, or <c>null</c> if creation failed.</param>
-        /// <returns><c>true</c> if the proxy was created and registered; <c>false</c> if System.Web is not available.</returns>
+        /// <returns>
+        /// <c>true</c> if the proxy was successfully created and configured;
+        /// <c>false</c> if System.Web hosting types are not available or proxy creation failed.
+        /// </returns>
         internal static bool TryCreate(
             IisShutdownHandler shutdownHandler,
             TimeSpan shutdownTimeout,
