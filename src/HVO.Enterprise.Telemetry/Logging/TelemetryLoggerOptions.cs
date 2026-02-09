@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace HVO.Enterprise.Telemetry.Logging
 {
@@ -46,9 +47,15 @@ namespace HVO.Enterprise.Telemetry.Logging
         public bool IncludeTraceState { get; set; }
 
         /// <summary>
-        /// Gets or sets whether to include the correlation ID from
-        /// <see cref="Correlation.CorrelationContext.Current"/> in log scope.
+        /// Gets or sets whether to include the correlation ID in the log scope.
         /// </summary>
+        /// <remarks>
+        /// The correlation ID is taken from <see cref="Correlation.CorrelationContext"/> only when a value
+        /// has been explicitly set (via its raw value accessor). The underlying implementation intentionally
+        /// uses the raw value (e.g., <c>CorrelationContext.GetRawValue()</c>) and does not trigger any
+        /// fallback or auto-generation behavior. If no explicit correlation ID is present, no correlation
+        /// identifier field is added to the log scope even when this option is <c>true</c>.
+        /// </remarks>
         public bool IncludeCorrelationId { get; set; } = true;
 
         /// <summary>
@@ -85,10 +92,30 @@ namespace HVO.Enterprise.Telemetry.Logging
         /// Gets or sets the list of custom enrichers to apply to log entries.
         /// </summary>
         /// <remarks>
-        /// Custom enrichers are invoked after the built-in Activity and correlation
+        /// <para>Custom enrichers are invoked after the built-in Activity and correlation
         /// enrichment. Enricher exceptions are silently suppressed to prevent
-        /// enrichment failures from affecting logging.
+        /// enrichment failures from affecting logging.</para>
+        /// <para>When this list is set, an immutable snapshot (array) is taken
+        /// immediately and used for all subsequent log calls. Mutating the list
+        /// after registration has no effect — set this property again to update.</para>
         /// </remarks>
-        public List<ILogEnricher>? CustomEnrichers { get; set; }
+        public List<ILogEnricher>? CustomEnrichers
+        {
+            get => _customEnrichers;
+            set
+            {
+                _customEnrichers = value;
+                // Take an immutable snapshot so the hot-path iteration in
+                // TelemetryEnrichedLogger is safe against concurrent mutation.
+                CustomEnrichersSnapshot = value?.ToArray();
+            }
+        }
+
+        /// <summary>
+        /// Immutable snapshot of <see cref="CustomEnrichers"/> used on the logging hot path.
+        /// </summary>
+        internal ILogEnricher[]? CustomEnrichersSnapshot { get; private set; }
+
+        private List<ILogEnricher>? _customEnrichers;
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using HVO.Enterprise.Telemetry.Correlation;
 using HVO.Enterprise.Telemetry.Logging;
 using Microsoft.Extensions.Logging;
@@ -76,11 +77,9 @@ namespace HVO.Enterprise.Telemetry.Tests.Logging
             // Assert — same instance returned
             Assert.AreSame(logger1, logger2);
             // Inner provider should only be called once
-            int categoryCount = 0;
-            foreach (var cat in innerProvider.CreatedCategories)
-            {
-                if (cat == "CachedCategory") categoryCount++;
-            }
+            int categoryCount = innerProvider.CreatedCategories
+                .Where(cat => cat == "CachedCategory")
+                .Count();
             Assert.AreEqual(1, categoryCount, "Inner provider should only create logger once per category");
         }
 
