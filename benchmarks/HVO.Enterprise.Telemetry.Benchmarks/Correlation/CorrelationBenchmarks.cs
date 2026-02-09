@@ -101,7 +101,7 @@ namespace HVO.Enterprise.Telemetry.Benchmarks.Correlation
             {
                 activity.SetTag("correlation.id", _correlationId);
             }
-            _consumer.Consume(activity.GetTagItem("correlation.id"));
+            _consumer.Consume(activity.GetTagItem("correlation.id")!);
         }
     }
 }
