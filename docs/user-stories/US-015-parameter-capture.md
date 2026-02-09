@@ -1,6 +1,6 @@
 # US-015: Parameter Capture
 
-**GitHub Issue**: [#17](https://github.com/RoySalisbury/HVO.Enterprise/issues/17)  
+**GitHub Issue**: [#59](https://github.com/RoySalisbury/HVO.Enterprise/issues/59)  
 **Status**: ✅ Complete  
 **Category**: Core Package  
 **Effort**: 5 story points  
