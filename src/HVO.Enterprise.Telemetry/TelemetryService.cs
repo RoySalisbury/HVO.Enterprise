@@ -1,7 +1,6 @@
 using System;
 using HVO.Enterprise.Telemetry.Abstractions;
 using HVO.Enterprise.Telemetry.Configuration;
-using HVO.Enterprise.Telemetry.Correlation;
 using HVO.Enterprise.Telemetry.Exceptions;
 using HVO.Enterprise.Telemetry.HealthChecks;
 using HVO.Enterprise.Telemetry.Internal;
@@ -20,7 +19,8 @@ namespace HVO.Enterprise.Telemetry
     {
         private readonly TelemetryOptions _options;
         private readonly ILogger<TelemetryService> _logger;
-        private readonly TelemetryStatistics _statistics;
+        private readonly ITelemetryStatistics _statistics;
+        private readonly TelemetryStatistics? _internalStatistics;
         private readonly IOperationScopeFactory _operationScopeFactory;
         private volatile bool _isStarted;
         private volatile bool _isDisposed;
@@ -43,8 +43,8 @@ namespace HVO.Enterprise.Telemetry
                 throw new ArgumentNullException(nameof(options));
 
             _options = options.Value ?? throw new ArgumentNullException(nameof(options), "Options.Value is null.");
-            _statistics = statistics as TelemetryStatistics ?? throw new ArgumentException(
-                "Statistics must be a TelemetryStatistics instance.", nameof(statistics));
+            _statistics = statistics ?? throw new ArgumentNullException(nameof(statistics));
+            _internalStatistics = statistics as TelemetryStatistics;
             _operationScopeFactory = operationScopeFactory ?? throw new ArgumentNullException(nameof(operationScopeFactory));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -66,7 +66,9 @@ namespace HVO.Enterprise.Telemetry
             _options = options;
             var factory = loggerFactory ?? NullLoggerFactory.Instance;
             _logger = factory.CreateLogger<TelemetryService>();
-            _statistics = new TelemetryStatistics();
+            var stats = new TelemetryStatistics();
+            _statistics = stats;
+            _internalStatistics = stats;
 
             // Determine activity source name from options
             var sourceName = _options.ActivitySources != null && _options.ActivitySources.Count > 0
@@ -95,6 +97,7 @@ namespace HVO.Enterprise.Telemetry
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
             _statistics = statistics ?? throw new ArgumentNullException(nameof(statistics));
+            _internalStatistics = statistics;
             _operationScopeFactory = operationScopeFactory ?? throw new ArgumentNullException(nameof(operationScopeFactory));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -107,8 +110,9 @@ namespace HVO.Enterprise.Telemetry
 
         /// <summary>
         /// Gets the internal statistics instance for direct access by the telemetry system.
+        /// Returns null if the underlying statistics is not a <see cref="TelemetryStatistics"/> instance.
         /// </summary>
-        internal TelemetryStatistics InternalStatistics => _statistics;
+        internal TelemetryStatistics? InternalStatistics => _internalStatistics;
 
         /// <inheritdoc />
         public void Start()
@@ -145,7 +149,7 @@ namespace HVO.Enterprise.Telemetry
             if (!IsEnabled)
                 return new NoOpOperationScope(operationName);
 
-            _statistics.IncrementActivitiesCreated(operationName);
+            _internalStatistics?.IncrementActivitiesCreated(operationName);
             return _operationScopeFactory.Begin(operationName);
         }
 
@@ -159,7 +163,7 @@ namespace HVO.Enterprise.Telemetry
                 return;
 
             exception.RecordException();
-            _statistics.IncrementExceptionsTracked();
+            _internalStatistics?.IncrementExceptionsTracked();
         }
 
         /// <inheritdoc />
@@ -171,7 +175,7 @@ namespace HVO.Enterprise.Telemetry
             if (!IsEnabled)
                 return;
 
-            _statistics.IncrementEventsRecorded();
+            _internalStatistics?.IncrementEventsRecorded();
 
             _logger.LogDebug("Event tracked: {EventName}", eventName);
         }
@@ -185,7 +189,7 @@ namespace HVO.Enterprise.Telemetry
             if (!IsEnabled)
                 return;
 
-            _statistics.IncrementMetricsRecorded();
+            _internalStatistics?.IncrementMetricsRecorded();
 
             _logger.LogDebug("Metric recorded: {MetricName} = {Value}", metricName, value);
         }

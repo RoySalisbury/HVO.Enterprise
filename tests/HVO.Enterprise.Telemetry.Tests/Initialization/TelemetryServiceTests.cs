@@ -1,8 +1,6 @@
 using System;
-using HVO.Enterprise.Telemetry.Abstractions;
 using HVO.Enterprise.Telemetry.Configuration;
 using HVO.Enterprise.Telemetry.HealthChecks;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

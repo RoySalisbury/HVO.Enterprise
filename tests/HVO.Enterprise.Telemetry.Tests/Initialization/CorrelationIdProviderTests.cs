@@ -1,4 +1,3 @@
-using System;
 using HVO.Enterprise.Telemetry.Correlation;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

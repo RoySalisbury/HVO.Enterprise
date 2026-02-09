@@ -5,10 +5,8 @@ using System.Threading.Tasks;
 using HVO.Enterprise.Telemetry.Abstractions;
 using HVO.Enterprise.Telemetry.Configuration;
 using HVO.Enterprise.Telemetry.Correlation;
-using HVO.Enterprise.Telemetry.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

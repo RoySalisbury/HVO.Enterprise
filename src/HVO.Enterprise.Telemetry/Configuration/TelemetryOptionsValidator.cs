@@ -2,7 +2,7 @@ using System;
 using HVO.Enterprise.Telemetry.Configuration;
 using Microsoft.Extensions.Options;
 
-namespace HVO.Enterprise.Telemetry
+namespace HVO.Enterprise.Telemetry.Configuration
 {
     /// <summary>
     /// Validates <see cref="TelemetryOptions"/> during DI container build.

@@ -1,6 +1,4 @@
-using System;
 using HVO.Enterprise.Telemetry.Configuration;
-using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HVO.Enterprise.Telemetry.Tests.Initialization

@@ -5,7 +5,6 @@ using HVO.Enterprise.Telemetry.Configuration;
 using HVO.Enterprise.Telemetry.Correlation;
 using HVO.Enterprise.Telemetry.HealthChecks;
 using HVO.Enterprise.Telemetry.Lifecycle;
-using HVO.Enterprise.Telemetry.Sampling;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using HVO.Enterprise.Telemetry.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -80,12 +81,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Initialization
             using var provider = services.BuildServiceProvider();
             var options = provider.GetRequiredService<IOptions<TelemetryOptions>>();
 
-            var count = 0;
-            foreach (var source in options.Value.ActivitySources)
-            {
-                if (source == "CustomSource")
-                    count++;
-            }
+            var count = options.Value.ActivitySources.Where(s => s == "CustomSource").Count();
 
             Assert.AreEqual(1, count);
         }

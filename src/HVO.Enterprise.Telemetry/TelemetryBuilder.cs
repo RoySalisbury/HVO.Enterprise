@@ -46,10 +46,9 @@ namespace HVO.Enterprise.Telemetry
         /// Adds an activity source name to the list of enabled sources.
         /// </summary>
         /// <param name="name">The activity source name.</param>
-        /// <param name="version">Optional version string.</param>
         /// <returns>This builder for chaining.</returns>
         /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is null or empty.</exception>
-        public TelemetryBuilder AddActivitySource(string name, string? version = null)
+        public TelemetryBuilder AddActivitySource(string name)
         {
             if (string.IsNullOrEmpty(name))
                 throw new ArgumentException("Activity source name cannot be null or empty.", nameof(name));
@@ -80,6 +79,7 @@ namespace HVO.Enterprise.Telemetry
 
             Services.Configure<TelemetryOptions>(options =>
             {
+                options.Features ??= new FeatureFlags();
                 options.Features.EnableHttpInstrumentation = true;
             });
 

@@ -176,7 +176,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Initialization
         public void Statistics_ThrowsWhenNotInitialized()
         {
             Assert.ThrowsException<InvalidOperationException>(
-                () => { var _ = Telemetry.Statistics; });
+                () => _ = Telemetry.Statistics);
         }
 
         [TestMethod]
