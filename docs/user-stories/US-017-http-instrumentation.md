@@ -841,8 +841,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Integration
 - [x] `TelemetryHttpMessageHandler` implemented and tested
 - [x] W3C TraceContext propagation working correctly
 - [x] All unit tests passing (>90% coverage)
-- [x] Integration tests with real HTTP calls
-- [x] Performance benchmarks meet targets
+- [ ] Integration tests with real HTTP calls
+- [ ] Performance benchmarks meet targets
 - [x] Works on both .NET Framework 4.8 and .NET 8+
 - [x] XML documentation complete
 - [x] Code reviewed and approved

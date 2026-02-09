@@ -43,8 +43,9 @@ namespace HVO.Enterprise.Telemetry.Http
         /// requires buffering the request stream. Use only for debugging.
         /// </para>
         /// Default is <see langword="false"/>.
+        /// <para>Reserved for future use. Body capture is not yet implemented in <see cref="TelemetryHttpMessageHandler"/>.</para>
         /// </summary>
-        public bool CaptureRequestBody { get; set; }
+        internal bool CaptureRequestBody { get; set; }
 
         /// <summary>
         /// Gets or sets whether to capture response body content.
@@ -53,20 +54,25 @@ namespace HVO.Enterprise.Telemetry.Http
         /// requires buffering the response stream. Use only for debugging.
         /// </para>
         /// Default is <see langword="false"/>.
+        /// <para>Reserved for future use. Body capture is not yet implemented in <see cref="TelemetryHttpMessageHandler"/>.</para>
         /// </summary>
-        public bool CaptureResponseBody { get; set; }
+        internal bool CaptureResponseBody { get; set; }
 
         /// <summary>
         /// Gets or sets the maximum body size in bytes to capture when body capture is enabled.
         /// Bodies exceeding this size are truncated. Default is 4096 (4 KB).
+        /// <para>Reserved for future use. Body capture is not yet implemented in <see cref="TelemetryHttpMessageHandler"/>.</para>
         /// </summary>
-        public int MaxBodyCaptureSize { get; set; } = 4096;
+        internal int MaxBodyCaptureSize { get; set; } = 4096;
 
         /// <summary>
-        /// Gets or sets the set of header names considered sensitive and excluded from capture.
-        /// Comparison is case-insensitive.
+        /// Gets the set of header names considered sensitive and excluded from capture.
+        /// Comparison is case-insensitive. Use <see cref="AddSensitiveHeader"/> and
+        /// <see cref="RemoveSensitiveHeader"/> to modify.
         /// </summary>
-        public HashSet<string> SensitiveHeaders { get; set; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        public IReadOnlyCollection<string> SensitiveHeaders => _sensitiveHeaders;
+
+        private HashSet<string> _sensitiveHeaders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "Authorization",
             "Cookie",
@@ -77,16 +83,41 @@ namespace HVO.Enterprise.Telemetry.Http
         };
 
         /// <summary>
+        /// Adds a header name to the sensitive headers set.
+        /// </summary>
+        /// <param name="headerName">The header name to add.</param>
+        public void AddSensitiveHeader(string headerName)
+        {
+            if (headerName == null)
+                throw new ArgumentNullException(nameof(headerName));
+
+            _sensitiveHeaders.Add(headerName);
+        }
+
+        /// <summary>
+        /// Removes a header name from the sensitive headers set.
+        /// </summary>
+        /// <param name="headerName">The header name to remove.</param>
+        /// <returns><see langword="true"/> if the header was removed; otherwise <see langword="false"/>.</returns>
+        public bool RemoveSensitiveHeader(string headerName)
+        {
+            if (headerName == null)
+                throw new ArgumentNullException(nameof(headerName));
+
+            return _sensitiveHeaders.Remove(headerName);
+        }
+
+        /// <summary>
         /// Determines whether the specified header name is considered sensitive.
         /// </summary>
         /// <param name="headerName">The header name to check.</param>
         /// <returns><see langword="true"/> if the header is sensitive; otherwise <see langword="false"/>.</returns>
-        public bool IsSensitiveHeader(string headerName)
+        public bool IsSensitiveHeader(string? headerName)
         {
             if (headerName == null)
                 return false;
 
-            return SensitiveHeaders.Contains(headerName);
+            return _sensitiveHeaders.Contains(headerName);
         }
 
         /// <summary>
@@ -98,7 +129,7 @@ namespace HVO.Enterprise.Telemetry.Http
             if (MaxBodyCaptureSize <= 0)
                 throw new ArgumentOutOfRangeException(nameof(MaxBodyCaptureSize), "Must be positive.");
 
-            if (SensitiveHeaders == null)
+            if (_sensitiveHeaders == null)
                 throw new ArgumentNullException(nameof(SensitiveHeaders));
         }
 
@@ -108,16 +139,17 @@ namespace HVO.Enterprise.Telemetry.Http
         /// <returns>A new <see cref="HttpInstrumentationOptions"/> with the same values.</returns>
         internal HttpInstrumentationOptions Clone()
         {
-            return new HttpInstrumentationOptions
+            var clone = new HttpInstrumentationOptions
             {
                 RedactQueryStrings = RedactQueryStrings,
                 CaptureRequestHeaders = CaptureRequestHeaders,
                 CaptureResponseHeaders = CaptureResponseHeaders,
                 CaptureRequestBody = CaptureRequestBody,
                 CaptureResponseBody = CaptureResponseBody,
-                MaxBodyCaptureSize = MaxBodyCaptureSize,
-                SensitiveHeaders = new HashSet<string>(SensitiveHeaders, StringComparer.OrdinalIgnoreCase)
+                MaxBodyCaptureSize = MaxBodyCaptureSize
             };
+            clone._sensitiveHeaders = new HashSet<string>(_sensitiveHeaders, StringComparer.OrdinalIgnoreCase);
+            return clone;
         }
     }
 }

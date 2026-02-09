@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using HVO.Enterprise.Telemetry.Http;
 
 namespace HVO.Enterprise.Telemetry.Tests.Http
@@ -130,7 +131,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
         public void IsSensitiveHeader_CustomHeader_Configurable()
         {
             var options = new HttpInstrumentationOptions();
-            options.SensitiveHeaders.Add("X-Custom-Secret");
+            options.AddSensitiveHeader("X-Custom-Secret");
 
             Assert.IsTrue(options.IsSensitiveHeader("X-Custom-Secret"));
             Assert.IsTrue(options.IsSensitiveHeader("x-custom-secret"));
@@ -194,7 +195,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
             var original = new HttpInstrumentationOptions();
             var clone = original.Clone();
 
-            clone.SensitiveHeaders.Add("X-New-Header");
+            clone.AddSensitiveHeader("X-New-Header");
 
             Assert.IsFalse(original.SensitiveHeaders.Contains("X-New-Header"),
                 "Modifying clone should not affect original.");

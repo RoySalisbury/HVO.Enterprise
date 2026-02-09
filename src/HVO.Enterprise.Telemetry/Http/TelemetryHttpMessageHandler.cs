@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
@@ -59,7 +60,9 @@ namespace HVO.Enterprise.Telemetry.Http
             HttpInstrumentationOptions? options,
             ILogger<TelemetryHttpMessageHandler>? logger = null)
         {
-            _options = options ?? HttpInstrumentationOptions.Default;
+            var effectiveOptions = options ?? HttpInstrumentationOptions.Default;
+            effectiveOptions.Validate();
+            _options = effectiveOptions.Clone();
             _logger = logger;
         }
 
@@ -192,6 +195,10 @@ namespace HVO.Enterprise.Telemetry.Http
 
             var traceparent = $"00-{traceId}-{spanId}-{traceFlags}";
 
+            // Remove any existing values to avoid duplicates (e.g. if handler is applied twice)
+            request.Headers.Remove("traceparent");
+            request.Headers.Remove("tracestate");
+
             // Use TryAddWithoutValidation to avoid format validation errors
             request.Headers.TryAddWithoutValidation("traceparent", traceparent);
 
@@ -212,12 +219,8 @@ namespace HVO.Enterprise.Telemetry.Http
             HttpHeaders headers,
             string prefix)
         {
-            foreach (var header in headers)
+            foreach (var header in headers.Where(h => !_options.IsSensitiveHeader(h.Key)))
             {
-                // Skip sensitive headers
-                if (_options.IsSensitiveHeader(header.Key))
-                    continue;
-
                 var value = string.Join(", ", header.Value);
                 activity.SetTag($"{prefix}.{header.Key.ToLowerInvariant()}", value);
             }

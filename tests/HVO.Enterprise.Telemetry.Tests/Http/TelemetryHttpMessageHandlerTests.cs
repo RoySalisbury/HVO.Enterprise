@@ -51,8 +51,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
         [TestMethod]
         public async Task SendAsync_CreatesActivity_WithClientKind()
         {
-            var handler = CreateHandler(FakeHttpMessageHandler.Ok());
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(FakeHttpMessageHandler.Ok());
+            using var client = new HttpClient(handler);
 
             await client.GetAsync("https://api.example.com/users");
 
@@ -67,8 +67,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
         [TestMethod]
         public async Task SendAsync_SetsDisplayName_WithMethodAndHost()
         {
-            var handler = CreateHandler(FakeHttpMessageHandler.Ok());
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(FakeHttpMessageHandler.Ok());
+            using var client = new HttpClient(handler);
 
             await client.GetAsync("https://api.example.com/users");
 
@@ -86,8 +86,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
         [TestMethod]
         public async Task SendAsync_SetsHttpTags_FollowingSemanticConventions()
         {
-            var handler = CreateHandler(FakeHttpMessageHandler.Ok());
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(FakeHttpMessageHandler.Ok());
+            using var client = new HttpClient(handler);
 
             await client.GetAsync("https://api.example.com:8080/users?id=123");
 
@@ -101,8 +101,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
         [TestMethod]
         public async Task SendAsync_RecordsStatusCode_OnSuccess()
         {
-            var handler = CreateHandler(FakeHttpMessageHandler.Ok());
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(FakeHttpMessageHandler.Ok());
+            using var client = new HttpClient(handler);
 
             await client.GetAsync("https://api.example.com/users");
 
@@ -113,8 +113,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
         [TestMethod]
         public async Task SendAsync_DefaultPort443_OmitsPortTag()
         {
-            var handler = CreateHandler(FakeHttpMessageHandler.Ok());
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(FakeHttpMessageHandler.Ok());
+            using var client = new HttpClient(handler);
 
             await client.GetAsync("https://api.example.com/users");
 
@@ -126,8 +126,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
         [TestMethod]
         public async Task SendAsync_DefaultPort80_OmitsPortTag()
         {
-            var handler = CreateHandler(FakeHttpMessageHandler.Ok());
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(FakeHttpMessageHandler.Ok());
+            using var client = new HttpClient(handler);
 
             await client.GetAsync("http://api.example.com/users");
 
@@ -139,8 +139,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
         [TestMethod]
         public async Task SendAsync_NonDefaultPort_RecordsPortTag()
         {
-            var handler = CreateHandler(FakeHttpMessageHandler.Ok());
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(FakeHttpMessageHandler.Ok());
+            using var client = new HttpClient(handler);
 
             await client.GetAsync("https://api.example.com:9443/data");
 
@@ -156,8 +156,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
         public async Task SendAsync_InjectsTraceparentHeader()
         {
             var inner = FakeHttpMessageHandler.Ok();
-            var handler = CreateHandler(inner);
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(inner);
+            using var client = new HttpClient(handler);
 
             await client.GetAsync("https://api.example.com/users");
 
@@ -170,8 +170,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
         public async Task SendAsync_TraceparentHeader_FollowsW3CFormat()
         {
             var inner = FakeHttpMessageHandler.Ok();
-            var handler = CreateHandler(inner);
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(inner);
+            using var client = new HttpClient(handler);
 
             await client.GetAsync("https://api.example.com/users");
 
@@ -186,8 +186,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
         public async Task SendAsync_TraceparentHeader_CarriesSampledFlag()
         {
             var inner = FakeHttpMessageHandler.Ok();
-            var handler = CreateHandler(inner);
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(inner);
+            using var client = new HttpClient(handler);
 
             await client.GetAsync("https://api.example.com/users");
 
@@ -204,8 +204,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
             var expectedTraceId = parent.TraceId.ToHexString();
 
             var inner = FakeHttpMessageHandler.Ok();
-            var handler = CreateHandler(inner);
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(inner);
+            using var client = new HttpClient(handler);
 
             await client.GetAsync("https://api.example.com/users");
 
@@ -222,8 +222,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
             parent.Start();
 
             var inner = FakeHttpMessageHandler.Ok();
-            var handler = CreateHandler(inner);
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(inner);
+            using var client = new HttpClient(handler);
 
             await client.GetAsync("https://api.example.com/users");
 
@@ -243,8 +243,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
         public async Task SendAsync_ServerError500_SetsActivityStatusError()
         {
             var inner = FakeHttpMessageHandler.WithStatus(HttpStatusCode.InternalServerError, "Server Error");
-            var handler = CreateHandler(inner);
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(inner);
+            using var client = new HttpClient(handler);
 
             await client.GetAsync("https://api.example.com/users");
 
@@ -258,8 +258,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
         public async Task SendAsync_ClientError404_SetsStatusUnset()
         {
             var inner = FakeHttpMessageHandler.WithStatus(HttpStatusCode.NotFound);
-            var handler = CreateHandler(inner);
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(inner);
+            using var client = new HttpClient(handler);
 
             await client.GetAsync("https://api.example.com/users/999");
 
@@ -271,8 +271,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
         [TestMethod]
         public async Task SendAsync_SuccessStatus200_DoesNotSetErrorStatus()
         {
-            var handler = CreateHandler(FakeHttpMessageHandler.Ok());
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(FakeHttpMessageHandler.Ok());
+            using var client = new HttpClient(handler);
 
             await client.GetAsync("https://api.example.com/users");
 
@@ -288,8 +288,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
         public async Task SendAsync_Exception_SetsActivityStatusError()
         {
             var inner = FakeHttpMessageHandler.Throwing(new HttpRequestException("Connection refused"));
-            var handler = CreateHandler(inner);
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(inner);
+            using var client = new HttpClient(handler);
 
             await Assert.ThrowsExceptionAsync<HttpRequestException>(
                 () => client.GetAsync("https://api.example.com/users"));
@@ -303,8 +303,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
         public async Task SendAsync_Exception_RecordsExceptionEvent()
         {
             var inner = FakeHttpMessageHandler.Throwing(new InvalidOperationException("Network failure"));
-            var handler = CreateHandler(inner);
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(inner);
+            using var client = new HttpClient(handler);
 
             await Assert.ThrowsExceptionAsync<InvalidOperationException>(
                 () => client.GetAsync("https://api.example.com/users"));
@@ -323,8 +323,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
         {
             var expected = new HttpRequestException("Connection refused");
             var inner = FakeHttpMessageHandler.Throwing(expected);
-            var handler = CreateHandler(inner);
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(inner);
+            using var client = new HttpClient(handler);
 
             var thrown = await Assert.ThrowsExceptionAsync<HttpRequestException>(
                 () => client.GetAsync("https://api.example.com/users"));
@@ -340,8 +340,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
         public async Task SendAsync_DefaultOptions_RedactsQueryString()
         {
             // RedactQueryStrings defaults to true
-            var handler = CreateHandler(FakeHttpMessageHandler.Ok());
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(FakeHttpMessageHandler.Ok());
+            using var client = new HttpClient(handler);
 
             await client.GetAsync("https://api.example.com/users?token=secret123&page=1");
 
@@ -357,8 +357,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
         [TestMethod]
         public async Task SendAsync_DefaultOptions_RedactsTargetQueryString()
         {
-            var handler = CreateHandler(FakeHttpMessageHandler.Ok());
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(FakeHttpMessageHandler.Ok());
+            using var client = new HttpClient(handler);
 
             await client.GetAsync("https://api.example.com/users?token=secret");
 
@@ -375,8 +375,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
         public async Task SendAsync_RedactQueryStringsDisabled_ShowsFullUrl()
         {
             var options = new HttpInstrumentationOptions { RedactQueryStrings = false };
-            var handler = CreateHandler(FakeHttpMessageHandler.Ok(), options);
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(FakeHttpMessageHandler.Ok(), options);
+            using var client = new HttpClient(handler);
 
             await client.GetAsync("https://api.example.com/users?token=secret123");
 
@@ -391,8 +391,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
         [TestMethod]
         public async Task SendAsync_NoQueryString_UrlUnmodified()
         {
-            var handler = CreateHandler(FakeHttpMessageHandler.Ok());
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(FakeHttpMessageHandler.Ok());
+            using var client = new HttpClient(handler);
 
             await client.GetAsync("https://api.example.com/users");
 
@@ -412,8 +412,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
         public async Task SendAsync_CaptureRequestHeaders_RecordsSafeHeaders()
         {
             var options = new HttpInstrumentationOptions { CaptureRequestHeaders = true };
-            var handler = CreateHandler(FakeHttpMessageHandler.Ok(), options);
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(FakeHttpMessageHandler.Ok(), options);
+            using var client = new HttpClient(handler);
             client.DefaultRequestHeaders.TryAddWithoutValidation("X-Custom-Header", "custom-value");
 
             await client.GetAsync("https://api.example.com/users");
@@ -428,8 +428,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
         public async Task SendAsync_CaptureRequestHeaders_ExcludesSensitiveHeaders()
         {
             var options = new HttpInstrumentationOptions { CaptureRequestHeaders = true };
-            var handler = CreateHandler(FakeHttpMessageHandler.Ok(), options);
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(FakeHttpMessageHandler.Ok(), options);
+            using var client = new HttpClient(handler);
             client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", "Bearer secret-token");
 
             await client.GetAsync("https://api.example.com/users");
@@ -449,8 +449,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
             var inner = new FakeHttpMessageHandler(response);
 
             var options = new HttpInstrumentationOptions { CaptureResponseHeaders = true };
-            var handler = CreateHandler(inner, options);
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(inner, options);
+            using var client = new HttpClient(handler);
 
             await client.GetAsync("https://api.example.com/users");
 
@@ -463,8 +463,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
         [TestMethod]
         public async Task SendAsync_HeaderCaptureDisabledByDefault_NoHeaderTags()
         {
-            var handler = CreateHandler(FakeHttpMessageHandler.Ok());
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(FakeHttpMessageHandler.Ok());
+            using var client = new HttpClient(handler);
             client.DefaultRequestHeaders.TryAddWithoutValidation("X-Custom", "value");
 
             await client.GetAsync("https://api.example.com/users");
@@ -486,11 +486,11 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
             _listener.Dispose();
 
             var inner = FakeHttpMessageHandler.Ok();
-            var handler = new TelemetryHttpMessageHandler(null, null)
+            using var handler = new TelemetryHttpMessageHandler(null, null)
             {
                 InnerHandler = inner
             };
-            var client = new HttpClient(handler);
+            using var client = new HttpClient(handler);
 
             var response = await client.GetAsync("https://api.example.com/users");
 
@@ -501,7 +501,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
         [TestMethod]
         public async Task SendAsync_NullRequest_ThrowsArgumentNull()
         {
-            var handler = CreateHandler(FakeHttpMessageHandler.Ok());
+            using var handler = CreateHandler(FakeHttpMessageHandler.Ok());
 
             // Use reflection to call SendAsync with null — normally HttpClient prevents this
             var method = typeof(TelemetryHttpMessageHandler).GetMethod(
@@ -527,10 +527,10 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
         [DataRow("PATCH")]
         public async Task SendAsync_VariousMethods_RecordsMethodTag(string method)
         {
-            var handler = CreateHandler(FakeHttpMessageHandler.Ok());
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(FakeHttpMessageHandler.Ok());
+            using var client = new HttpClient(handler);
 
-            var request = new HttpRequestMessage(new HttpMethod(method), "https://api.example.com/resources");
+            using var request = new HttpRequestMessage(new HttpMethod(method), "https://api.example.com/resources");
             await client.SendAsync(request);
 
             var activity = GetActivity();
@@ -557,8 +557,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Http
             int statusCode, ActivityStatusCode expectedStatus)
         {
             var inner = FakeHttpMessageHandler.WithStatus((HttpStatusCode)statusCode);
-            var handler = CreateHandler(inner);
-            var client = new HttpClient(handler);
+            using var handler = CreateHandler(inner);
+            using var client = new HttpClient(handler);
 
             await client.GetAsync("https://api.example.com/resource");
 
