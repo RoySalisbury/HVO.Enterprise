@@ -22,6 +22,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Logging
         {
             // Arrange
             var services = new ServiceCollection();
+            services.AddLogging();
 
             // Act
             services.AddTelemetryLoggingEnrichment();
@@ -37,6 +38,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Logging
         {
             // Arrange
             var services = new ServiceCollection();
+            services.AddLogging();
 
             // Act
             services.AddTelemetryLoggingEnrichment(opts =>
@@ -57,6 +59,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Logging
         {
             // Arrange
             var services = new ServiceCollection();
+            services.AddLogging();
 
             // Act
             services.AddTelemetryLoggingEnrichment(opts => opts.TraceIdFieldName = "first");
@@ -91,19 +94,18 @@ namespace HVO.Enterprise.Telemetry.Tests.Logging
         }
 
         [TestMethod]
-        public void AddTelemetryLoggingEnrichment_WithoutExistingLogging_RegistersFactory()
+        public void AddTelemetryLoggingEnrichment_WithoutExistingLogging_ThrowsInvalidOperationException()
         {
             // Arrange
             var services = new ServiceCollection();
             // No AddLogging() call — no existing ILoggerFactory
 
-            // Act
-            services.AddTelemetryLoggingEnrichment();
+            // Act & Assert — should throw with guidance
+            var ex = Assert.ThrowsException<InvalidOperationException>(() =>
+                services.AddTelemetryLoggingEnrichment());
 
-            // Assert
-            var provider = services.BuildServiceProvider();
-            var factory = provider.GetService<ILoggerFactory>();
-            Assert.IsNotNull(factory, "ILoggerFactory should be registered even without prior AddLogging");
+            Assert.IsTrue(ex.Message.Contains("AddLogging"),
+                "Exception message should mention AddLogging()");
         }
 
         [TestMethod]
@@ -111,6 +113,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Logging
         {
             // Arrange
             var services = new ServiceCollection();
+            services.AddLogging();
 
             // Act
             var result = services.AddTelemetryLoggingEnrichment();
@@ -124,6 +127,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Logging
         {
             // Arrange
             var services = new ServiceCollection();
+            services.AddLogging();
 
             // Act
             services.AddTelemetryLoggingEnrichment();
@@ -134,6 +138,23 @@ namespace HVO.Enterprise.Telemetry.Tests.Logging
             Assert.IsTrue(options.EnableEnrichment);
             Assert.IsTrue(options.IncludeTraceId);
             Assert.IsTrue(options.IncludeSpanId);
+        }
+
+        [TestMethod]
+        public void AddTelemetryLoggingEnrichment_IdempotencyUsesMarkerNotOptions()
+        {
+            // Arrange — register TelemetryLoggerOptions independently (app config binding scenario)
+            var services = new ServiceCollection();
+            services.AddLogging();
+            services.AddSingleton(new TelemetryLoggerOptions { IncludeTraceFlags = true });
+
+            // Act — should still register enrichment despite options already present
+            services.AddTelemetryLoggingEnrichment(opts => opts.TraceIdFieldName = "my_trace");
+
+            // Assert — enrichment was applied
+            var provider = services.BuildServiceProvider();
+            var factory = provider.GetService<ILoggerFactory>();
+            Assert.IsNotNull(factory);
         }
     }
 }

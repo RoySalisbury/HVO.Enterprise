@@ -17,7 +17,7 @@ So that **I can correlate logs with distributed traces without manually adding t
 1. **Automatic Enrichment**
    - [x] `Activity.Current.TraceId` automatically added to log scope
    - [x] `Activity.Current.SpanId` automatically added to log scope
-   - [x] `CorrelationContext.Current` automatically added to log scope
+   - [x] Existing correlation ID (via `CorrelationContext.GetRawValue()`) added to log scope without auto-generating a new ID
    - [x] Works with all ILogger providers (Serilog, NLog, Console, etc.)
 
 2. **ILogger Integration**

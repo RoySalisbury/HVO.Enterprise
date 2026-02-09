@@ -63,28 +63,33 @@ namespace HVO.Enterprise.Telemetry.Logging
             }
 
             // Create enrichment scope — may return null if no context available
-            var enrichmentScope = CreateEnrichmentScope();
-            try
+            using (var enrichmentScope = CreateEnrichmentScope())
             {
                 _innerLogger.Log(logLevel, eventId, state, exception, formatter);
-            }
-            finally
-            {
-                enrichmentScope?.Dispose();
             }
         }
 
         /// <summary>
         /// Creates a log scope populated with Activity context, correlation ID,
         /// and custom enricher output. Returns <c>null</c> if no enrichment data
-        /// is available, avoiding an empty BeginScope allocation.
+        /// is available — zero allocation fast path when no context exists.
         /// </summary>
         private IDisposable? CreateEnrichmentScope()
         {
+            // Fast path: check whether any enrichment sources are present before
+            // allocating the dictionary. This avoids per-log-call allocations when
+            // there is no Activity, no correlation ID, and no custom enrichers.
+            var activity = Activity.Current;
+            var enrichers = _options.CustomEnrichersSnapshot;
+            var hasCorrelation = _options.IncludeCorrelationId
+                && !string.IsNullOrEmpty(CorrelationContext.GetRawValue());
+
+            if (activity == null && !hasCorrelation && (enrichers == null || enrichers.Length == 0))
+                return null;
+
             var enrichmentData = new Dictionary<string, object?>(8, StringComparer.Ordinal);
 
-            // Enrich from Activity.Current — check once to avoid repeated TLS lookups
-            var activity = Activity.Current;
+            // Enrich from Activity.Current — already captured above
             if (activity != null)
             {
                 if (_options.IncludeTraceId)
@@ -104,18 +109,17 @@ namespace HVO.Enterprise.Telemetry.Logging
             }
 
             // Enrich from CorrelationContext
-            if (_options.IncludeCorrelationId)
+            if (hasCorrelation)
             {
                 var rawCorrelationId = CorrelationContext.GetRawValue();
                 if (!string.IsNullOrEmpty(rawCorrelationId))
                     enrichmentData[_options.CorrelationIdFieldName] = rawCorrelationId;
             }
 
-            // Apply custom enrichers
-            var enrichers = _options.CustomEnrichers;
+            // Apply custom enrichers (immutable snapshot — safe for concurrent reads)
             if (enrichers != null)
             {
-                for (int i = 0; i < enrichers.Count; i++)
+                for (int i = 0; i < enrichers.Length; i++)
                 {
                     try
                     {
