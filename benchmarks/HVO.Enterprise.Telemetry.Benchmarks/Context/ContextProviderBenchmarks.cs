@@ -55,7 +55,7 @@ namespace HVO.Enterprise.Telemetry.Benchmarks.Context
             {
                 _environmentProvider.EnrichActivity(_activity, _options);
             }
-            _consumer.Consume(_activity.GetTagItem("service.name"));
+            _consumer.Consume(_activity.GetTagItem("service.name")!);
         }
 
         [Benchmark(OperationsPerInvoke = OperationsPerInvoke)]
@@ -66,7 +66,7 @@ namespace HVO.Enterprise.Telemetry.Benchmarks.Context
             {
                 _userProvider.EnrichActivity(_activity, _options);
             }
-            _consumer.Consume(_activity.GetTagItem("user.id"));
+            _consumer.Consume(_activity.GetTagItem("user.id")!);
         }
 
         [Benchmark(OperationsPerInvoke = OperationsPerInvoke)]
@@ -77,7 +77,7 @@ namespace HVO.Enterprise.Telemetry.Benchmarks.Context
             {
                 _requestProvider.EnrichActivity(_activity, _options);
             }
-            _consumer.Consume(_activity.GetTagItem("http.method"));
+            _consumer.Consume(_activity.GetTagItem("http.method")!);
         }
 
         [Benchmark(OperationsPerInvoke = OperationsPerInvoke)]
