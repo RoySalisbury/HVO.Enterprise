@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using HVO.Enterprise.Telemetry.Capture;
 
 namespace HVO.Enterprise.Telemetry.Proxies
 {
@@ -10,6 +11,7 @@ namespace HVO.Enterprise.Telemetry.Proxies
     public sealed class TelemetryProxyFactory : ITelemetryProxyFactory
     {
         private readonly IOperationScopeFactory _scopeFactory;
+        private readonly IParameterCapture? _parameterCapture;
 
         /// <summary>
         /// Initializes a new instance of <see cref="TelemetryProxyFactory"/>.
@@ -17,8 +19,26 @@ namespace HVO.Enterprise.Telemetry.Proxies
         /// <param name="scopeFactory">Factory for creating operation scopes.</param>
         /// <exception cref="ArgumentNullException"><paramref name="scopeFactory"/> is <c>null</c>.</exception>
         public TelemetryProxyFactory(IOperationScopeFactory scopeFactory)
+            : this(scopeFactory, null)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="TelemetryProxyFactory"/> with a custom
+        /// <see cref="IParameterCapture"/> implementation.
+        /// </summary>
+        /// <param name="scopeFactory">Factory for creating operation scopes.</param>
+        /// <param name="parameterCapture">
+        /// Parameter capture implementation. When <c>null</c>, a default
+        /// <see cref="Capture.ParameterCapture"/> is created per proxy.
+        /// </param>
+        /// <exception cref="ArgumentNullException"><paramref name="scopeFactory"/> is <c>null</c>.</exception>
+        public TelemetryProxyFactory(
+            IOperationScopeFactory scopeFactory,
+            IParameterCapture? parameterCapture)
         {
             _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
+            _parameterCapture = parameterCapture;
         }
 
         /// <inheritdoc />
@@ -53,7 +73,8 @@ namespace HVO.Enterprise.Telemetry.Proxies
             telemetryProxy.Initialize(
                 target,
                 _scopeFactory,
-                options ?? new InstrumentationOptions());
+                options ?? new InstrumentationOptions(),
+                _parameterCapture);
 
             return (T)(object)telemetryProxy;
         }

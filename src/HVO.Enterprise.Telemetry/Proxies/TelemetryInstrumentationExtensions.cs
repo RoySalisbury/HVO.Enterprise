@@ -1,4 +1,5 @@
 using System;
+using HVO.Enterprise.Telemetry.Capture;
 using HVO.Enterprise.Telemetry.Proxies;
 
 namespace Microsoft.Extensions.DependencyInjection
@@ -10,8 +11,8 @@ namespace Microsoft.Extensions.DependencyInjection
     public static class TelemetryInstrumentationExtensions
     {
         /// <summary>
-        /// Registers the <see cref="ITelemetryProxyFactory"/> as a singleton in the service collection.
-        /// Must be called before any <c>AddInstrumented*</c> methods.
+        /// Registers the <see cref="ITelemetryProxyFactory"/> and <see cref="IParameterCapture"/>
+        /// as singletons in the service collection. Must be called before any <c>AddInstrumented*</c> methods.
         /// </summary>
         /// <param name="services">The service collection.</param>
         /// <returns>The service collection for chaining.</returns>
@@ -23,6 +24,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentNullException(nameof(services));
             }
 
+            services.AddSingleton<IParameterCapture, ParameterCapture>();
             services.AddSingleton<ITelemetryProxyFactory, TelemetryProxyFactory>();
             return services;
         }

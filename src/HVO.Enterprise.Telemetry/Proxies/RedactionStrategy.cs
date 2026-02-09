@@ -12,6 +12,12 @@ namespace HVO.Enterprise.Telemetry.Proxies
         Mask,
 
         /// <summary>Replace value with its hash for correlation without exposure.</summary>
-        Hash
+        Hash,
+
+        /// <summary>Show first/last characters only (e.g., "ab***yz").</summary>
+        Partial,
+
+        /// <summary>Replace value with its type name.</summary>
+        TypeName
     }
 }

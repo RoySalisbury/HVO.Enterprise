@@ -130,8 +130,9 @@ namespace HVO.Enterprise.Telemetry.Tests.Proxies
             Assert.IsNotNull(dict);
             Assert.AreEqual("Alice", dict!["Name"]);
             Assert.AreEqual(30, dict["Age"]);
-            // Secret has [SensitiveData] on property → excluded.
-            Assert.IsFalse(dict.ContainsKey("Secret"));
+            // Secret has [SensitiveData] on property → redacted with Mask strategy.
+            Assert.IsTrue(dict.ContainsKey("Secret"));
+            Assert.AreEqual("***", dict["Secret"]);
         }
 
         [TestMethod]
@@ -167,7 +168,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Proxies
             Assert.AreEqual(1, captured[0]);
             Assert.AreEqual(2, captured[1]);
             Assert.AreEqual(3, captured[2]);
-            Assert.AreEqual("...(truncated)", captured[3]);
+            Assert.IsTrue(captured[3]!.ToString()!.Contains("truncated after"), $"Truncation marker was: {captured[3]}");
         }
 
         [TestMethod]
@@ -210,8 +211,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Proxies
             proxy.Process(new ComplexParam { Name = "test" });
 
             var tags = _scopeFactory.LastScope!.Tags;
-            // At depth 0, complex types are captured as type name.
-            Assert.AreEqual("ComplexParam", tags["param.param"]);
+            // At depth 0, complex types report max depth reached.
+            Assert.IsTrue(tags["param.param"]!.ToString()!.Contains("Max depth"), $"Value was: {tags["param.param"]}");
         }
     }
 }
