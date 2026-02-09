@@ -21,10 +21,13 @@ namespace HVO.Enterprise.Telemetry.Wcf.Propagation
         /// <param name="name">The header name (e.g., "traceparent").</param>
         /// <returns>The header value as a string, or <c>null</c> if not found.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="headers"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is null or empty.</exception>
         public static string? GetHeader(MessageHeaders headers, string name)
         {
             if (headers == null)
                 throw new ArgumentNullException(nameof(headers));
+            if (string.IsNullOrEmpty(name))
+                throw new ArgumentException("Header name cannot be null or empty.", nameof(name));
 
             var headerIndex = headers.FindHeader(name, TraceContextConstants.SoapNamespace);
             if (headerIndex < 0)

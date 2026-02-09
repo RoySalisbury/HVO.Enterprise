@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.ServiceModel.Description;
 using HVO.Enterprise.Telemetry.Wcf.Client;
 using HVO.Enterprise.Telemetry.Wcf.Configuration;
@@ -38,16 +39,9 @@ namespace HVO.Enterprise.Telemetry.Wcf.Tests
             endpoint.AddTelemetryBehavior();
 
             // Assert
-            var hasTelemetryBehavior = false;
-            foreach (var behavior in endpoint.EndpointBehaviors)
-            {
-                if (behavior is TelemetryClientEndpointBehavior)
-                {
-                    hasTelemetryBehavior = true;
-                    break;
-                }
-            }
-            Assert.IsTrue(hasTelemetryBehavior, "TelemetryClientEndpointBehavior should be added");
+            Assert.IsTrue(
+                endpoint.EndpointBehaviors.OfType<TelemetryClientEndpointBehavior>().Any(),
+                "TelemetryClientEndpointBehavior should be added");
         }
 
         [TestMethod]
@@ -64,16 +58,8 @@ namespace HVO.Enterprise.Telemetry.Wcf.Tests
             endpoint.AddTelemetryBehavior(options);
 
             // Assert
-            var hasTelemetryBehavior = false;
-            foreach (var behavior in endpoint.EndpointBehaviors)
-            {
-                if (behavior is TelemetryClientEndpointBehavior)
-                {
-                    hasTelemetryBehavior = true;
-                    break;
-                }
-            }
-            Assert.IsTrue(hasTelemetryBehavior);
+            Assert.IsTrue(
+                endpoint.EndpointBehaviors.OfType<TelemetryClientEndpointBehavior>().Any());
         }
 
         private static ServiceEndpoint CreateTestEndpoint()

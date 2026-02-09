@@ -910,10 +910,10 @@ namespace HVO.Enterprise.WCF.Client
 - [x] Attribute-based configuration complete
 - [x] Fault tracking implemented
 - [x] Unit tests passing (>85% coverage)
-- [ ] Integration tests with actual WCF service passing
+- [ ] ~~Integration tests with actual WCF service passing~~ *(deferred: requires .NET Framework 4.8 runtime, not available in Linux dev container)*
 - [x] XML documentation complete
-- [ ] README.md with usage examples
-- [ ] Code reviewed and approved
+- [ ] ~~README.md with usage examples~~ *(deferred to US-029: Project Documentation)*
+- [x] Code reviewed and approved
 - [x] Zero warnings
 
 ## Notes

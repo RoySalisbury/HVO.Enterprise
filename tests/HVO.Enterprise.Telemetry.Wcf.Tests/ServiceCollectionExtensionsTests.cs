@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using HVO.Enterprise.Telemetry.Wcf.Client;
 using HVO.Enterprise.Telemetry.Wcf.Configuration;
 using HVO.Enterprise.Telemetry.Wcf.Extensions;
@@ -35,7 +36,7 @@ namespace HVO.Enterprise.Telemetry.Wcf.Tests
             services.AddWcfTelemetryInstrumentation(options =>
             {
                 options.PropagateTraceContextInReply = false;
-                options.MaxMessageBodySize = 8192;
+                options.CaptureFaultDetails = false;
             });
 
             var provider = services.BuildServiceProvider();
@@ -43,7 +44,7 @@ namespace HVO.Enterprise.Telemetry.Wcf.Tests
 
             // Assert
             Assert.IsFalse(optionsAccessor.Value.PropagateTraceContextInReply);
-            Assert.AreEqual(8192, optionsAccessor.Value.MaxMessageBodySize);
+            Assert.IsFalse(optionsAccessor.Value.CaptureFaultDetails);
         }
 
         [TestMethod]
@@ -59,17 +60,9 @@ namespace HVO.Enterprise.Telemetry.Wcf.Tests
             // Assert
             var validators = provider.GetServices<IValidateOptions<WcfExtensionOptions>>();
             Assert.IsNotNull(validators);
-
-            var hasValidator = false;
-            foreach (var validator in validators)
-            {
-                if (validator is WcfExtensionOptionsValidator)
-                {
-                    hasValidator = true;
-                    break;
-                }
-            }
-            Assert.IsTrue(hasValidator, "WcfExtensionOptionsValidator should be registered");
+            Assert.IsTrue(
+                validators.OfType<WcfExtensionOptionsValidator>().Any(),
+                "WcfExtensionOptionsValidator should be registered");
         }
 
         [TestMethod]
@@ -108,7 +101,7 @@ namespace HVO.Enterprise.Telemetry.Wcf.Tests
 
             // Assert
             Assert.IsTrue(options.PropagateTraceContextInReply);
-            Assert.AreEqual(4096, options.MaxMessageBodySize);
+            Assert.IsTrue(options.CaptureFaultDetails);
         }
 
         [TestMethod]

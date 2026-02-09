@@ -14,12 +14,6 @@ namespace HVO.Enterprise.Telemetry.Wcf.Configuration
             if (options == null)
                 return ValidateOptionsResult.Fail("Options instance is null.");
 
-            if (options.MaxMessageBodySize < 0)
-                return ValidateOptionsResult.Fail("MaxMessageBodySize cannot be negative.");
-
-            if (options.MaxMessageBodySize > 1_048_576)
-                return ValidateOptionsResult.Fail("MaxMessageBodySize cannot exceed 1,048,576 bytes (1 MB).");
-
             return ValidateOptionsResult.Success;
         }
     }

@@ -210,6 +210,18 @@ namespace HVO.Enterprise.Telemetry.Wcf.Tests
         }
 
         [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void GetHeader_EmptyName_ThrowsArgumentException()
+        {
+            var message = Message.CreateMessage(
+                MessageVersion.Soap12WSAddressing10,
+                "http://tempuri.org/Test",
+                "test body");
+
+            SoapHeaderAccessor.GetHeader(message.Headers, "");
+        }
+
+        [TestMethod]
         public void AddHeader_Soap11Message_Works()
         {
             // Arrange

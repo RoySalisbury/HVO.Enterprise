@@ -1,5 +1,3 @@
-using System;
-
 namespace HVO.Enterprise.Telemetry.Wcf.Propagation
 {
     /// <summary>

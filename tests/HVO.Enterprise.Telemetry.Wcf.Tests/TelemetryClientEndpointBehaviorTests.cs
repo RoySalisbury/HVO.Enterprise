@@ -28,7 +28,7 @@ namespace HVO.Enterprise.Telemetry.Wcf.Tests
             var options = new WcfExtensionOptions
             {
                 PropagateTraceContextInReply = false,
-                RecordMessageBodies = true
+                CaptureFaultDetails = true
             };
 
             // Act

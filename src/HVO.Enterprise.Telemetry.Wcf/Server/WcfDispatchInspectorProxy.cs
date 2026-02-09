@@ -115,25 +115,16 @@ namespace HVO.Enterprise.Telemetry.Wcf.Server
                 // Headers may not be readable; start a new trace
             }
 
-            Activity? activity;
-
-            if (!string.IsNullOrEmpty(traceparent) &&
+            Activity? activity = !string.IsNullOrEmpty(traceparent) &&
                 W3CTraceContextPropagator.TryParseTraceParent(
-                    traceparent, out _, out _, out _))
-            {
-                // Continue existing trace using validated traceparent string
-                activity = _activitySource!.StartActivity(
+                    traceparent, out _, out _, out _)
+                ? _activitySource!.StartActivity(
                     operationName,
                     ActivityKind.Server,
-                    traceparent!);
-            }
-            else
-            {
-                // Start new trace
-                activity = _activitySource!.StartActivity(
+                    traceparent!)
+                : _activitySource!.StartActivity(
                     operationName,
                     ActivityKind.Server);
-            }
 
             if (activity == null)
                 return null;
@@ -168,7 +159,7 @@ namespace HVO.Enterprise.Telemetry.Wcf.Server
             if (!(args[1] is Activity activity))
                 return;
 
-            try
+            using (activity)
             {
                 var reply = args[0] as Message;
                 if (reply != null && reply.IsFault)
@@ -191,7 +182,7 @@ namespace HVO.Enterprise.Telemetry.Wcf.Server
                     try
                     {
                         var responseTraceparent = W3CTraceContextPropagator.CreateTraceParent(activity);
-                        SoapHeaderAccessor.AddHeader(
+                        SoapHeaderAccessor.SetHeader(
                             reply.Headers,
                             TraceContextConstants.TraceParentHeaderName,
                             responseTraceparent);
@@ -199,7 +190,7 @@ namespace HVO.Enterprise.Telemetry.Wcf.Server
                         var responseTracestate = W3CTraceContextPropagator.GetTraceState(activity);
                         if (!string.IsNullOrEmpty(responseTracestate))
                         {
-                            SoapHeaderAccessor.AddHeader(
+                            SoapHeaderAccessor.SetHeader(
                                 reply.Headers,
                                 TraceContextConstants.TraceStateHeaderName,
                                 responseTracestate!);
@@ -210,11 +201,8 @@ namespace HVO.Enterprise.Telemetry.Wcf.Server
                         // Best effort header injection
                     }
                 }
-            }
-            finally
-            {
+
                 activity.Stop();
-                activity.Dispose();
             }
         }
 
@@ -278,9 +266,10 @@ namespace HVO.Enterprise.Telemetry.Wcf.Server
         {
             try
             {
-                var messageCopy = reply.CreateBufferedCopy(int.MaxValue);
+                const int MaxFaultBufferSize = 64 * 1024; // 64KB limit to avoid excessive allocations
+                var messageCopy = reply.CreateBufferedCopy(MaxFaultBufferSize);
                 var faultMessage = messageCopy.CreateMessage();
-                var fault = MessageFault.CreateFault(faultMessage, int.MaxValue);
+                var fault = MessageFault.CreateFault(faultMessage, MaxFaultBufferSize);
 
                 if (fault.Code != null)
                 {

@@ -93,12 +93,12 @@ namespace HVO.Enterprise.Telemetry.Wcf.Client
 
             // Inject W3C Trace Context into SOAP headers
             var traceparent = W3CTraceContextPropagator.CreateTraceParent(activity);
-            SoapHeaderAccessor.AddHeader(request.Headers, TraceContextConstants.TraceParentHeaderName, traceparent);
+            SoapHeaderAccessor.SetHeader(request.Headers, TraceContextConstants.TraceParentHeaderName, traceparent);
 
             var tracestate = W3CTraceContextPropagator.GetTraceState(activity);
             if (!string.IsNullOrEmpty(tracestate))
             {
-                SoapHeaderAccessor.AddHeader(request.Headers, TraceContextConstants.TraceStateHeaderName, tracestate!);
+                SoapHeaderAccessor.SetHeader(request.Headers, TraceContextConstants.TraceStateHeaderName, tracestate!);
             }
 
             return activity;
@@ -115,7 +115,7 @@ namespace HVO.Enterprise.Telemetry.Wcf.Client
             if (!(correlationState is Activity activity))
                 return;
 
-            try
+            using (activity)
             {
                 if (reply != null && reply.IsFault)
                 {
@@ -130,11 +130,8 @@ namespace HVO.Enterprise.Telemetry.Wcf.Client
                 {
                     activity.SetStatus(ActivityStatusCode.Ok);
                 }
-            }
-            finally
-            {
+
                 activity.Stop();
-                activity.Dispose();
             }
         }
 
@@ -173,9 +170,10 @@ namespace HVO.Enterprise.Telemetry.Wcf.Client
         {
             try
             {
-                var messageCopy = reply.CreateBufferedCopy(int.MaxValue);
+                const int MaxFaultBufferSize = 64 * 1024; // 64KB limit to avoid excessive allocations
+                var messageCopy = reply.CreateBufferedCopy(MaxFaultBufferSize);
                 var faultMessage = messageCopy.CreateMessage();
-                var fault = MessageFault.CreateFault(faultMessage, int.MaxValue);
+                var fault = MessageFault.CreateFault(faultMessage, MaxFaultBufferSize);
 
                 if (fault.Code != null)
                 {

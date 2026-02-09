@@ -71,7 +71,7 @@ namespace HVO.Enterprise.Telemetry.Wcf.Tests
                 TraceContextConstants.TraceParentHeaderName);
 
             Assert.IsNotNull(traceparent);
-            Assert.IsTrue(traceparent.StartsWith("00-"), "TraceparentIshould start with version 00");
+            Assert.IsTrue(traceparent.StartsWith("00-"), "Traceparent should start with version 00");
 
             // Cleanup
             if (correlationState is Activity activity)
