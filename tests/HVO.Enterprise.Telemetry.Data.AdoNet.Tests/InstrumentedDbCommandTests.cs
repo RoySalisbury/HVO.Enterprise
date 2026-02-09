@@ -7,6 +7,11 @@ namespace HVO.Enterprise.Telemetry.Data.AdoNet.Tests
     [TestClass]
     public class InstrumentedDbCommandTests
     {
+        /// <summary>
+        /// Verifies that <see cref="InstrumentedDbCommand.DetectOperation"/> delegates to
+        /// the shared <see cref="HVO.Enterprise.Telemetry.Data.Common.SqlOperationDetector"/>
+        /// and returns correct results for all supported SQL operation types.
+        /// </summary>
         [DataTestMethod]
         [DataRow(null, "EXECUTE")]
         [DataRow("", "EXECUTE")]
@@ -15,6 +20,10 @@ namespace HVO.Enterprise.Telemetry.Data.AdoNet.Tests
         [DataRow("UPDATE Users SET Name = @p0", "UPDATE")]
         [DataRow("DELETE FROM Users WHERE Id = @p0", "DELETE")]
         [DataRow("SELECT * FROM Users", "SELECT")]
+        [DataRow("MERGE INTO Target USING Source", "MERGE")]
+        [DataRow("CREATE TABLE Foo (Id INT)", "CREATE")]
+        [DataRow("ALTER TABLE Foo ADD Bar INT", "ALTER")]
+        [DataRow("DROP TABLE Foo", "DROP")]
         [DataRow("EXEC sp_GetUsers", "EXECUTE")]
         [DataRow("EXECUTE sp_GetUsers", "EXECUTE")]
         [DataRow("  SELECT * FROM Users", "SELECT")]

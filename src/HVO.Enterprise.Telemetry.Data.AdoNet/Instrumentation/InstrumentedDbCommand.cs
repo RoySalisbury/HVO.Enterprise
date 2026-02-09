@@ -137,6 +137,14 @@ namespace HVO.Enterprise.Telemetry.Data.AdoNet.Instrumentation
         }
 
         /// <inheritdoc/>
+        /// <remarks>
+        /// <strong>Known limitation:</strong> The telemetry Activity is started before the reader is created
+        /// and stopped (via <c>using</c>) once <see cref="DbDataReader"/> is returned.  Because the reader
+        /// streams data after this point, the Activity span will not capture the full I/O duration of
+        /// row-level reads.  This is an inherent trade-off of the decorator pattern — wrapping the reader
+        /// itself would require a full <see cref="DbDataReader"/> proxy.  For most use-cases the command
+        /// execution latency (captured here) is the dominant factor.
+        /// </remarks>
         protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
         {
             using (var activity = StartActivity("SELECT"))
@@ -223,24 +231,11 @@ namespace HVO.Enterprise.Telemetry.Data.AdoNet.Instrumentation
             }));
         }
 
+        /// <summary>
+        /// Detects the SQL operation type from a command text.
+        /// Delegates to <see cref="SqlOperationDetector"/> for shared logic.
+        /// </summary>
         internal static string DetectOperation(string? commandText)
-        {
-            if (string.IsNullOrWhiteSpace(commandText))
-                return "EXECUTE";
-
-            var trimmed = commandText!.TrimStart();
-            if (trimmed.StartsWith("INSERT", StringComparison.OrdinalIgnoreCase))
-                return "INSERT";
-            if (trimmed.StartsWith("UPDATE", StringComparison.OrdinalIgnoreCase))
-                return "UPDATE";
-            if (trimmed.StartsWith("DELETE", StringComparison.OrdinalIgnoreCase))
-                return "DELETE";
-            if (trimmed.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
-                return "SELECT";
-            if (trimmed.StartsWith("EXEC", StringComparison.OrdinalIgnoreCase))
-                return "EXECUTE";
-
-            return "EXECUTE";
-        }
+            => SqlOperationDetector.DetectOperation(commandText);
     }
 }

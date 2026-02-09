@@ -257,32 +257,11 @@ namespace HVO.Enterprise.Telemetry.Data.EfCore.Interceptors
             activity.Stop();
         }
 
+        /// <summary>
+        /// Detects the SQL operation type from a command text.
+        /// Delegates to <see cref="SqlOperationDetector"/> for shared logic.
+        /// </summary>
         internal static string DetectOperation(string? commandText)
-        {
-            if (string.IsNullOrWhiteSpace(commandText))
-                return "EXECUTE";
-
-            var trimmed = commandText!.TrimStart();
-            if (trimmed.StartsWith("INSERT", StringComparison.OrdinalIgnoreCase))
-                return "INSERT";
-            if (trimmed.StartsWith("UPDATE", StringComparison.OrdinalIgnoreCase))
-                return "UPDATE";
-            if (trimmed.StartsWith("DELETE", StringComparison.OrdinalIgnoreCase))
-                return "DELETE";
-            if (trimmed.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
-                return "SELECT";
-            if (trimmed.StartsWith("MERGE", StringComparison.OrdinalIgnoreCase))
-                return "MERGE";
-            if (trimmed.StartsWith("CREATE", StringComparison.OrdinalIgnoreCase))
-                return "CREATE";
-            if (trimmed.StartsWith("ALTER", StringComparison.OrdinalIgnoreCase))
-                return "ALTER";
-            if (trimmed.StartsWith("DROP", StringComparison.OrdinalIgnoreCase))
-                return "DROP";
-            if (trimmed.StartsWith("EXEC", StringComparison.OrdinalIgnoreCase))
-                return "EXECUTE";
-
-            return "EXECUTE";
-        }
+            => SqlOperationDetector.DetectOperation(commandText);
     }
 }

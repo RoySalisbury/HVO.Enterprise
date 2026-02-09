@@ -1,23 +1,22 @@
+using HVO.Enterprise.Telemetry.Data.Configuration;
 using Microsoft.Extensions.Options;
 
 namespace HVO.Enterprise.Telemetry.Data.AdoNet.Configuration
 {
     /// <summary>
     /// Validates <see cref="AdoNetTelemetryOptions"/> configuration.
+    /// Delegates base property validation to <see cref="DataExtensionOptionsValidator.ValidateBaseOptions"/>.
     /// </summary>
     public sealed class AdoNetTelemetryOptionsValidator : IValidateOptions<AdoNetTelemetryOptions>
     {
         /// <inheritdoc/>
         public ValidateOptionsResult Validate(string? name, AdoNetTelemetryOptions options)
         {
-            if (options == null)
-                return ValidateOptionsResult.Fail("Options cannot be null.");
+            var baseResult = DataExtensionOptionsValidator.ValidateBaseOptions(options);
+            if (baseResult.Failed)
+                return baseResult;
 
-            if (options.MaxStatementLength < 100 || options.MaxStatementLength > 50000)
-                return ValidateOptionsResult.Fail("MaxStatementLength must be between 100 and 50000.");
-
-            if (options.MaxParameters < 0 || options.MaxParameters > 100)
-                return ValidateOptionsResult.Fail("MaxParameters must be between 0 and 100.");
+            // Add ADO.NET-specific validation here as needed.
 
             return ValidateOptionsResult.Success;
         }
