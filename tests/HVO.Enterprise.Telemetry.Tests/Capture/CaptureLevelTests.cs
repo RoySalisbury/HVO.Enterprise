@@ -292,7 +292,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Capture
             Assert.AreEqual(1, captured[0]);
             Assert.AreEqual(2, captured[1]);
             Assert.AreEqual(3, captured[2]);
-            Assert.IsTrue(captured[3]!.ToString()!.Contains("total: 5"));
+            Assert.IsTrue(captured[3]!.ToString()!.Contains("truncated after 3 items"));
         }
 
         [TestMethod]

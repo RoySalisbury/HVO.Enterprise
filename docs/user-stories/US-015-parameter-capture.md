@@ -1063,12 +1063,12 @@ public void IsSensitive_Check()
 - Kept `RedactionStrategy` and `SensitiveDataAttribute` in `Proxies/` namespace to avoid breaking changes; `Capture/` references them via using
 - Primitives are always captured regardless of depth limit (bug fix: moved primitive check before depth check)
 - `ConcurrentDictionary` used for sensitive pattern cache with lock-based registration
-- SHA256 hash truncated to first 8 base64 chars for compact redacted values
+- SHA256 hash truncated to first 8 hex characters for compact redacted values
 - Two `ParameterCapture` constructors: default (with 30+ patterns) and `registerDefaults: false` for testing
 - `GetRedactionStrategy()` added to interface for strategy introspection
 
 ### Quality Gates
-- ✅ Build: 0 errors, 0 warnings (excluding benchmarks CS8604)
+- ✅ Build: 0 errors, 0 warnings
 - ✅ Tests: 542 passed (120 common + 422 telemetry), 0 failed, 1 skipped
 - ✅ XML documentation: Complete for all public APIs
 - ✅ Proxy integration: Existing tests updated and passing

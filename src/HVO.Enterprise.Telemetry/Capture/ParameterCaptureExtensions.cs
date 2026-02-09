@@ -10,6 +10,12 @@ namespace HVO.Enterprise.Telemetry.Capture
     public static class ParameterCaptureExtensions
     {
         /// <summary>
+        /// Cached default <see cref="ParameterCapture"/> instance to avoid repeated allocations.
+        /// </summary>
+        private static readonly Lazy<IParameterCapture> DefaultCapture =
+            new Lazy<IParameterCapture>(() => new ParameterCapture());
+
+        /// <summary>
         /// Captures method parameters and adds them as tags to the operation scope.
         /// Each parameter is added with a "param.{name}" tag key.
         /// </summary>
@@ -33,7 +39,7 @@ namespace HVO.Enterprise.Telemetry.Capture
             if (parameters == null) throw new ArgumentNullException(nameof(parameters));
             if (values == null) throw new ArgumentNullException(nameof(values));
 
-            parameterCapture = parameterCapture ?? new ParameterCapture();
+            parameterCapture = parameterCapture ?? DefaultCapture.Value;
             options = options ?? ParameterCaptureOptions.Default;
 
             var captured = parameterCapture.CaptureParameters(parameters, values, options);
@@ -68,7 +74,7 @@ namespace HVO.Enterprise.Telemetry.Capture
             if (scope == null) throw new ArgumentNullException(nameof(scope));
             if (returnType == null) throw new ArgumentNullException(nameof(returnType));
 
-            parameterCapture = parameterCapture ?? new ParameterCapture();
+            parameterCapture = parameterCapture ?? DefaultCapture.Value;
             options = options ?? ParameterCaptureOptions.Default;
 
             var captured = parameterCapture.CaptureParameter("return", returnValue, returnType, options);

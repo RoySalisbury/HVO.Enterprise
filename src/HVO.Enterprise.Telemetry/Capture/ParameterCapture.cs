@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
@@ -214,12 +215,19 @@ namespace HVO.Enterprise.Telemetry.Capture
             var items = new List<object?>();
             int count = 0;
 
+            // Pre-check ICollection for known count to avoid double-enumeration.
+            int? knownCount = (enumerable is ICollection coll) ? coll.Count : (int?)null;
+
             foreach (var item in enumerable)
             {
                 if (count >= options.MaxCollectionItems)
                 {
-                    var total = GetCollectionCount(enumerable);
-                    items.Add($"... (total: {total} items)");
+                    // Only report total count when cheaply available via ICollection;
+                    // otherwise omit total to avoid double-enumerating lazy/streaming sequences.
+                    if (knownCount.HasValue)
+                        items.Add($"... (truncated after {options.MaxCollectionItems} items, total: {knownCount.Value})");
+                    else
+                        items.Add($"... (truncated after {options.MaxCollectionItems} items)");
                     break;
                 }
 
@@ -260,20 +268,30 @@ namespace HVO.Enterprise.Telemetry.Capture
             {
                 var properties = new Dictionary<string, object?>();
 
-                foreach (var prop in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
-                {
-                    // Skip indexed properties.
-                    if (prop.GetIndexParameters().Length > 0)
-                        continue;
+                var readableProperties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    .Where(p => p.CanRead && p.GetIndexParameters().Length == 0);
 
-                    if (!prop.CanRead)
+                foreach (var prop in readableProperties)
+                {
+
+                    // Read the property value up-front so redaction strategies
+                    // (Hash, Partial, TypeName) receive the real value.
+                    object? propValue;
+                    try
+                    {
+                        propValue = prop.GetValue(value);
+                    }
+                    catch
+                    {
+                        properties[prop.Name] = "[Error reading property]";
                         continue;
+                    }
 
                     // [SensitiveData] on the property.
                     var sensitiveAttr = prop.GetCustomAttribute<SensitiveDataAttribute>();
                     if (sensitiveAttr != null)
                     {
-                        properties[prop.Name] = RedactValue(null, sensitiveAttr.Strategy);
+                        properties[prop.Name] = RedactValue(propValue, sensitiveAttr.Strategy);
                         continue;
                     }
 
@@ -283,20 +301,12 @@ namespace HVO.Enterprise.Telemetry.Capture
                         var match = FindSensitiveMatch(prop.Name);
                         if (match != null)
                         {
-                            properties[prop.Name] = RedactValue(null, match.Value.Strategy);
+                            properties[prop.Name] = RedactValue(propValue, match.Value.Strategy);
                             continue;
                         }
                     }
 
-                    try
-                    {
-                        var propValue = prop.GetValue(value);
-                        properties[prop.Name] = CaptureValue(propValue, prop.PropertyType, options, depth + 1);
-                    }
-                    catch
-                    {
-                        properties[prop.Name] = "[Error reading property]";
-                    }
+                    properties[prop.Name] = CaptureValue(propValue, prop.PropertyType, options, depth + 1);
                 }
 
                 return properties;
@@ -412,16 +422,7 @@ namespace HVO.Enterprise.Telemetry.Capture
             return toStringMethod?.DeclaringType != typeof(object);
         }
 
-        private static int GetCollectionCount(IEnumerable enumerable)
-        {
-            if (enumerable is ICollection collection)
-                return collection.Count;
 
-            int count = 0;
-            foreach (var _ in enumerable)
-                count++;
-            return count;
-        }
 
         // ─── Default patterns ────────────────────────────────────────────
 

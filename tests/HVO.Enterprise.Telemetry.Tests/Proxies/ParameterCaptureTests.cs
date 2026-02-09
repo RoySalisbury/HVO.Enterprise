@@ -168,7 +168,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Proxies
             Assert.AreEqual(1, captured[0]);
             Assert.AreEqual(2, captured[1]);
             Assert.AreEqual(3, captured[2]);
-            Assert.IsTrue(captured[3]!.ToString()!.Contains("total:"), $"Truncation marker was: {captured[3]}");
+            Assert.IsTrue(captured[3]!.ToString()!.Contains("truncated after"), $"Truncation marker was: {captured[3]}");
         }
 
         [TestMethod]

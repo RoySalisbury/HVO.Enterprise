@@ -31,7 +31,8 @@ namespace HVO.Enterprise.Telemetry.Capture
 
         /// <summary>
         /// Gets or sets the maximum depth for traversing nested objects.
-        /// Objects deeper than this limit are represented as their type name.
+        /// Objects deeper than this limit are replaced with a marker string indicating
+        /// that the maximum depth was reached (for example, "[Max depth 2 reached]").
         /// Defaults to 2.
         /// </summary>
         public int MaxDepth { get; set; } = 2;

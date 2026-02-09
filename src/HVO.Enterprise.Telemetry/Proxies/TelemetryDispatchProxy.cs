@@ -6,8 +6,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
-using System.Security.Cryptography;
-using System.Text;
+
 using System.Threading.Tasks;
 using HVO.Enterprise.Telemetry.Capture;
 using Microsoft.Extensions.Logging;
