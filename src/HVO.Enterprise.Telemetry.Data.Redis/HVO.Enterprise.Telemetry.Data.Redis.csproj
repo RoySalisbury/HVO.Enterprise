@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Authors>HVO Enterprise</Authors>
+    <Company>HVO Enterprise</Company>
+    <Product>HVO.Enterprise.Telemetry.Data.Redis</Product>
+    <Description>Redis extension for HVO.Enterprise.Telemetry providing automatic distributed tracing for StackExchange.Redis operations via profiling integration with OpenTelemetry semantic conventions.</Description>
+    <PackageProjectUrl>https://github.com/RoySalisbury/HVO.Enterprise</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/RoySalisbury/HVO.Enterprise</RepositoryUrl>
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StackExchange.Redis" Version="2.6.122" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\HVO.Enterprise.Telemetry.Data\HVO.Enterprise.Telemetry.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="HVO.Enterprise.Telemetry.Data.Redis.Tests" />
+  </ItemGroup>
+
+</Project>
