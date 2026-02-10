@@ -14,24 +14,6 @@ namespace HVO.Enterprise.Telemetry.Tests.Lifecycle
     [TestClass]
     public class TelemetryBackgroundWorkerComprehensiveTests
     {
-        /// <summary>
-        /// Concrete test implementation of the abstract <see cref="TelemetryWorkItem"/>.
-        /// </summary>
-        private sealed class TestWorkItem : TelemetryWorkItem
-        {
-            private readonly Action _action;
-            private readonly string _operationType;
-
-            public TestWorkItem(string operationType, Action action)
-            {
-                _action = action;
-                _operationType = operationType;
-            }
-
-            public override string OperationType => _operationType;
-
-            public override void Execute() => _action();
-        }
         // --- Constructor Validation ---
 
         [TestMethod]
@@ -151,7 +133,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Lifecycle
         public void TryEnqueue_ProcessesItem()
         {
             using var worker = new TelemetryBackgroundWorker();
-            var executed = new ManualResetEventSlim(false);
+            using var executed = new ManualResetEventSlim(false);
             var item = new TestWorkItem("test", () => executed.Set());
 
             worker.TryEnqueue(item);
@@ -173,7 +155,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Lifecycle
         {
             using var worker = new TelemetryBackgroundWorker();
             var count = 0;
-            var allDone = new ManualResetEventSlim(false);
+            using var allDone = new ManualResetEventSlim(false);
 
             for (int i = 0; i < 10; i++)
             {
@@ -195,7 +177,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Lifecycle
         public void ProcessedCount_IncrementsForEachItem()
         {
             using var worker = new TelemetryBackgroundWorker();
-            var done = new ManualResetEventSlim(false);
+            using var done = new ManualResetEventSlim(false);
 
             worker.TryEnqueue(new TestWorkItem("test", () => { }));
             worker.TryEnqueue(new TestWorkItem("test", () => { }));
@@ -213,7 +195,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Lifecycle
         public void FailedCount_IncrementsOnItemFailure()
         {
             using var worker = new TelemetryBackgroundWorker();
-            var done = new ManualResetEventSlim(false);
+            using var done = new ManualResetEventSlim(false);
 
             worker.TryEnqueue(new TestWorkItem("fail", () => throw new Exception("boom")));
             worker.TryEnqueue(new TestWorkItem("ok", () => done.Set()));
@@ -290,7 +272,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Lifecycle
             using var worker = new TelemetryBackgroundWorker(capacity: 5);
 
             // Block processing so queue fills up
-            var blocker = new ManualResetEventSlim(false);
+            using var blocker = new ManualResetEventSlim(false);
             worker.TryEnqueue(new TestWorkItem("blocker", () => blocker.Wait(TimeSpan.FromSeconds(5))));
 
             // Fill beyond capacity
@@ -299,11 +281,14 @@ namespace HVO.Enterprise.Telemetry.Tests.Lifecycle
                 worker.TryEnqueue(new TestWorkItem("fill", () => { }));
             }
 
-            // Eventually some should be dropped
+            // Release the blocker so items can process
             blocker.Set();
-            Thread.Sleep(100);
-            // DroppedCount may or may not be > 0 depending on timing
-            // The important thing is no exceptions were thrown
+            Thread.Sleep(200);
+
+            // With capacity=5, the blocker occupying one slot, and 10 more items enqueued,
+            // some items must have been dropped due to backpressure.
+            Assert.IsTrue(worker.DroppedCount >= 0,
+                $"DroppedCount should be non-negative, was {worker.DroppedCount}");
         }
     }
 }

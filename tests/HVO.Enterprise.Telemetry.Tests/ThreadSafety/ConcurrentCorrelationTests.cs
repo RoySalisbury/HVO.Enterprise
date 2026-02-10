@@ -104,7 +104,6 @@ namespace HVO.Enterprise.Telemetry.Tests.ThreadSafety
         {
             // Arrange
             const int threadCount = 20;
-            var exceptions = new ConcurrentBag<Exception>();
 
             // Act
             TestHelpers.RunConcurrently(threadCount, index =>

@@ -169,7 +169,7 @@ namespace HVO.Enterprise.Telemetry.Tests.OperationScopes
         }
 
         [TestMethod]
-        public void OperationScope_AfterDispose_Fail_IsNoOp()
+        public void OperationScope_AfterDispose_Fail_WithValidException_IsNoOp()
         {
             var scope = CreateScope("disposed-fail-op");
             scope.Dispose();
@@ -307,7 +307,7 @@ namespace HVO.Enterprise.Telemetry.Tests.OperationScopes
         }
 
         [TestMethod]
-        public void OperationScope_LogEventsFalse_DoesNotLog()
+        public void OperationScope_LogEventsFalse_DoesNotLogOnSuccessPath()
         {
             var logger = new FakeLogger("OperationScope");
             var options = new OperationScopeOptions { LogEvents = false };
@@ -317,9 +317,19 @@ namespace HVO.Enterprise.Telemetry.Tests.OperationScopes
                 scope.Succeed();
             }
 
-            // With LogEvents=false, logger should not be called on success path
-            // (may still log exceptions)
-            // This is a soft assertion since logging behavior is implementation-dependent
+            // With LogEvents=false, the success path should not produce log entries.
+            // Compare against the LogEvents=true test which asserts Count > 0.
+            var logEventsEnabled = new FakeLogger("OperationScope");
+            var enabledOptions = new OperationScopeOptions { LogEvents = true, LogLevel = LogLevel.Information };
+            using (var scope2 = new OperationScope("logged-op", enabledOptions,
+                _testSource.Source, logEventsEnabled, null, null))
+            {
+                scope2.Succeed();
+            }
+
+            Assert.IsTrue(logger.Count <= logEventsEnabled.Count,
+                $"LogEvents=false should produce no more log entries than LogEvents=true. " +
+                $"Silent={logger.Count}, Logged={logEventsEnabled.Count}");
         }
 
         // --- Fluent chaining ---

@@ -70,40 +70,42 @@ namespace HVO.Enterprise.Telemetry.Tests.Helpers
         /// <param name="action">Action each thread executes. Receives the thread index.</param>
         public static void RunConcurrently(int threadCount, Action<int> action)
         {
-            var barrier = new ManualResetEventSlim(false);
-            var threads = new Thread[threadCount];
-            Exception? firstException = null;
-
-            for (int i = 0; i < threadCount; i++)
+            using (var barrier = new ManualResetEventSlim(false))
             {
-                int index = i;
-                threads[i] = new Thread(() =>
+                var threads = new Thread[threadCount];
+                Exception? firstException = null;
+
+                for (int i = 0; i < threadCount; i++)
                 {
-                    barrier.Wait();
-                    try
+                    int index = i;
+                    threads[i] = new Thread(() =>
                     {
-                        action(index);
-                    }
-                    catch (Exception ex)
-                    {
-                        Interlocked.CompareExchange(ref firstException, ex, null);
-                    }
-                });
-                threads[i].IsBackground = true;
-                threads[i].Start();
-            }
+                        barrier.Wait();
+                        try
+                        {
+                            action(index);
+                        }
+                        catch (Exception ex)
+                        {
+                            Interlocked.CompareExchange(ref firstException, ex, null);
+                        }
+                    });
+                    threads[i].IsBackground = true;
+                    threads[i].Start();
+                }
 
-            // Release all threads simultaneously
-            barrier.Set();
+                // Release all threads simultaneously
+                barrier.Set();
 
-            foreach (var thread in threads)
-            {
-                thread.Join(TimeSpan.FromSeconds(30));
-            }
+                foreach (var thread in threads)
+                {
+                    thread.Join(TimeSpan.FromSeconds(30));
+                }
 
-            if (firstException != null)
-            {
-                throw new AggregateException("Concurrent execution failed.", firstException);
+                if (firstException != null)
+                {
+                    throw new AggregateException("Concurrent execution failed.", firstException);
+                }
             }
         }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 
 namespace HVO.Enterprise.Telemetry.Tests.Helpers
@@ -38,21 +39,29 @@ namespace HVO.Enterprise.Telemetry.Tests.Helpers
         /// <summary>Checks if any entry was logged at the given level.</summary>
         public bool HasLoggedAtLevel(LogLevel level)
         {
-            foreach (var entry in _entries)
-            {
-                if (entry.Level == level) return true;
-            }
-            return false;
+            return _entries.Where(e => e.Level == level).Any();
         }
 
-        /// <summary>Checks if any entry contains the given substring.</summary>
+        /// <summary>Checks if any entry contains the given substring (case-sensitive).</summary>
         public bool HasLoggedContaining(string substring)
         {
-            foreach (var entry in _entries)
-            {
-                if (entry.Message?.Contains(substring) == true) return true;
-            }
-            return false;
+            return HasLoggedContaining(substring, ignoreCase: false);
+        }
+
+        /// <summary>
+        /// Checks if any entry contains the given substring, with an option for case-insensitive search.
+        /// </summary>
+        /// <param name="substring">The substring to search for in logged messages.</param>
+        /// <param name="ignoreCase">
+        /// When <c>true</c>, performs a case-insensitive comparison; otherwise, uses a case-sensitive comparison.
+        /// </param>
+        /// <returns><c>true</c> if any logged message contains the substring; otherwise, <c>false</c>.</returns>
+        public bool HasLoggedContaining(string substring, bool ignoreCase)
+        {
+            var comparison = ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+            return _entries
+                .Where(e => e.Message != null && e.Message.IndexOf(substring, comparison) >= 0)
+                .Any();
         }
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,

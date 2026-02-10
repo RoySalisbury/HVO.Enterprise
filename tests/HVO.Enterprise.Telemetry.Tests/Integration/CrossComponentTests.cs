@@ -44,7 +44,6 @@ namespace HVO.Enterprise.Telemetry.Tests.Integration
         public void OperationScope_WithException_TrackedInStatistics()
         {
             // Arrange
-            var stats = new TelemetryStatistics();
             using var testSource = new TestActivitySource("cross-stats");
             var factory = new OperationScopeFactory(testSource.Source);
 

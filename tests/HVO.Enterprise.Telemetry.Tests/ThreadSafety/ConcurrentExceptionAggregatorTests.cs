@@ -74,7 +74,7 @@ namespace HVO.Enterprise.Telemetry.Tests.ThreadSafety
             var aggregator = new ExceptionAggregator();
             const int writerThreads = 10;
             const int readerThreads = 5;
-            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
             var readCount = 0;
 
             // Act - writers record exceptions while readers query groups

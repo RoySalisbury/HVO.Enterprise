@@ -19,24 +19,6 @@ namespace HVO.Enterprise.Telemetry.Tests.Integration
     [TestClass]
     public class LifecycleIntegrationTests
     {
-        /// <summary>
-        /// Concrete implementation of <see cref="TelemetryWorkItem"/> for lifecycle tests.
-        /// </summary>
-        private sealed class TestWorkItem : TelemetryWorkItem
-        {
-            private readonly Action _action;
-            private readonly string _operationType;
-
-            public TestWorkItem(string operationType, Action action)
-            {
-                _action = action;
-                _operationType = operationType;
-            }
-
-            public override string OperationType => _operationType;
-
-            public override void Execute() => _action();
-        }
         [TestCleanup]
         public void Cleanup()
         {
@@ -147,9 +129,11 @@ namespace HVO.Enterprise.Telemetry.Tests.Integration
                 }));
             }
 
-            // Assert - some items should have been dropped
-            // (may not be exactly 98 due to race conditions with processing)
-            Assert.IsTrue(worker.DroppedCount >= 0);
+            // Assert - the test verifies the worker handles overflow without
+            // throwing exceptions. The exact DroppedCount depends on timing
+            // between enqueue and background processing.
+            Assert.IsTrue(worker.DroppedCount >= 0,
+                $"DroppedCount should be non-negative, was {worker.DroppedCount}");
         }
 
         [TestMethod]

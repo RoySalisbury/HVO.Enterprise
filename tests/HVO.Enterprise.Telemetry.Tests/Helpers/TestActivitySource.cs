@@ -9,7 +9,6 @@ namespace HVO.Enterprise.Telemetry.Tests.Helpers
     /// <see cref="ActivityListener"/> that records all sampled data. Disposing this
     /// instance tears down both the listener and the source, ensuring test isolation.
     /// </summary>
-    [TestClass]
     public sealed class TestActivitySource : IDisposable
     {
         private readonly ActivitySource _source;

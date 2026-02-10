@@ -47,8 +47,8 @@ namespace HVO.Enterprise.Telemetry.Tests.Metrics
         {
             var ex = Assert.ThrowsException<ArgumentException>(
                 () => MetricNameValidator.ValidateName(null!, "myParam"));
-            Assert.IsTrue(ex.Message.Contains("non-empty") || ex.ParamName == "myParam",
-                "Exception should reference the parameter name");
+            Assert.IsTrue(ex.Message.Contains("non-empty") && ex.ParamName == "myParam",
+                "Exception should contain 'non-empty' message and reference the parameter name");
         }
     }
 }

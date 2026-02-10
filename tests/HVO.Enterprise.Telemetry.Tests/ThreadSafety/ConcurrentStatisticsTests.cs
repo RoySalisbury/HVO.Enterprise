@@ -117,7 +117,7 @@ namespace HVO.Enterprise.Telemetry.Tests.ThreadSafety
             const int readerThreads = 5;
             const int opsPerThread = 500;
             var snapshots = new ConcurrentBag<TelemetryStatisticsSnapshot>();
-            var cts = new CancellationTokenSource();
+            using var cts = new CancellationTokenSource();
 
             // Act - writers increment while readers take snapshots
             var writers = new Thread[writerThreads];

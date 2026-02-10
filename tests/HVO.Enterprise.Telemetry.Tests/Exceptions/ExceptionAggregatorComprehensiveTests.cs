@@ -308,7 +308,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Exceptions
             var aggregator = CreateAggregatorWithTimeProvider(() =>
             {
                 callCount++;
-                return now.AddSeconds(callCount * 10);
+                return now.AddSeconds(callCount * 10d);
             });
 
             var group = aggregator.RecordException(new InvalidOperationException("repeated"));
