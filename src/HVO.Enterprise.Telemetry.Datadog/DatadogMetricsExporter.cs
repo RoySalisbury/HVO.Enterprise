@@ -24,9 +24,10 @@ namespace HVO.Enterprise.Telemetry.Datadog
     /// </remarks>
     public sealed class DatadogMetricsExporter : IDisposable
     {
-        private readonly DogStatsdService _statsd;
+        private readonly DogStatsdService? _statsd;
         private readonly ILogger<DatadogMetricsExporter>? _logger;
         private readonly string[] _globalTags;
+        private readonly bool _enabled;
         private bool _disposed;
 
         /// <summary>
@@ -45,6 +46,15 @@ namespace HVO.Enterprise.Telemetry.Datadog
             }
 
             _logger = logger;
+            _enabled = options.EnableMetricsExporter;
+
+            if (!_enabled)
+            {
+                _globalTags = Array.Empty<string>();
+                _logger?.LogInformation("DatadogMetricsExporter registered but disabled via EnableMetricsExporter=false");
+                return;
+            }
+
             _globalTags = options.GlobalTags
                 .Select(kvp => kvp.Key + ":" + kvp.Value)
                 .ToArray();
@@ -60,12 +70,19 @@ namespace HVO.Enterprise.Telemetry.Datadog
             _statsd = new DogStatsdService();
             _statsd.Configure(statsdConfig);
 
-            _logger?.LogInformation(
-                "DatadogMetricsExporter initialized: {Host}:{Port}, Transport: {Transport}, Mode: {Mode}",
-                options.AgentHost,
-                options.AgentPort,
-                options.UseUnixDomainSocket ? "UDS" : "UDP",
-                options.Mode);
+            if (options.UseUnixDomainSocket)
+            {
+                _logger?.LogInformation(
+                    "DatadogMetricsExporter initialized: {Endpoint}, Transport: UDS",
+                    options.GetEffectiveServerName());
+            }
+            else
+            {
+                _logger?.LogInformation(
+                    "DatadogMetricsExporter initialized: {Host}:{Port}, Transport: UDP",
+                    options.AgentHost,
+                    options.AgentPort);
+            }
         }
 
         /// <summary>
@@ -84,7 +101,8 @@ namespace HVO.Enterprise.Telemetry.Datadog
                 throw new ArgumentException("Metric name cannot be null or empty.", nameof(name));
             }
 
-            _statsd.Counter(name, value, tags: FormatTags(tags));
+            if (!_enabled) { return; }
+            _statsd!.Counter(name, value, tags: FormatTags(tags));
         }
 
         /// <summary>
@@ -103,7 +121,8 @@ namespace HVO.Enterprise.Telemetry.Datadog
                 throw new ArgumentException("Metric name cannot be null or empty.", nameof(name));
             }
 
-            _statsd.Gauge(name, value, tags: FormatTags(tags));
+            if (!_enabled) { return; }
+            _statsd!.Gauge(name, value, tags: FormatTags(tags));
         }
 
         /// <summary>
@@ -122,7 +141,8 @@ namespace HVO.Enterprise.Telemetry.Datadog
                 throw new ArgumentException("Metric name cannot be null or empty.", nameof(name));
             }
 
-            _statsd.Histogram(name, value, tags: FormatTags(tags));
+            if (!_enabled) { return; }
+            _statsd!.Histogram(name, value, tags: FormatTags(tags));
         }
 
         /// <summary>
@@ -142,7 +162,8 @@ namespace HVO.Enterprise.Telemetry.Datadog
                 throw new ArgumentException("Metric name cannot be null or empty.", nameof(name));
             }
 
-            _statsd.Distribution(name, value, tags: FormatTags(tags));
+            if (!_enabled) { return; }
+            _statsd!.Distribution(name, value, tags: FormatTags(tags));
         }
 
         /// <summary>
@@ -161,7 +182,8 @@ namespace HVO.Enterprise.Telemetry.Datadog
                 throw new ArgumentException("Metric name cannot be null or empty.", nameof(name));
             }
 
-            _statsd.Timer(name, milliseconds, tags: FormatTags(tags));
+            if (!_enabled) { return; }
+            _statsd!.Timer(name, milliseconds, tags: FormatTags(tags));
         }
 
         /// <inheritdoc />
@@ -174,7 +196,7 @@ namespace HVO.Enterprise.Telemetry.Datadog
 
             try
             {
-                _statsd.Dispose();
+                _statsd?.Dispose();
             }
             catch (Exception ex)
             {

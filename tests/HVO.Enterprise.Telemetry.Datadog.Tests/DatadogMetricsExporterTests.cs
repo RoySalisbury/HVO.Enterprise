@@ -253,5 +253,39 @@ namespace HVO.Enterprise.Telemetry.Datadog.Tests
             using var exporter = new DatadogMetricsExporter(options);
             exporter.Counter("requests", 1);
         }
+
+        [TestMethod]
+        public void Constructor_WithDisabledMetrics_CreatesInstance()
+        {
+            var options = new DatadogOptions
+            {
+                EnableMetricsExporter = false,
+                AgentHost = "localhost"
+            };
+            using var exporter = new DatadogMetricsExporter(options);
+            Assert.IsNotNull(exporter);
+        }
+
+        [TestMethod]
+        public void Counter_WhenDisabled_DoesNotThrow()
+        {
+            var options = new DatadogOptions { EnableMetricsExporter = false };
+            using var exporter = new DatadogMetricsExporter(options);
+            exporter.Counter("test.counter", 1);
+        }
+
+        [TestMethod]
+        public void AllMetricTypes_WhenDisabled_AreNoOps()
+        {
+            var options = new DatadogOptions { EnableMetricsExporter = false };
+            using var exporter = new DatadogMetricsExporter(options);
+            var tags = new Dictionary<string, string> { ["env"] = "test" };
+
+            exporter.Counter("c", 1, tags);
+            exporter.Gauge("g", 1.0, tags);
+            exporter.Histogram("h", 1.0, tags);
+            exporter.Distribution("d", 1.0, tags);
+            exporter.Timing("t", 1.0, tags);
+        }
     }
 }

@@ -9,7 +9,9 @@ namespace HVO.Enterprise.Telemetry.Datadog
     /// <remarks>
     /// All properties support environment-variable fallbacks following Datadog conventions
     /// (<c>DD_SERVICE</c>, <c>DD_ENV</c>, <c>DD_VERSION</c>, etc.).
-    /// Call <see cref="ApplyEnvironmentDefaults"/> to merge environment values into this instance.
+    /// When this options type is registered via the Datadog integration (for example, through
+    /// dependency injection extension methods), environment variable values are merged into the
+    /// instance automatically and no additional method calls are required by consumers.
     /// </remarks>
     public sealed class DatadogOptions
     {

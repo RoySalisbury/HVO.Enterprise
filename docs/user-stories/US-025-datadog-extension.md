@@ -1093,7 +1093,7 @@ public void Performance_MetricExport_IsMinimal()
 - [x] Works on .NET Framework 4.8 and .NET 8+
 - [x] Unix domain socket support on Linux
 - [x] XML documentation complete for all public APIs
-- [x] Code reviewed and approved
+- [ ] Code reviewed and approved
 - [x] Zero warnings in build
 - [ ] NuGet package created and validated
 

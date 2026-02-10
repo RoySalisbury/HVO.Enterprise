@@ -341,5 +341,35 @@ namespace HVO.Enterprise.Telemetry.Datadog.Tests
 
             Assert.IsNull(exporter.ExtractTraceContext(headers));
         }
+
+        // --- Disabled mode ---
+
+        [TestMethod]
+        public void EnrichActivity_WhenDisabled_DoesNotAddTags()
+        {
+            var options = new DatadogOptions
+            {
+                EnableTraceExporter = false,
+                ServiceName = "my-service",
+                Environment = "prod"
+            };
+            var exporter = new DatadogTraceExporter(options);
+
+            using var activity = new Activity("test").Start();
+            exporter.EnrichActivity(activity);
+
+            Assert.IsNull(activity.GetTagItem("service.name"));
+            Assert.IsNull(activity.GetTagItem("env"));
+        }
+
+        [TestMethod]
+        public void EnrichActivity_WhenDisabled_NullActivity_StillThrows()
+        {
+            var options = new DatadogOptions { EnableTraceExporter = false };
+            var exporter = new DatadogTraceExporter(options);
+
+            Assert.ThrowsException<ArgumentNullException>(
+                () => exporter.EnrichActivity(null!));
+        }
     }
 }

@@ -13,16 +13,24 @@ namespace HVO.Enterprise.Telemetry.Datadog
     /// </summary>
     /// <remarks>
     /// <para>
-    /// In OTLP mode this class is used only for Activity enrichment — the OpenTelemetry SDK
-    /// handles actual trace export. In DogStatsD mode it provides manual trace-context
-    /// propagation via Datadog headers (<c>x-datadog-trace-id</c>, <c>x-datadog-parent-id</c>).
+    /// Provides Activity enrichment with Datadog unified service tags and manual trace-context
+    /// propagation via both W3C and Datadog-native headers
+    /// (<c>x-datadog-trace-id</c>, <c>x-datadog-parent-id</c>).
     /// </para>
-    /// <para>This class is thread-safe.</para>
+    /// <para>
+    /// This class is thread-safe. Configuration values are captured as immutable snapshots
+    /// during construction; subsequent mutations to the source <see cref="DatadogOptions"/>
+    /// instance have no effect.
+    /// </para>
     /// </remarks>
     public sealed class DatadogTraceExporter
     {
-        private readonly DatadogOptions _options;
+        private readonly string? _serviceName;
+        private readonly string? _environment;
+        private readonly string? _version;
+        private readonly KeyValuePair<string, string>[] _globalTags;
         private readonly ILogger<DatadogTraceExporter>? _logger;
+        private readonly bool _enabled;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DatadogTraceExporter"/> class.
@@ -34,8 +42,24 @@ namespace HVO.Enterprise.Telemetry.Datadog
             DatadogOptions options,
             ILogger<DatadogTraceExporter>? logger = null)
         {
-            _options = options ?? throw new ArgumentNullException(nameof(options));
+            if (options == null)
+            {
+                throw new ArgumentNullException(nameof(options));
+            }
+
             _logger = logger;
+            _enabled = options.EnableTraceExporter;
+
+            // Snapshot immutable copies to guarantee thread safety
+            _serviceName = options.ServiceName;
+            _environment = options.Environment;
+            _version = options.Version;
+            _globalTags = options.GlobalTags.ToArray();
+
+            if (!_enabled)
+            {
+                _logger?.LogInformation("DatadogTraceExporter registered but disabled via EnableTraceExporter=false");
+            }
         }
 
         /// <summary>
@@ -51,27 +75,26 @@ namespace HVO.Enterprise.Telemetry.Datadog
                 throw new ArgumentNullException(nameof(activity));
             }
 
+            if (!_enabled) { return; }
+
             // Add unified service tags
-            if (!string.IsNullOrEmpty(_options.ServiceName))
+            if (!string.IsNullOrEmpty(_serviceName))
             {
-                activity.SetTag("service.name", _options.ServiceName);
+                activity.SetTag("service.name", _serviceName);
             }
-            if (!string.IsNullOrEmpty(_options.Environment))
+            if (!string.IsNullOrEmpty(_environment))
             {
-                activity.SetTag("env", _options.Environment);
+                activity.SetTag("env", _environment);
             }
-            if (!string.IsNullOrEmpty(_options.Version))
+            if (!string.IsNullOrEmpty(_version))
             {
-                activity.SetTag("version", _options.Version);
+                activity.SetTag("version", _version);
             }
 
             // Add global tags (don't overwrite existing)
-            foreach (var tag in _options.GlobalTags)
+            foreach (var tag in _globalTags.Where(tag => !activity.Tags.Any(t => t.Key == tag.Key)))
             {
-                if (!activity.Tags.Any(t => t.Key == tag.Key))
-                {
-                    activity.SetTag(tag.Key, tag.Value);
-                }
+                activity.SetTag(tag.Key, tag.Value);
             }
         }
 
