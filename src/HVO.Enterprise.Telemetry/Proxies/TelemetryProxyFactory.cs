@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using HVO.Enterprise.Telemetry.Abstractions;
 using HVO.Enterprise.Telemetry.Capture;
 
 namespace HVO.Enterprise.Telemetry.Proxies

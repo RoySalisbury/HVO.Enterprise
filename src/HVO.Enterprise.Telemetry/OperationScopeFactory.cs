@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using HVO.Enterprise.Telemetry.Abstractions;
 using HVO.Enterprise.Telemetry.Context;
 using HVO.Enterprise.Telemetry.Internal;
 using HVO.Enterprise.Telemetry.Sampling;

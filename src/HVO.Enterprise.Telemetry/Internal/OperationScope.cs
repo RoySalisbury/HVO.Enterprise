@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using HVO.Enterprise.Telemetry.Abstractions;
 using HVO.Enterprise.Telemetry.Context;
 using HVO.Enterprise.Telemetry.Correlation;
 using HVO.Enterprise.Telemetry.Exceptions;

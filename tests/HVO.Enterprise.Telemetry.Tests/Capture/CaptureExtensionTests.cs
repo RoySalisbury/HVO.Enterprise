@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using HVO.Enterprise.Telemetry.Abstractions;
 using HVO.Enterprise.Telemetry.Capture;
 using HVO.Enterprise.Telemetry.Proxies;
 using HVO.Enterprise.Telemetry.Tests.Proxies;

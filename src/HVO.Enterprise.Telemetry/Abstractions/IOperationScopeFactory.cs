@@ -1,6 +1,6 @@
 using System;
 
-namespace HVO.Enterprise.Telemetry
+namespace HVO.Enterprise.Telemetry.Abstractions
 {
     /// <summary>
     /// Factory for creating operation scopes.
