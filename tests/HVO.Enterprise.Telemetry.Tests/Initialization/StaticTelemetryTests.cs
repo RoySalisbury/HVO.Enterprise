@@ -11,6 +11,15 @@ namespace HVO.Enterprise.Telemetry.Tests.Initialization
     [TestClass]
     public class StaticTelemetryTests
     {
+        [TestInitialize]
+        public void Initialize()
+        {
+            // Clear leaked AsyncLocal state from parallel test projects
+            // to prevent CorrelationScope from capturing stale _previousId values
+            Telemetry.Shutdown();
+            CorrelationContext.Clear();
+        }
+
         [TestCleanup]
         public void Cleanup()
         {
