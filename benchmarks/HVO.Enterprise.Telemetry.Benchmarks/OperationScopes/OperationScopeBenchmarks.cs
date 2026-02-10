@@ -3,6 +3,7 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Engines;
 using BenchmarkDotNet.Jobs;
+using HVO.Enterprise.Telemetry.Abstractions;
 using HVO.Enterprise.Telemetry.Context;
 
 namespace HVO.Enterprise.Telemetry.Benchmarks.OperationScopes

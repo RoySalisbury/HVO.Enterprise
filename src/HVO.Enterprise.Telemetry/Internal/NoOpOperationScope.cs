@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using HVO.Enterprise.Telemetry.Abstractions;
 
 namespace HVO.Enterprise.Telemetry.Internal
 {

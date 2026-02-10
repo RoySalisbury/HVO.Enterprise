@@ -1,4 +1,5 @@
 using System;
+using HVO.Enterprise.Telemetry.Abstractions;
 
 namespace HVO.Enterprise.Telemetry.Proxies
 {

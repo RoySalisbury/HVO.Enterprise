@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using HVO.Enterprise.Telemetry.Abstractions;
 using HVO.Enterprise.Telemetry.Proxies;
 
 namespace HVO.Enterprise.Telemetry.Tests.Proxies

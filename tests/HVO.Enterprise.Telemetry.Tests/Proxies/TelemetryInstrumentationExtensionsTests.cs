@@ -1,4 +1,5 @@
 using System;
+using HVO.Enterprise.Telemetry.Abstractions;
 using HVO.Enterprise.Telemetry.Proxies;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

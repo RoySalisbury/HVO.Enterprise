@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace HVO.Enterprise.Telemetry
+namespace HVO.Enterprise.Telemetry.Abstractions
 {
     /// <summary>
     /// Represents an operation scope with automatic timing and telemetry capture.

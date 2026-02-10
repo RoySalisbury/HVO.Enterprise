@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 
 using System.Threading.Tasks;
+using HVO.Enterprise.Telemetry.Abstractions;
 using HVO.Enterprise.Telemetry.Capture;
 using Microsoft.Extensions.Logging;
 
