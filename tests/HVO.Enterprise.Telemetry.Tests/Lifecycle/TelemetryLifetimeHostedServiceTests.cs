@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using HVO.Enterprise.Telemetry.Lifecycle;
 using HVO.Enterprise.Telemetry.Metrics;
+using HVO.Enterprise.Telemetry.Tests.Helpers;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -163,6 +164,80 @@ namespace HVO.Enterprise.Telemetry.Tests.Lifecycle
             // This should not throw even though we're calling start/stop again
             // However, in a real scenario, we wouldn't reuse the same service instance
             // This test primarily validates no exceptions are thrown
+        }
+
+        [TestMethod]
+        public async Task StopAsync_WithAlreadyCancelledToken_HandlesGracefully()
+        {
+            // Arrange
+            var appLifetime = new MockHostApplicationLifetime();
+            using var worker = new TelemetryBackgroundWorker();
+            using var manager = new TelemetryLifetimeManager(worker);
+            var logger = new FakeLogger<TelemetryLifetimeHostedService>();
+            var service = new TelemetryLifetimeHostedService(appLifetime, manager, logger);
+
+            await service.StartAsync(CancellationToken.None);
+
+            using var cts = new CancellationTokenSource();
+            cts.Cancel();
+
+            // Act — should handle cancellation gracefully
+            await service.StopAsync(cts.Token);
+        }
+
+        [TestMethod]
+        public async Task OnStopping_TriggeredAfterStart_LogsMessage()
+        {
+            // Arrange
+            var appLifetime = new MockHostApplicationLifetime();
+            using var worker = new TelemetryBackgroundWorker();
+            using var manager = new TelemetryLifetimeManager(worker);
+            var logger = new FakeLogger<TelemetryLifetimeHostedService>();
+            var service = new TelemetryLifetimeHostedService(appLifetime, manager, logger);
+
+            await service.StartAsync(CancellationToken.None);
+
+            // Act — simulate application stopping event
+            appLifetime.TriggerStopping();
+
+            // Assert
+            Assert.IsTrue(logger.HasLoggedContaining("stopping"), "Should log stopping event");
+        }
+
+        [TestMethod]
+        public async Task OnStopped_TriggeredAfterStart_LogsMessage()
+        {
+            // Arrange
+            var appLifetime = new MockHostApplicationLifetime();
+            using var worker = new TelemetryBackgroundWorker();
+            using var manager = new TelemetryLifetimeManager(worker);
+            var logger = new FakeLogger<TelemetryLifetimeHostedService>();
+            var service = new TelemetryLifetimeHostedService(appLifetime, manager, logger);
+
+            await service.StartAsync(CancellationToken.None);
+
+            // Act — simulate application stopped event
+            appLifetime.TriggerStopped();
+
+            // Assert
+            Assert.IsTrue(logger.HasLoggedContaining("stopped"), "Should log stopped event");
+        }
+
+        [TestMethod]
+        public async Task Constructor_WithLogger_LogsStartOnStartAsync()
+        {
+            // Arrange
+            var appLifetime = new MockHostApplicationLifetime();
+            using var worker = new TelemetryBackgroundWorker();
+            using var manager = new TelemetryLifetimeManager(worker);
+            var logger = new FakeLogger<TelemetryLifetimeHostedService>();
+            var service = new TelemetryLifetimeHostedService(appLifetime, manager, logger);
+
+            // Act
+            await service.StartAsync(CancellationToken.None);
+
+            // Assert
+            Assert.IsTrue(logger.HasLoggedContaining("started"), "Should log service started");
         }
     }
 }
