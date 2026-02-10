@@ -209,7 +209,7 @@ namespace HVO.Enterprise.Telemetry.Serilog.Tests
                 .CreateLogger();
 
             // Act — create an Activity and correlation scope, then log
-            using (var activity = new Activity("test-operation")
+            using (new Activity("test-operation")
                 .SetIdFormat(ActivityIdFormat.W3C)
                 .Start())
             {

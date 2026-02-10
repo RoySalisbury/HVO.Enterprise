@@ -719,7 +719,7 @@ public void Performance_EnrichmentOverhead_IsMinimal()
 - [x] Performance benchmarks meet requirements
 - [x] Works on .NET Framework 4.8 and .NET 8+
 - [x] XML documentation complete for all public APIs
-- [x] Code reviewed and approved
+- [ ] Code reviewed and approved
 - [x] Zero warnings in build
 - [ ] NuGet package created and validated
 

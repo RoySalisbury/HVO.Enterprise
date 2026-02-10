@@ -82,6 +82,46 @@ namespace HVO.Enterprise.Telemetry.Correlation
         }
 
         /// <summary>
+        /// Attempts to get the explicitly set correlation ID without triggering fallback
+        /// or auto-generation logic.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Returns only values explicitly set via <see cref="BeginScope"/>, direct assignment
+        /// to <see cref="Current"/>, or the Activity-derived value cached from a prior read.
+        /// Does NOT trigger the three-tier fallback mechanism.
+        /// </para>
+        /// <para>
+        /// This method is useful for enrichers and integrations that need to distinguish
+        /// explicit correlation IDs from auto-generated or Activity-derived values.
+        /// </para>
+        /// </remarks>
+        /// <param name="correlationId">
+        /// When this method returns <see langword="true"/>, contains the explicitly set
+        /// correlation ID; otherwise, <see langword="null"/>.
+        /// </param>
+        /// <returns>
+        /// <see langword="true"/> if an explicit correlation ID is available;
+        /// otherwise, <see langword="false"/>.
+        /// </returns>
+        /// <example>
+        /// <code>
+        /// using (CorrelationContext.BeginScope("my-id"))
+        /// {
+        ///     if (CorrelationContext.TryGetExplicitCorrelationId(out var id))
+        ///     {
+        ///         Console.WriteLine(id); // "my-id"
+        ///     }
+        /// }
+        /// </code>
+        /// </example>
+        public static bool TryGetExplicitCorrelationId(out string? correlationId)
+        {
+            correlationId = _correlationId.Value;
+            return correlationId != null;
+        }
+
+        /// <summary>
         /// Clears the current correlation ID from AsyncLocal storage.
         /// This does not affect Activity.Current or auto-generation behavior.
         /// </summary>

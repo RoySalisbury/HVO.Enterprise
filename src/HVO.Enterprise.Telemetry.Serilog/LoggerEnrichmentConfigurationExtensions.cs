@@ -80,7 +80,7 @@ namespace HVO.Enterprise.Telemetry.Serilog
         }
 
         /// <summary>
-        /// Enriches log events with correlation ID from <see cref="Correlation.CorrelationContext"/>.
+        /// Enriches log events with correlation ID from <see cref="HVO.Enterprise.Telemetry.Correlation.CorrelationContext"/>.
         /// </summary>
         /// <param name="enrichmentConfiguration">Logger enrichment configuration.</param>
         /// <param name="propertyName">Property name for correlation ID. Default: <c>"CorrelationId"</c>.</param>

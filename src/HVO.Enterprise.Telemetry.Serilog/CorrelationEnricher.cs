@@ -19,11 +19,12 @@ namespace HVO.Enterprise.Telemetry.Serilog
     /// Thread-safe and AsyncLocal-aware — correlation IDs flow correctly across async/await boundaries.
     /// </para>
     /// <para>
-    /// This enricher reads the raw AsyncLocal value directly (without triggering auto-generation)
-    /// to distinguish explicit correlation IDs from fallback values. When an explicit value is set
-    /// (via <see cref="CorrelationContext.BeginScope"/> or direct assignment), it is always used.
+    /// This enricher uses <see cref="CorrelationContext.TryGetExplicitCorrelationId"/> to check
+    /// for explicitly set correlation IDs without triggering auto-generation. When an explicit value
+    /// is set (via <see cref="CorrelationContext.BeginScope"/> or direct assignment), it is always used.
     /// When no explicit value is set and <see cref="FallbackToActivity"/> is <see langword="true"/>,
-    /// falls back to <see cref="CorrelationContext.Current"/> (Activity TraceId or auto-generated).
+    /// derives the correlation from <see cref="Activity.Current"/> directly (W3C TraceId or hierarchical
+    /// RootId/Id), avoiding the all-zeroes TraceId issue for hierarchical Activities.
     /// When no explicit value is set and fallback is disabled, no property is added.
     /// </para>
     /// </remarks>
@@ -42,9 +43,6 @@ namespace HVO.Enterprise.Telemetry.Serilog
     /// </example>
     public sealed class CorrelationEnricher : ILogEventEnricher
     {
-        /// <summary>
-        /// The default zero-value W3C TraceId (32 hex zeroes).
-        /// </summary>
         private const string ZeroTraceId = "00000000000000000000000000000000";
 
         private readonly string _propertyName;
@@ -91,16 +89,14 @@ namespace HVO.Enterprise.Telemetry.Serilog
                 throw new ArgumentNullException(nameof(propertyFactory));
             }
 
-            // Use GetRawValue() to check if an explicit correlation was set (AsyncLocal only,
-            // no fallback or auto-generation). This lets us distinguish explicit values from
-            // Activity-derived or auto-generated ones.
-            var rawValue = CorrelationContext.GetRawValue();
-
-            if (rawValue != null)
+            // Use TryGetExplicitCorrelationId to check if an explicit correlation was set
+            // (AsyncLocal only, no fallback or auto-generation). This lets us distinguish
+            // explicit values from Activity-derived or auto-generated ones.
+            if (CorrelationContext.TryGetExplicitCorrelationId(out var explicitId))
             {
                 // Explicit AsyncLocal value — always use it regardless of fallback setting.
                 logEvent.AddPropertyIfAbsent(
-                    propertyFactory.CreateProperty(_propertyName, rawValue));
+                    propertyFactory.CreateProperty(_propertyName, explicitId!));
                 return;
             }
 
@@ -110,14 +106,38 @@ namespace HVO.Enterprise.Telemetry.Serilog
                 return;
             }
 
-            // Fallback: read the full three-tier value (AsyncLocal → Activity → auto-gen).
-            // Since rawValue was null, this will either pick up Activity.TraceId or auto-generate.
-            var correlationId = CorrelationContext.Current;
+            // Fallback: derive correlation from Activity.Current directly.
+            // We resolve here instead of using CorrelationContext.Current to avoid the
+            // all-zeroes W3C TraceId problem for hierarchical Activities.
+            var activity = Activity.Current;
+            if (activity != null)
+            {
+                string? correlationId;
+                if (activity.IdFormat == ActivityIdFormat.W3C)
+                {
+                    var traceId = activity.TraceId.ToString();
+                    correlationId = (traceId != ZeroTraceId) ? traceId : null;
+                }
+                else
+                {
+                    // Hierarchical format: prefer RootId, fall back to Id
+                    correlationId = activity.RootId ?? activity.Id;
+                }
 
-            if (!string.IsNullOrEmpty(correlationId))
+                if (!string.IsNullOrEmpty(correlationId))
+                {
+                    logEvent.AddPropertyIfAbsent(
+                        propertyFactory.CreateProperty(_propertyName, correlationId));
+                }
+                return;
+            }
+
+            // No Activity present — use CorrelationContext.Current which will auto-generate.
+            var autoId = CorrelationContext.Current;
+            if (!string.IsNullOrEmpty(autoId))
             {
                 logEvent.AddPropertyIfAbsent(
-                    propertyFactory.CreateProperty(_propertyName, correlationId));
+                    propertyFactory.CreateProperty(_propertyName, autoId));
             }
         }
     }
