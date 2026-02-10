@@ -1,4 +1,3 @@
-using System;
 using HVO.Enterprise.Telemetry.AppInsights;
 
 namespace HVO.Enterprise.Telemetry.AppInsights.Tests

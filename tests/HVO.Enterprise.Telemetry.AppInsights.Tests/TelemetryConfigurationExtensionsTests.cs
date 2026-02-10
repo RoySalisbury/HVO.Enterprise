@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Microsoft.ApplicationInsights.Extensibility;
 using HVO.Enterprise.Telemetry.AppInsights;
 
@@ -33,17 +34,8 @@ namespace HVO.Enterprise.Telemetry.AppInsights.Tests
             using var configuration = TelemetryConfiguration.CreateDefault();
             configuration.AddHvoEnrichers();
 
-            var hasActivityInitializer = false;
-            foreach (var init in configuration.TelemetryInitializers)
-            {
-                if (init is ActivityTelemetryInitializer)
-                {
-                    hasActivityInitializer = true;
-                    break;
-                }
-            }
-
-            Assert.IsTrue(hasActivityInitializer);
+            Assert.IsTrue(
+                configuration.TelemetryInitializers.OfType<ActivityTelemetryInitializer>().Any());
         }
 
         [TestMethod]
@@ -52,17 +44,8 @@ namespace HVO.Enterprise.Telemetry.AppInsights.Tests
             using var configuration = TelemetryConfiguration.CreateDefault();
             configuration.AddHvoEnrichers();
 
-            var hasCorrelationInitializer = false;
-            foreach (var init in configuration.TelemetryInitializers)
-            {
-                if (init is CorrelationTelemetryInitializer)
-                {
-                    hasCorrelationInitializer = true;
-                    break;
-                }
-            }
-
-            Assert.IsTrue(hasCorrelationInitializer);
+            Assert.IsTrue(
+                configuration.TelemetryInitializers.OfType<CorrelationTelemetryInitializer>().Any());
         }
 
         [TestMethod]
@@ -73,17 +56,8 @@ namespace HVO.Enterprise.Telemetry.AppInsights.Tests
 
             configuration.AddHvoEnrichers(options);
 
-            var hasActivityInitializer = false;
-            foreach (var init in configuration.TelemetryInitializers)
-            {
-                if (init is ActivityTelemetryInitializer)
-                {
-                    hasActivityInitializer = true;
-                    break;
-                }
-            }
-
-            Assert.IsFalse(hasActivityInitializer);
+            Assert.IsFalse(
+                configuration.TelemetryInitializers.OfType<ActivityTelemetryInitializer>().Any());
         }
 
         [TestMethod]
@@ -94,17 +68,8 @@ namespace HVO.Enterprise.Telemetry.AppInsights.Tests
 
             configuration.AddHvoEnrichers(options);
 
-            var hasCorrelationInitializer = false;
-            foreach (var init in configuration.TelemetryInitializers)
-            {
-                if (init is CorrelationTelemetryInitializer)
-                {
-                    hasCorrelationInitializer = true;
-                    break;
-                }
-            }
-
-            Assert.IsFalse(hasCorrelationInitializer);
+            Assert.IsFalse(
+                configuration.TelemetryInitializers.OfType<CorrelationTelemetryInitializer>().Any());
         }
 
         [TestMethod]
@@ -127,15 +92,9 @@ namespace HVO.Enterprise.Telemetry.AppInsights.Tests
 
             configuration.AddHvoEnrichers(options);
 
-            var correlationInitializer = (CorrelationTelemetryInitializer?)null;
-            foreach (var init in configuration.TelemetryInitializers)
-            {
-                if (init is CorrelationTelemetryInitializer ci)
-                {
-                    correlationInitializer = ci;
-                    break;
-                }
-            }
+            var correlationInitializer = configuration.TelemetryInitializers
+                .OfType<CorrelationTelemetryInitializer>()
+                .FirstOrDefault();
 
             Assert.IsNotNull(correlationInitializer);
             // Verify the FallbackToActivity is set (indirect validation of custom options being passed)
@@ -153,15 +112,9 @@ namespace HVO.Enterprise.Telemetry.AppInsights.Tests
 
             configuration.AddHvoEnrichers(options);
 
-            var correlationInitializer = (CorrelationTelemetryInitializer?)null;
-            foreach (var init in configuration.TelemetryInitializers)
-            {
-                if (init is CorrelationTelemetryInitializer ci)
-                {
-                    correlationInitializer = ci;
-                    break;
-                }
-            }
+            var correlationInitializer = configuration.TelemetryInitializers
+                .OfType<CorrelationTelemetryInitializer>()
+                .FirstOrDefault();
 
             Assert.IsNotNull(correlationInitializer);
             Assert.IsFalse(correlationInitializer!.FallbackToActivity);

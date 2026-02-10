@@ -36,10 +36,10 @@ namespace HVO.Enterprise.Telemetry.AppInsights.Tests
         }
 
         [TestMethod]
-        public void AddAppInsightsTelemetry_WithNullConnectionString_ThrowsArgumentException()
+        public void AddAppInsightsTelemetry_WithNullConnectionString_ThrowsArgumentNullException()
         {
             var services = new ServiceCollection();
-            Assert.ThrowsException<ArgumentException>(
+            Assert.ThrowsException<ArgumentNullException>(
                 () => services.AddAppInsightsTelemetry((string)null!));
         }
 
@@ -166,16 +166,12 @@ namespace HVO.Enterprise.Telemetry.AppInsights.Tests
             var provider = services.BuildServiceProvider();
             var config = provider.GetRequiredService<TelemetryConfiguration>();
 
-            var hasActivity = false;
-            var hasCorrelation = false;
-            foreach (var init in config.TelemetryInitializers)
-            {
-                if (init is ActivityTelemetryInitializer) hasActivity = true;
-                if (init is CorrelationTelemetryInitializer) hasCorrelation = true;
-            }
-
-            Assert.IsTrue(hasActivity, "Should have ActivityTelemetryInitializer");
-            Assert.IsTrue(hasCorrelation, "Should have CorrelationTelemetryInitializer");
+            Assert.IsTrue(
+                config.TelemetryInitializers.OfType<ActivityTelemetryInitializer>().Any(),
+                "Should have ActivityTelemetryInitializer");
+            Assert.IsTrue(
+                config.TelemetryInitializers.OfType<CorrelationTelemetryInitializer>().Any(),
+                "Should have CorrelationTelemetryInitializer");
 
             config.Dispose();
             (provider as IDisposable)?.Dispose();

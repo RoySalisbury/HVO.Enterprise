@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using HVO.Enterprise.Telemetry.AppInsights;
 using Microsoft.Extensions.DependencyInjection;
 

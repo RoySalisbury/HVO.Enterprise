@@ -94,11 +94,21 @@ namespace HVO.Enterprise.Telemetry.AppInsights
             // Register ApplicationInsightsBridge (singleton)
             services.TryAddSingleton(sp =>
             {
-                var client = sp.GetRequiredService<TelemetryClient>();
                 var options = sp.GetRequiredService<IOptions<AppInsightsOptions>>().Value;
+
+                if (!options.EnableBridge)
+                {
+                    // Bridge is disabled — register a no-op instance (OTLP mode = all methods are no-ops)
+                    var noOpConfig = TelemetryConfiguration.CreateDefault();
+                    var noOpClient = new TelemetryClient(noOpConfig);
+                    return new ApplicationInsightsBridge(noOpClient, forceOtlpMode: true);
+                }
+
+                var client = sp.GetRequiredService<TelemetryClient>();
                 var loggerFactory = sp.GetService<ILoggerFactory>();
                 var logger = loggerFactory?.CreateLogger<ApplicationInsightsBridge>();
-                return new ApplicationInsightsBridge(client, logger, options.ForceOtlpMode);
+                return new ApplicationInsightsBridge(
+                    client, logger, options.ForceOtlpMode, options.CorrelationPropertyName);
             });
 
             return services;
@@ -110,7 +120,8 @@ namespace HVO.Enterprise.Telemetry.AppInsights
         /// <param name="services">The service collection.</param>
         /// <param name="connectionString">The Application Insights connection string.</param>
         /// <returns>The service collection for chaining.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when parameters are null.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="services"/> or <paramref name="connectionString"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="connectionString"/> is empty.</exception>
         /// <example>
         /// <code>
         /// services.AddAppInsightsTelemetry("InstrumentationKey=...;IngestionEndpoint=...");
@@ -124,10 +135,14 @@ namespace HVO.Enterprise.Telemetry.AppInsights
             {
                 throw new ArgumentNullException(nameof(services));
             }
-            if (string.IsNullOrEmpty(connectionString))
+            if (connectionString == null)
+            {
+                throw new ArgumentNullException(nameof(connectionString));
+            }
+            if (connectionString.Length == 0)
             {
                 throw new ArgumentException(
-                    "Connection string cannot be null or empty.",
+                    "Connection string cannot be empty.",
                     nameof(connectionString));
             }
 

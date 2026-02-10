@@ -48,7 +48,6 @@ namespace HVO.Enterprise.Telemetry.AppInsights.Tests
         [TestMethod]
         public void Constructor_DefaultPropertyName_IsCorrelationId()
         {
-            var initializer = new CorrelationTelemetryInitializer();
             // Default property name constant should be "CorrelationId"
             Assert.AreEqual("CorrelationId", CorrelationTelemetryInitializer.DefaultPropertyName);
         }

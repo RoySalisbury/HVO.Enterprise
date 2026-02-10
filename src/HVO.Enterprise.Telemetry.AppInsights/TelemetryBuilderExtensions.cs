@@ -45,7 +45,8 @@ namespace HVO.Enterprise.Telemetry.AppInsights
         /// <param name="builder">The telemetry builder.</param>
         /// <param name="connectionString">The Application Insights connection string.</param>
         /// <returns>The telemetry builder for chaining.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when parameters are null.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="builder"/> or <paramref name="connectionString"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="connectionString"/> is empty.</exception>
         /// <example>
         /// <code>
         /// services.AddTelemetry(builder =>
@@ -61,6 +62,10 @@ namespace HVO.Enterprise.Telemetry.AppInsights
             if (builder == null)
             {
                 throw new ArgumentNullException(nameof(builder));
+            }
+            if (connectionString == null)
+            {
+                throw new ArgumentNullException(nameof(connectionString));
             }
 
             builder.Services.AddAppInsightsTelemetry(connectionString);

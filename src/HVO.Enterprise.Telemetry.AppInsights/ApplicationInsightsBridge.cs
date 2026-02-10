@@ -3,7 +3,6 @@ using System.Diagnostics;
 using HVO.Enterprise.Telemetry.Correlation;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
-using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Logging;
 
 namespace HVO.Enterprise.Telemetry.AppInsights
@@ -38,6 +37,7 @@ namespace HVO.Enterprise.Telemetry.AppInsights
         private readonly TelemetryClient _telemetryClient;
         private readonly ILogger<ApplicationInsightsBridge>? _logger;
         private readonly bool _isOtlpMode;
+        private readonly string _correlationPropertyName;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ApplicationInsightsBridge"/> class.
@@ -47,11 +47,15 @@ namespace HVO.Enterprise.Telemetry.AppInsights
         /// <param name="forceOtlpMode">
         /// Optional flag to force a specific mode. When <see langword="null"/>, the mode is auto-detected.
         /// </param>
+        /// <param name="correlationPropertyName">
+        /// The property name used for correlation ID in telemetry custom properties. Default: <c>"CorrelationId"</c>.
+        /// </param>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="telemetryClient"/> is null.</exception>
         public ApplicationInsightsBridge(
             TelemetryClient telemetryClient,
             ILogger<ApplicationInsightsBridge>? logger = null,
-            bool? forceOtlpMode = null)
+            bool? forceOtlpMode = null,
+            string correlationPropertyName = CorrelationTelemetryInitializer.DefaultPropertyName)
         {
             if (telemetryClient == null)
             {
@@ -61,6 +65,7 @@ namespace HVO.Enterprise.Telemetry.AppInsights
             _telemetryClient = telemetryClient;
             _logger = logger;
             _isOtlpMode = forceOtlpMode ?? DetectOtlpMode();
+            _correlationPropertyName = correlationPropertyName ?? CorrelationTelemetryInitializer.DefaultPropertyName;
 
             _logger?.LogInformation(
                 "ApplicationInsightsBridge initialized in {Mode} mode",
@@ -235,29 +240,29 @@ namespace HVO.Enterprise.Telemetry.AppInsights
         /// <summary>
         /// Enriches telemetry with correlation context and Activity tags.
         /// </summary>
-        private static void EnrichFromContext(ISupportProperties telemetry)
+        private void EnrichFromContext(ISupportProperties telemetry)
         {
             // Add correlation ID
             if (CorrelationContext.TryGetExplicitCorrelationId(out var correlationId) &&
-                !string.IsNullOrEmpty(correlationId))
+                !string.IsNullOrEmpty(correlationId) &&
+                !telemetry.Properties.ContainsKey(_correlationPropertyName))
             {
-                if (!telemetry.Properties.ContainsKey("CorrelationId"))
-                {
-                    telemetry.Properties["CorrelationId"] = correlationId;
-                }
+                telemetry.Properties[_correlationPropertyName] = correlationId;
             }
 
             // Add Activity context
             var activity = Activity.Current;
-            if (activity != null)
+            if (activity == null)
             {
-                foreach (var tag in activity.Tags)
+                return;
+            }
+
+            foreach (var tag in activity.Tags)
+            {
+                if (!string.IsNullOrEmpty(tag.Key) &&
+                    !telemetry.Properties.ContainsKey(tag.Key))
                 {
-                    if (!string.IsNullOrEmpty(tag.Key) &&
-                        !telemetry.Properties.ContainsKey(tag.Key))
-                    {
-                        telemetry.Properties[tag.Key] = tag.Value ?? string.Empty;
-                    }
+                    telemetry.Properties[tag.Key] = tag.Value ?? string.Empty;
                 }
             }
         }

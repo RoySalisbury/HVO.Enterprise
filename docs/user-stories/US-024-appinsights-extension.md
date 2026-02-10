@@ -28,7 +28,7 @@ So that **my OpenTelemetry traces, metrics, and logs appear in Application Insig
 3. **Telemetry Initializers**
    - [x] `ActivityTelemetryInitializer` propagates W3C TraceContext
    - [x] `CorrelationTelemetryInitializer` adds correlation ID
-   - [x] `OperationTelemetryInitializer` enriches with operation scope data (see Implementation Notes)
+   - [ ] `OperationTelemetryInitializer` — intentionally skipped: `OperationScope` is `internal sealed` with no static `Current` accessor. Activity tags (via `ActivityTelemetryInitializer`) and correlation ID (via `CorrelationTelemetryInitializer`) cover the same enrichment data. Can be added when `OperationScope.Current` is made public.
    - [x] All initializers thread-safe and AsyncLocal-aware
 
 4. **Configuration Extensions**
@@ -937,7 +937,7 @@ public void Performance_TelemetryInitializer_IsMinimal()
 
 ## Definition of Done
 
-- [x] All three telemetry initializers implemented
+- [x] Two telemetry initializers implemented (Activity + Correlation); OperationTelemetryInitializer deferred — see Acceptance Criteria §3
 - [x] Dual-mode bridge working in both OTLP and Direct modes
 - [x] Configuration extensions working with fluent API
 - [x] Unit tests passing (>85% coverage)
