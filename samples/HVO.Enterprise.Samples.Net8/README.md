@@ -257,3 +257,178 @@ HVO.Enterprise.Samples.Net8/
 └── Models/
     └── WeatherModels.cs                ← DTOs + domain models
 ```
+
+---
+
+## Example Output
+
+### Console Startup Logs
+
+When the application starts, you'll see telemetry initialization and background service registration:
+
+```
+info: HVO.Enterprise.Telemetry[0]
+      Telemetry initialized: ServiceName=HVO.Samples.Net8.WeatherMonitor, Environment=Development
+info: HVO.Enterprise.Telemetry[0]
+      Activity sources registered: HVO.Enterprise.Telemetry, HVO.Samples.Weather
+info: HVO.Enterprise.Telemetry[0]
+      Telemetry background worker started (queue capacity: 10000, batch size: 100)
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5133
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+```
+
+### Weather Summary Response (`GET /api/weather/summary`)
+
+```json
+{
+  "timestamp": "2026-02-11T06:00:00Z",
+  "locations": [
+    {
+      "name": "New York",
+      "latitude": 40.7128,
+      "longitude": -74.006,
+      "temperature": 2.5,
+      "windSpeed": 15.3,
+      "humidity": 65,
+      "conditions": "Partly Cloudy",
+      "lastUpdated": "2026-02-11T05:55:00Z"
+    },
+    {
+      "name": "London",
+      "latitude": 51.5074,
+      "longitude": -0.1278,
+      "temperature": 8.1,
+      "windSpeed": 22.7,
+      "humidity": 80,
+      "conditions": "Overcast",
+      "lastUpdated": "2026-02-11T05:55:00Z"
+    }
+  ],
+  "correlationId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+}
+```
+
+### Diagnostics Response (`GET /api/weather/diagnostics`)
+
+```json
+{
+  "telemetry": {
+    "activitiesCreated": 142,
+    "activitiesCompleted": 140,
+    "exceptionsTracked": 2,
+    "metricsRecorded": 87,
+    "queueDepth": 3,
+    "queueCapacity": 10000,
+    "errorRate": 0.014,
+    "throughputPerSecond": 2.4,
+    "uptime": "00:15:32"
+  },
+  "correlationId": "d4e5f6a7-b8c9-0123-4567-890abcdef012"
+}
+```
+
+### Health Check Response (`GET /health`)
+
+```json
+{
+  "status": "Healthy",
+  "totalDuration": "00:00:00.0234567",
+  "entries": {
+    "telemetry": {
+      "status": "Healthy",
+      "description": "Queue depth: 3/10000, Error rate: 1.4%",
+      "duration": "00:00:00.0001234"
+    },
+    "weather-api": {
+      "status": "Healthy",
+      "description": "Open-Meteo API responding",
+      "duration": "00:00:00.0230000"
+    }
+  }
+}
+```
+
+### Enriched Log Output (with ILogger enrichment)
+
+Each log line includes telemetry context automatically:
+
+```
+info: WeatherService[0]
+      => CorrelationId:a1b2c3d4 TraceId:0af7651916cd43dd8448eb211c80319c SpanId:b7ad6b7169203331
+      Fetched weather for "New York": 2.5°C, Partly Cloudy
+info: WeatherService[0]
+      => CorrelationId:a1b2c3d4 TraceId:0af7651916cd43dd8448eb211c80319c SpanId:00f067aa0ba902b7
+      Fetched weather for "London": 8.1°C, Overcast
+```
+
+### Background Service Telemetry Report
+
+The `TelemetryReporterService` logs a formatted report every minute:
+
+```
+info: TelemetryReporterService[0]
+      ┌─────────────────────────────────────────┐
+      │        Telemetry Statistics Report       │
+      ├─────────────────────────────────────────┤
+      │ Activities Created:          142        │
+      │ Activities Completed:        140        │
+      │ Exceptions Tracked:            2        │
+      │ Metrics Recorded:             87        │
+      │ Queue Depth:                3/10000     │
+      │ Error Rate:                  1.4%       │
+      │ Throughput:              2.4 ops/sec    │
+      │ Uptime:                   00:15:32     │
+      └─────────────────────────────────────────┘
+```
+
+### Error Demo Response (`GET /api/weather/error-demo`)
+
+```json
+{
+  "error": "Intentional error for demonstration",
+  "correlationId": "f1e2d3c4-b5a6-7890-fedc-ba0987654321",
+  "exceptionFingerprint": "WeatherService.DemoError:InvalidOperationException",
+  "tracked": true
+}
+```
+
+---
+
+## Request Flow
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Middleware as CorrelationMiddleware
+    participant Controller as WeatherController
+    participant Proxy as DispatchProxy
+    participant Service as WeatherService
+    participant API as Open-Meteo API
+
+    Client->>Middleware: GET /api/weather/summary
+    Note over Middleware: Assign/propagate<br/>X-Correlation-ID
+    Middleware->>Controller: Request + CorrelationContext
+    Controller->>Controller: Begin OperationScope
+    Controller->>Proxy: GetWeatherSummary()
+    Note over Proxy: Auto-instrumented via<br/>DispatchProxy (timing, tags)
+    Proxy->>Service: GetWeatherSummary()
+    Service->>Service: Begin OperationScope
+    Service->>API: HTTP GET (instrumented)
+    API-->>Service: Weather JSON
+    Service->>Service: RecordMetric(temperature)
+    Service-->>Proxy: WeatherSummary
+    Note over Proxy: Record duration,<br/>parameters, result
+    Proxy-->>Controller: WeatherSummary
+    Controller-->>Client: 200 OK + JSON
+```
+
+---
+
+## Related Documentation
+
+- [Architecture](../../docs/ARCHITECTURE.md) — System design, component diagrams, threading model
+- [Platform Differences](../../docs/DIFFERENCES.md) — .NET Framework vs .NET 8+ comparison
+- [Migration Guide](../../docs/MIGRATION.md) — Migrating from other telemetry libraries
+- [Core Telemetry](../../src/HVO.Enterprise.Telemetry/README.md) — Core library API reference
