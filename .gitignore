@@ -417,4 +417,4 @@ FodyWeavers.xsd
 *.msm
 *.msp
 .DS_Store
-weather.db
+samples/HVO.Enterprise.Samples.Net8/weather.db

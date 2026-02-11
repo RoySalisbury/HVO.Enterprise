@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using HVO.Enterprise.Telemetry.Context;
 using HVO.Enterprise.Telemetry;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -109,6 +112,118 @@ namespace HVO.Enterprise.Telemetry.Tests.OperationScopes
 
                 Assert.AreEqual("serialized", scope.Activity?.GetTagItem("payload"));
             }
+        }
+
+        [TestMethod]
+        public void Fail_RecordExceptionThenFail_SameException_TagsAppearOnce()
+        {
+            var factory = CreateFactory();
+            Activity? activity = null;
+
+            using (var scope = factory.Begin("Test"))
+            {
+                activity = scope.Activity;
+                var ex = new InvalidOperationException("boom");
+
+                // Simulate the pattern that caused duplicate tags:
+                // RecordException delegates to Fail, then user code calls Fail again.
+                scope.RecordException(ex);
+                scope.Fail(ex);
+            }
+
+            Assert.IsNotNull(activity);
+
+            var exceptionTypeTags = activity!.TagObjects
+                .Where(t => t.Key == "exception.type")
+                .ToList();
+
+            var fingerprintTags = activity.TagObjects
+                .Where(t => t.Key == "exception.fingerprint")
+                .ToList();
+
+            Assert.AreEqual(1, exceptionTypeTags.Count,
+                "exception.type tag should appear exactly once");
+            Assert.AreEqual(1, fingerprintTags.Count,
+                "exception.fingerprint tag should appear exactly once");
+        }
+
+        [TestMethod]
+        public void Fail_CalledMultipleTimesWithSameException_TagsAppearOnce()
+        {
+            var factory = CreateFactory();
+            Activity? activity = null;
+
+            using (var scope = factory.Begin("Test"))
+            {
+                activity = scope.Activity;
+                var ex = new InvalidOperationException("boom");
+
+                scope.Fail(ex);
+                scope.Fail(ex);
+                scope.Fail(ex);
+            }
+
+            Assert.IsNotNull(activity);
+
+            var exceptionTypeTags = activity!.TagObjects
+                .Where(t => t.Key == "exception.type")
+                .ToList();
+
+            Assert.AreEqual(1, exceptionTypeTags.Count,
+                "exception.type tag should appear exactly once after multiple Fail() calls");
+        }
+
+        [TestMethod]
+        public void Fail_CalledWithDifferentExceptions_RecordsBoth()
+        {
+            var factory = CreateFactory();
+            Activity? activity = null;
+
+            using (var scope = factory.Begin("Test"))
+            {
+                activity = scope.Activity;
+
+                scope.Fail(new InvalidOperationException("first"));
+                scope.Fail(new ArgumentException("second"));
+            }
+
+            Assert.IsNotNull(activity);
+
+            var exceptionTypeTags = activity!.TagObjects
+                .Where(t => t.Key == "exception.type")
+                .ToList();
+
+            // Two different exceptions should each record their own tags.
+            Assert.AreEqual(2, exceptionTypeTags.Count,
+                "Each distinct exception should record its own exception.type tag");
+        }
+
+        [TestMethod]
+        public void Fail_ConcurrentCallsWithSameException_TagsAppearOnce()
+        {
+            var factory = CreateFactory();
+            Activity? activity = null;
+            var ex = new InvalidOperationException("concurrent-boom");
+
+            using (var scope = factory.Begin("Test"))
+            {
+                activity = scope.Activity;
+
+                // Hammer Fail() from multiple threads with the same exception instance.
+                var tasks = Enumerable.Range(0, 20).Select(_ =>
+                    Task.Run(() => scope.Fail(ex))).ToArray();
+
+                Task.WaitAll(tasks);
+            }
+
+            Assert.IsNotNull(activity);
+
+            var exceptionTypeTags = activity!.TagObjects
+                .Where(t => t.Key == "exception.type")
+                .ToList();
+
+            Assert.AreEqual(1, exceptionTypeTags.Count,
+                "Concurrent Fail() calls with the same exception should record tags exactly once");
         }
 
         private static OperationScopeFactory CreateFactory()

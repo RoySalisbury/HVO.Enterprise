@@ -256,8 +256,10 @@ namespace HVO.Enterprise.Samples.Net8.Controllers
             }
             catch (Exception ex)
             {
-                _telemetry.TrackException(ex);
-                scope.RecordException(ex);
+                // scope.Fail() handles everything: sets error status on the
+                // Activity, records exception tags (type + fingerprint), and
+                // marks the scope as failed.  Calling TrackException() or
+                // RecordException() as well would duplicate the tags.
                 scope.Fail(ex);
 
                 _logger.LogError(ex, "Deliberate error for demo purposes");
