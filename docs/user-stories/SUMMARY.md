@@ -69,6 +69,9 @@ This directory contains user stories for implementing the HVO.Enterprise telemet
 - US-029: Project Documentation (8 SP) - README, guides, migration
 - US-030: Future Extensibility (3 SP) - Extension points
 
+**Sample Enhancement**:
+- US-031: Sample Extension Integrations (13 SP) - Activate all extension packages with SQLite, fakes, console telemetry
+
 ## Development Phases
 
 ### Phase 1: Foundation (Weeks 1-2)
@@ -136,6 +139,12 @@ This directory contains user stories for implementing the HVO.Enterprise telemet
 - US-028: .NET 8 sample
 - US-029: Documentation
 - US-030: Future extensibility
+
+### Phase 6: Integration Validation (Week 11)
+**Goal**: Full extension integration demonstrated
+
+**Sprint 11** - Extension Samples:
+- US-031: Sample extension integrations (SQLite, fakes, console telemetry)
 
 ## Parallel Work Opportunities
 
