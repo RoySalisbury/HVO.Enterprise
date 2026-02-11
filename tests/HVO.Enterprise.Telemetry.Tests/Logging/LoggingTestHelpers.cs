@@ -33,6 +33,7 @@ namespace HVO.Enterprise.Telemetry.Tests.Logging
 
         /// <summary>
         /// Gets the last scope as a dictionary, or null if no dictionary scope was captured.
+        /// Handles both raw Dictionary scopes and LogEnrichmentScope wrappers.
         /// </summary>
         public IDictionary<string, object?>? GetLastDictionaryScope()
         {
@@ -40,6 +41,18 @@ namespace HVO.Enterprise.Telemetry.Tests.Logging
             {
                 if (Scopes[i] is IDictionary<string, object?> dict)
                     return dict;
+
+                // Handle LogEnrichmentScope which wraps enrichment data as
+                // IReadOnlyList<KeyValuePair<string, object?>>
+                if (Scopes[i] is IReadOnlyList<KeyValuePair<string, object?>> readOnlyList)
+                {
+                    var result = new Dictionary<string, object?>(readOnlyList.Count, StringComparer.Ordinal);
+                    for (int j = 0; j < readOnlyList.Count; j++)
+                    {
+                        result[readOnlyList[j].Key] = readOnlyList[j].Value;
+                    }
+                    return result;
+                }
             }
             return null;
         }

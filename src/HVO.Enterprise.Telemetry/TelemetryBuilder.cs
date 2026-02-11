@@ -1,6 +1,7 @@
 using System;
 using HVO.Enterprise.Telemetry.Configuration;
 using System.Collections.Generic;
+using HVO.Enterprise.Telemetry.Exceptions;
 using HVO.Enterprise.Telemetry.Http;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -83,6 +84,31 @@ namespace HVO.Enterprise.Telemetry
                 options.Features.EnableHttpInstrumentation = true;
             });
 
+            return this;
+        }
+
+        /// <summary>
+        /// Adds first-chance exception monitoring to the telemetry pipeline.
+        /// When enabled, subscribes to <c>AppDomain.CurrentDomain.FirstChanceException</c>
+        /// to detect exceptions the instant they are thrown, including those that are
+        /// subsequently caught and suppressed.
+        /// </summary>
+        /// <param name="configure">Optional delegate to configure <see cref="FirstChanceExceptionOptions"/>.</param>
+        /// <returns>This builder for chaining.</returns>
+        /// <example>
+        /// <code>
+        /// services.AddTelemetry(builder => builder
+        ///     .WithFirstChanceExceptionMonitoring(options =>
+        ///     {
+        ///         options.Enabled = true;
+        ///         options.MaxEventsPerSecond = 50;
+        ///     }));
+        /// </code>
+        /// </example>
+        public TelemetryBuilder WithFirstChanceExceptionMonitoring(
+            Action<FirstChanceExceptionOptions>? configure = null)
+        {
+            Services.AddFirstChanceExceptionMonitoring(configure);
             return this;
         }
     }

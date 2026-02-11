@@ -14,10 +14,11 @@ namespace HVO.Enterprise.Telemetry.Logging
     /// <remarks>
     /// <para>This wrapper intercepts every <see cref="Log{TState}"/> call and, when
     /// enrichment is enabled, creates a scope containing TraceId, SpanId, and
-    /// CorrelationId (plus any custom enricher output). The scope is passed as a
-    /// <c>Dictionary&lt;string, object?&gt;</c> which all major logging providers
-    /// (Serilog, NLog, Console, Application Insights) understand as structured
-    /// properties.</para>
+    /// CorrelationId (plus any custom enricher output). The scope is wrapped in a
+    /// <see cref="LogEnrichmentScope"/> which provides a human-readable
+    /// <c>ToString()</c> for console formatters while still exposing key-value pairs
+    /// as <c>IReadOnlyList&lt;KeyValuePair&lt;string, object?&gt;&gt;</c> for
+    /// structured logging providers (Serilog, NLog, Application Insights).</para>
     /// <para>When no <see cref="Activity.Current"/> exists and no correlation ID is
     /// available, no scope is created and delegation is direct — zero allocation.</para>
     /// </remarks>
@@ -136,7 +137,7 @@ namespace HVO.Enterprise.Telemetry.Logging
 
             // Only create scope if we have data
             if (enrichmentData.Count > 0)
-                return _innerLogger.BeginScope(enrichmentData);
+                return _innerLogger.BeginScope(new LogEnrichmentScope(enrichmentData));
 
             return null;
         }
