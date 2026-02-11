@@ -1,5 +1,6 @@
 # US-030: Future Extensibility
 
+**GitHub Issue**: [#32](https://github.com/RoySalisbury/HVO.Enterprise/issues/32)  
 **Status**: ❌ Not Started  
 **Category**: Documentation  
 **Effort**: 3 story points  

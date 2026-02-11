@@ -1,5 +1,6 @@
 # US-002: Auto-Managed Correlation with AsyncLocal
 
+**GitHub Issue**: [#4](https://github.com/RoySalisbury/HVO.Enterprise/issues/4)  
 **Status**: ✅ Complete  
 **Category**: Core Package  
 **Effort**: 5 story points  

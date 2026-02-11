@@ -1,5 +1,6 @@
 # US-034: Seq Structured Log Extension Package
 
+**GitHub Issue**: [#81](https://github.com/RoySalisbury/HVO.Enterprise/issues/81)  
 **Status**: ❌ Not Started  
 **Category**: Extension Package  
 **Effort**: 3 story points  

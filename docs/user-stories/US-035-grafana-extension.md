@@ -1,5 +1,6 @@
 # US-035: Grafana Stack Extension Package (Loki, Tempo, Mimir)
 
+**GitHub Issue**: [#82](https://github.com/RoySalisbury/HVO.Enterprise/issues/82)  
 **Status**: ❌ Not Started  
 **Category**: Extension Package  
 **Effort**: 5 story points  

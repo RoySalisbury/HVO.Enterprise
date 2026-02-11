@@ -1,5 +1,6 @@
 # US-036: gRPC Interceptor Extension Package
 
+**GitHub Issue**: [#83](https://github.com/RoySalisbury/HVO.Enterprise/issues/83)  
 **Status**: ❌ Not Started  
 **Category**: Extension Package  
 **Effort**: 5 story points  

@@ -1,5 +1,6 @@
 # US-033: OpenTelemetry / OTLP Extension Package
 
+**GitHub Issue**: [#80](https://github.com/RoySalisbury/HVO.Enterprise/issues/80)  
 **Status**: ❌ Not Started  
 **Category**: Extension Package  
 **Effort**: 8 story points  

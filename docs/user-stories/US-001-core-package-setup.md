@@ -1,5 +1,6 @@
 # US-001: Core Package Setup and Dependencies
 
+**GitHub Issue**: [#3](https://github.com/RoySalisbury/HVO.Enterprise/issues/3)  
 **Status**: ✅ Complete  
 **Category**: Core Package  
 **Effort**: 3 story points  
