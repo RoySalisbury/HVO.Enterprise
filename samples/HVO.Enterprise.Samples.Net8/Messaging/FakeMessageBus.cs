@@ -174,6 +174,11 @@ namespace HVO.Enterprise.Samples.Net8.Messaging
 
         private Channel<MessageEnvelope> GetOrCreateChannel(string topic)
         {
+            if (string.IsNullOrWhiteSpace(topic))
+            {
+                throw new ArgumentException("Topic name must not be null or whitespace.", nameof(topic));
+            }
+
             return _topics.GetOrAdd(topic, _ => Channel.CreateBounded<MessageEnvelope>(
                 new BoundedChannelOptions(_capacity)
                 {

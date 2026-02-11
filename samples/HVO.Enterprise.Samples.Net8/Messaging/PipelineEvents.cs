@@ -42,8 +42,8 @@ namespace HVO.Enterprise.Samples.Net8.Messaging
         /// <summary>How long analysis took in milliseconds.</summary>
         public double ProcessingTimeMs { get; set; }
 
-        /// <summary>Number of Pi digits computed during simulated work.</summary>
-        public int PiDigitsComputed { get; set; }
+        /// <summary>Number of Leibniz series iterations performed during simulated work.</summary>
+        public int PiIterationsComputed { get; set; }
 
         /// <summary>UTC timestamp of the original observation.</summary>
         public DateTime ObservedAtUtc { get; set; }

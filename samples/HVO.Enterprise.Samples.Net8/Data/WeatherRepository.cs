@@ -48,6 +48,23 @@ namespace HVO.Enterprise.Samples.Net8.Data
         }
 
         /// <summary>
+        /// Stores a batch of weather readings in a single transaction.
+        /// </summary>
+        /// <param name="readings">The reading entities to persist.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The number of readings saved.</returns>
+        public async Task<int> AddReadingsAsync(
+            IEnumerable<WeatherReadingEntity> readings, CancellationToken cancellationToken = default)
+        {
+            _context.WeatherReadings.AddRange(readings);
+            var count = await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+            _logger.LogDebug("Stored {Count} weather readings in batch", count);
+
+            return count;
+        }
+
+        /// <summary>
         /// Gets the most recent weather readings, optionally filtered by location.
         /// </summary>
         /// <param name="location">Optional location filter (case-insensitive prefix match).</param>

@@ -53,11 +53,11 @@ namespace HVO.Enterprise.Samples.Net8.BackgroundServices
             IOperationScopeFactory scopeFactory,
             ILogger<WeatherCollectorService> logger)
         {
-            _serviceScopeFactory = serviceScopeFactory;
-            _messageBus = messageBus;
-            _telemetry = telemetry;
-            _scopeFactory = scopeFactory;
-            _logger = logger;
+            _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
+            _messageBus = messageBus ?? throw new ArgumentNullException(nameof(messageBus));
+            _telemetry = telemetry ?? throw new ArgumentNullException(nameof(telemetry));
+            _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -105,9 +105,9 @@ namespace HVO.Enterprise.Samples.Net8.BackgroundServices
                     var weatherService = serviceScope.ServiceProvider
                         .GetRequiredService<IWeatherService>();
                     var repository = serviceScope.ServiceProvider
-                        .GetRequiredService<WeatherRepository>();
+                        .GetService<WeatherRepository>();
                     var cacheService = serviceScope.ServiceProvider
-                        .GetRequiredService<WeatherCacheService>();
+                        .GetService<WeatherCacheService>();
 
                     var sw = Stopwatch.StartNew();
                     var summary = await weatherService.GetWeatherSummaryAsync(stoppingToken);
@@ -115,12 +115,12 @@ namespace HVO.Enterprise.Samples.Net8.BackgroundServices
 
                     scope.WithTag("collector.fetch_duration_ms", sw.ElapsedMilliseconds);
 
-                    // ── Persist each observation to SQLite ──
-                    var persistSw = Stopwatch.StartNew();
+                    // ── Persist observations to SQLite in batch ──
                     int persistedCount = 0;
-                    foreach (var observation in summary.Observations)
+                    if (repository != null)
                     {
-                        var entity = new WeatherReadingEntity
+                        var persistSw = Stopwatch.StartNew();
+                        var entities = summary.Observations.Select(observation => new WeatherReadingEntity
                         {
                             Location = observation.LocationName,
                             TemperatureCelsius = observation.TemperatureCelsius,
@@ -129,35 +129,39 @@ namespace HVO.Enterprise.Samples.Net8.BackgroundServices
                             Condition = $"WMO:{observation.WeatherCode}",
                             RecordedAtUtc = DateTime.UtcNow,
                             CorrelationId = CorrelationContext.Current,
-                        };
+                        }).ToList();
 
-                        await repository.AddReadingAsync(entity, stoppingToken).ConfigureAwait(false);
-                        persistedCount++;
+                        persistedCount = await repository.AddReadingsAsync(entities, stoppingToken)
+                            .ConfigureAwait(false);
+                        persistSw.Stop();
+
+                        _logger.LogInformation(
+                            "Persisted {Count} readings to database in {Duration}ms (CorrelationId={CorrelationId})",
+                            persistedCount, persistSw.ElapsedMilliseconds, CorrelationContext.Current);
+
+                        scope.WithTag("collector.persisted_count", persistedCount)
+                             .WithTag("collector.persist_duration_ms", persistSw.ElapsedMilliseconds);
                     }
-                    persistSw.Stop();
-
-                    _logger.LogInformation(
-                        "Persisted {Count} readings to database in {Duration}ms (CorrelationId={CorrelationId})",
-                        persistedCount, persistSw.ElapsedMilliseconds, CorrelationContext.Current);
-
-                    scope.WithTag("collector.persisted_count", persistedCount)
-                         .WithTag("collector.persist_duration_ms", persistSw.ElapsedMilliseconds);
+                    else
+                    {
+                        _logger.LogDebug("WeatherRepository not registered — skipping persistence");
+                    }
 
                     // ── Publish each observation to the message pipeline ──
                     var publishSw = Stopwatch.StartNew();
-                    int publishedCount = 0;
-                    foreach (var observation in summary.Observations)
+                    var events = summary.Observations.Select(observation => new WeatherObservationEvent
                     {
-                        var evt = new WeatherObservationEvent
-                        {
-                            Location = observation.LocationName,
-                            TemperatureCelsius = observation.TemperatureCelsius,
-                            Humidity = observation.RelativeHumidity,
-                            WindSpeedKmh = observation.WindSpeedKmh,
-                            Condition = $"WMO:{observation.WeatherCode}",
-                            ObservedAtUtc = DateTime.UtcNow,
-                        };
+                        Location = observation.LocationName,
+                        TemperatureCelsius = observation.TemperatureCelsius,
+                        Humidity = observation.RelativeHumidity,
+                        WindSpeedKmh = observation.WindSpeedKmh,
+                        Condition = $"WMO:{observation.WeatherCode}",
+                        ObservedAtUtc = DateTime.UtcNow,
+                    }).ToList();
 
+                    int publishedCount = 0;
+                    foreach (var evt in events)
+                    {
                         await _messageBus.PublishAsync(
                             FakeMessageBus.ObservationsTopic, evt, stoppingToken)
                             .ConfigureAwait(false);
@@ -174,25 +178,31 @@ namespace HVO.Enterprise.Samples.Net8.BackgroundServices
                          .WithTag("collector.publish_duration_ms", publishSw.ElapsedMilliseconds);
 
                     // ── Cache the latest summary in Redis ──
-                    var cacheSw = Stopwatch.StartNew();
-                    await cacheService.GetOrCreateAsync(
-                        "weather:summary:latest",
-                        _ => Task.FromResult(summary),
-                        TimeSpan.FromMinutes(4), // slightly shorter than collection interval
-                        stoppingToken).ConfigureAwait(false);
-                    cacheSw.Stop();
+                    if (cacheService != null)
+                    {
+                        var cacheSw = Stopwatch.StartNew();
+                        await cacheService.GetOrCreateAsync(
+                            "weather:summary:latest",
+                            _ => Task.FromResult(summary),
+                            TimeSpan.FromMinutes(4), // slightly shorter than collection interval
+                            stoppingToken).ConfigureAwait(false);
+                        cacheSw.Stop();
 
-                    _logger.LogInformation(
-                        "Cached latest weather summary (TTL=4min, {Duration}ms, CorrelationId={CorrelationId})",
-                        cacheSw.ElapsedMilliseconds, CorrelationContext.Current);
+                        _logger.LogInformation(
+                            "Cached latest weather summary (TTL=4min, {Duration}ms, CorrelationId={CorrelationId})",
+                            cacheSw.ElapsedMilliseconds, CorrelationContext.Current);
 
-                    scope.WithTag("collector.cache_duration_ms", cacheSw.ElapsedMilliseconds);
+                        scope.WithTag("collector.cache_duration_ms", cacheSw.ElapsedMilliseconds);
+                    }
+                    else
+                    {
+                        _logger.LogDebug("WeatherCacheService not registered — skipping cache");
+                    }
 
                     // ── Evaluate alerts from collected data ──
                     var alerts = weatherService.EvaluateAlerts(summary.Observations);
 
-                    var totalDurationMs = sw.ElapsedMilliseconds + persistSw.ElapsedMilliseconds
-                        + publishSw.ElapsedMilliseconds + cacheSw.ElapsedMilliseconds;
+                    var totalDurationMs = sw.ElapsedMilliseconds + publishSw.ElapsedMilliseconds;
 
                     scope.WithTag("collector.locations_collected", summary.LocationCount)
                          .WithTag("collector.avg_temperature", summary.AverageTemperature)

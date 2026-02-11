@@ -1,6 +1,5 @@
 using System;
 using System.Diagnostics;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
@@ -12,7 +11,7 @@ namespace HVO.Enterprise.Samples.Net8.Messaging
     /// Pipeline Stage 1: Consumes raw weather observations from the
     /// <see cref="FakeMessageBus.ObservationsTopic"/> topic, evaluates alert thresholds,
     /// computes weather analytics (heat index, wind chill, comfort classification),
-    /// performs simulated CPU-bound work (computing digits of Pi), and publishes
+    /// performs simulated CPU-bound work (approximating Pi via Leibniz series), and publishes
     /// a <see cref="WeatherAnalysisEvent"/> to the <see cref="FakeMessageBus.AnalysisTopic"/>.
     /// <para>
     /// The correlation ID from the original publisher is restored automatically
@@ -85,13 +84,13 @@ namespace HVO.Enterprise.Samples.Net8.Messaging
                 observation.Location, observation.TemperatureCelsius,
                 observation.WindSpeedKmh, envelope.CorrelationId);
 
-            // ── Simulated CPU-bound work: compute digits of Pi ──
-            var piDigits = Random.Shared.Next(500, 5000);
-            var piResult = ComputePiDigits(piDigits);
+            // ── Simulated CPU-bound work: approximate Pi via Leibniz series ──
+            var piIterations = Random.Shared.Next(500, 5000);
+            var piResult = ComputePiApproximation(piIterations);
 
             _logger.LogDebug(
-                "Computed {PiDigits} digits of Pi (first 20: {PiPrefix}...)",
-                piDigits, piResult.Length > 20 ? piResult[..20] : piResult);
+                "Computed {PiIterations} Leibniz iterations (result: {PiPrefix}...)",
+                piIterations, piResult.Length > 20 ? piResult[..20] : piResult);
 
             // ── Random processing delay to simulate real work ──
             var delayMs = Random.Shared.Next(50, 300);
@@ -152,7 +151,7 @@ namespace HVO.Enterprise.Samples.Net8.Messaging
                 AlertDescription = alertDescription,
                 AnalysedAtUtc = DateTime.UtcNow,
                 ProcessingTimeMs = sw.Elapsed.TotalMilliseconds,
-                PiDigitsComputed = piDigits,
+                PiIterationsComputed = piIterations,
                 ObservedAtUtc = observation.ObservedAtUtc,
             };
 
@@ -163,23 +162,23 @@ namespace HVO.Enterprise.Samples.Net8.Messaging
 
             _logger.LogInformation(
                 "📤 Stage 1 → [{Topic}]: {Location} analysed in {Duration:F1}ms " +
-                "(Comfort={Comfort}, Alert={Alert}, PiDigits={PiDigits}, CorrelationId={CorrelationId})",
+                "(Comfort={Comfort}, Alert={Alert}, PiIterations={PiIterations}, CorrelationId={CorrelationId})",
                 FakeMessageBus.AnalysisTopic, observation.Location,
                 sw.Elapsed.TotalMilliseconds, comfort, alertTriggered,
-                piDigits, envelope.CorrelationId);
+                piIterations, envelope.CorrelationId);
         }
 
         /// <summary>
-        /// Computes digits of Pi using the Leibniz formula. This is intentionally
+        /// Approximates Pi using the Leibniz series. This is intentionally
         /// CPU-bound to simulate real processing work in the pipeline.
         /// </summary>
-        private static string ComputePiDigits(int iterations)
+        private static string ComputePiApproximation(int iterations)
         {
             // Leibniz series: π/4 = 1 - 1/3 + 1/5 - 1/7 + ...
             double sum = 0.0;
             for (int i = 0; i < iterations; i++)
             {
-                double term = 1.0 / (2 * i + 1);
+                double term = 1.0 / (2.0 * i + 1.0);
                 sum += (i % 2 == 0) ? term : -term;
             }
 
