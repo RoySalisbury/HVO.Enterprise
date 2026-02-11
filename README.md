@@ -1,56 +1,61 @@
 # HVO.Enterprise
 
-A modular .NET telemetry and logging library providing unified observability across all .NET platforms.
+[![Build Status](https://github.com/RoySalisbury/HVO.Enterprise/workflows/CI/badge.svg)](https://github.com/RoySalisbury/HVO.Enterprise/actions)
+[![.NET Standard](https://img.shields.io/badge/.NET%20Standard-2.0-blue)](https://docs.microsoft.com/en-us/dotnet/standard/net-standard)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-## Overview
+> Unified telemetry and observability for all .NET platforms — single binary from .NET Framework 4.8 to .NET 10+
 
-HVO.Enterprise standardizes logging, distributed tracing, and performance telemetry across diverse .NET platforms including legacy WCF services, ASP.NET applications, and modern ASP.NET Core APIs.
+## Features
 
-### Key Features
-
-- **Cross-Platform Support**: Single binary (.NET Standard 2.0) works on .NET Framework 4.8 through .NET 10+
-- **Unified Observability**: Distributed tracing (ActivitySource), metrics (runtime-adaptive), and structured logging
-- **Functional Patterns**: `Result<T>`, `Option<T>`, and discriminated unions for robust error handling
-- **Platform Integrations**: Extensions for IIS, WCF, Serilog, Application Insights, Datadog, and databases
-- **Auto-Correlation**: Automatic correlation ID management across async/await boundaries
-- **Performance-Focused**: <100ns overhead per operation, non-blocking background processing
-- **Production-Ready**: Configuration hot reload, health checks, exception aggregation, lifecycle management
+- **🔄 Automatic Correlation** — AsyncLocal-based correlation across async boundaries
+- **📊 Adaptive Metrics** — Meter API (.NET 6+) with EventCounters fallback (.NET Framework)
+- **📈 Distributed Tracing** — W3C TraceContext with OpenTelemetry integration
+- **⚡ High Performance** — <100ns overhead, lock-free queues, zero-allocation hot paths
+- **🔌 Extensible** — Platform-specific extensions (IIS, WCF, Serilog, App Insights, Datadog, Database)
+- **📦 Single Binary** — .NET Standard 2.0 for universal deployment
+- **🛡️ Functional Patterns** — `Result<T>`, `Option<T>`, discriminated unions for robust error handling
+- **🏥 Production-Ready** — Health checks, exception aggregation, configuration hot reload, lifecycle management
 
 ## Project Structure
 
 ```
 HVO.Enterprise/
 ├── src/
-│   ├── HVO.Common/                       # Shared utilities (Result<T>, Option<T>, IOneOf)
-│   ├── HVO.Enterprise.Telemetry/        # Core telemetry library
-│   ├── HVO.Enterprise.Telemetry.IIS/    # IIS hosting integration
-│   ├── HVO.Enterprise.Telemetry.Wcf/    # WCF instrumentation
-│   ├── HVO.Enterprise.Telemetry.Database/    # Database instrumentation
-│   ├── HVO.Enterprise.Telemetry.Serilog/     # Serilog enrichers
-│   ├── HVO.Enterprise.Telemetry.AppInsights/ # Application Insights
-│   └── HVO.Enterprise.Telemetry.Datadog/     # Datadog integration
-├── tests/                               # Unit and integration tests
-├── docs/
-│   └── project-plan.md                  # Detailed implementation plan
-└── .github/
-    └── copilot-instructions.md          # Development guidelines
+│   ├── HVO.Common/                            # Shared utilities (Result<T>, Option<T>, OneOf)
+│   ├── HVO.Enterprise.Telemetry/              # Core telemetry library
+│   ├── HVO.Enterprise.Telemetry.IIS/          # IIS hosting integration
+│   ├── HVO.Enterprise.Telemetry.Wcf/          # WCF instrumentation
+│   ├── HVO.Enterprise.Telemetry.Serilog/      # Serilog enrichers
+│   ├── HVO.Enterprise.Telemetry.AppInsights/  # Application Insights bridge
+│   ├── HVO.Enterprise.Telemetry.Datadog/      # Datadog integration
+│   ├── HVO.Enterprise.Telemetry.Data/         # Database instrumentation (shared)
+│   ├── HVO.Enterprise.Telemetry.Data.EfCore/  # Entity Framework Core
+│   ├── HVO.Enterprise.Telemetry.Data.AdoNet/  # Raw ADO.NET
+│   ├── HVO.Enterprise.Telemetry.Data.Redis/   # StackExchange.Redis
+│   └── HVO.Enterprise.Telemetry.Data.RabbitMQ/# RabbitMQ messaging
+├── tests/                                     # Unit and integration tests
+├── samples/
+│   └── HVO.Enterprise.Samples.Net8/           # Weather monitoring API sample
+├── benchmarks/                                # Performance benchmarks
+└── docs/                                      # Documentation
 ```
 
-## Core Packages
+## Packages
 
-### HVO.Common
+### [HVO.Common](src/HVO.Common/)
 
-Shared utilities and functional programming patterns used across all HVO projects (not limited to Enterprise telemetry):
+Shared utilities and functional programming patterns used across all HVO projects:
 
-- **Result&lt;T&gt;**: Functional error handling without exceptions
-- **Result&lt;T, TEnum&gt;**: Typed error codes with enum-based errors
+- **Result&lt;T&gt;** / **Result&lt;T, TEnum&gt;**: Functional error handling without exceptions
 - **Option&lt;T&gt;**: Type-safe optional values
-- **IOneOf**: Discriminated union interface for type-safe variants
-- **Extension Methods**: Common utilities (EnumExtensions, etc.)
+- **OneOf&lt;T1, T2, ...&gt;**: Discriminated unions for type-safe variants
+- **Extensions**: String, collection, and enum utilities
+- **Guard / Ensure**: Input validation and runtime assertions
 
 **Target**: .NET Standard 2.0 (compatible with all .NET implementations)
 
-### HVO.Enterprise.Telemetry
+### [HVO.Enterprise.Telemetry](src/HVO.Enterprise.Telemetry/)
 
 Core telemetry library providing:
 
@@ -67,6 +72,21 @@ Core telemetry library providing:
 - Performance monitoring
 
 **Target**: .NET Standard 2.0
+
+### Extension Packages
+
+| Package | Description |
+|---------|-------------|
+| [`Telemetry.Serilog`](src/HVO.Enterprise.Telemetry.Serilog/) | Serilog enrichers (CorrelationId, TraceId, SpanId) |
+| [`Telemetry.AppInsights`](src/HVO.Enterprise.Telemetry.AppInsights/) | Azure Application Insights bridge (OTLP / Direct) |
+| [`Telemetry.Datadog`](src/HVO.Enterprise.Telemetry.Datadog/) | Datadog trace and metrics export (OTLP / DogStatsD) |
+| [`Telemetry.IIS`](src/HVO.Enterprise.Telemetry.IIS/) | IIS hosting lifecycle management |
+| [`Telemetry.Wcf`](src/HVO.Enterprise.Telemetry.Wcf/) | WCF instrumentation with W3C TraceContext |
+| [`Telemetry.Data`](src/HVO.Enterprise.Telemetry.Data/) | Shared database instrumentation base |
+| [`Telemetry.Data.EfCore`](src/HVO.Enterprise.Telemetry.Data.EfCore/) | Entity Framework Core interceptor |
+| [`Telemetry.Data.AdoNet`](src/HVO.Enterprise.Telemetry.Data.AdoNet/) | Raw ADO.NET wrapper instrumentation |
+| [`Telemetry.Data.Redis`](src/HVO.Enterprise.Telemetry.Data.Redis/) | StackExchange.Redis profiling |
+| [`Telemetry.Data.RabbitMQ`](src/HVO.Enterprise.Telemetry.Data.RabbitMQ/) | RabbitMQ message instrumentation |
 
 ## Quick Start
 
@@ -233,9 +253,16 @@ See [QUICK-START-ISSUES.md](QUICK-START-ISSUES.md) for detailed instructions.
 
 ## Documentation
 
-- [Project Plan](docs/project-plan.md) - Detailed implementation plan and architecture decisions
-- [User Stories](docs/user-stories/README.md) - All 30 user stories with acceptance criteria
-- [Copilot Instructions](.github/copilot-instructions.md) - Development guidelines and coding standards
+| Document | Description |
+|----------|-------------|
+| [Architecture](docs/ARCHITECTURE.md) | System design, component diagrams, threading model |
+| [Platform Differences](docs/DIFFERENCES.md) | .NET Framework 4.8 vs .NET 8+ comparison matrix |
+| [Migration Guide](docs/MIGRATION.md) | Migrating from other telemetry libraries |
+| [Roadmap](docs/ROADMAP.md) | Feature status, planned timeline, version compatibility |
+| [Project Plan](docs/project-plan.md) | Detailed implementation plan and decisions |
+| [Benchmarks](docs/benchmarks/benchmark-report-2026-02-08.md) | Performance benchmark results |
+| [Sample App](samples/HVO.Enterprise.Samples.Net8/) | Weather monitoring API with full telemetry |
+| [User Stories](docs/user-stories/README.md) | All 30 user stories with acceptance criteria |
 
 ## Development
 
