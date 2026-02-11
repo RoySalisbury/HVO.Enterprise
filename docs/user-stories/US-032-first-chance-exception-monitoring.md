@@ -1,6 +1,7 @@
 # US-032: First Chance Exception Monitoring
 
-**Status**: ❌ Not Started  
+**Status**: 🚧 In Progress  
+**GitHub Issue**: [#74](https://github.com/RoySalisbury/HVO.Enterprise/issues/74)  
 **Category**: Core Package  
 **Effort**: 5 story points  
 **Sprint**: 8
