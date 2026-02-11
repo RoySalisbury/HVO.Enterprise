@@ -15,6 +15,11 @@ namespace HVO.Enterprise.Samples.Net8.Messaging
         public string MessageType { get; set; } = string.Empty;
 
         /// <summary>
+        /// Gets or sets the topic/queue this message was published to.
+        /// </summary>
+        public string Topic { get; set; } = string.Empty;
+
+        /// <summary>
         /// Gets or sets the JSON-serialised payload.
         /// </summary>
         public string Payload { get; set; } = string.Empty;
