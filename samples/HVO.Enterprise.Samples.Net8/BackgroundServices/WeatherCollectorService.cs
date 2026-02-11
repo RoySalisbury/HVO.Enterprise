@@ -4,6 +4,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using HVO.Enterprise.Samples.Net8.Caching;
+using HVO.Enterprise.Samples.Net8.Data;
+using HVO.Enterprise.Samples.Net8.Messaging;
 using HVO.Enterprise.Samples.Net8.Services;
 using HVO.Enterprise.Telemetry.Abstractions;
 using HVO.Enterprise.Telemetry.Correlation;
@@ -14,7 +17,8 @@ using Microsoft.Extensions.Logging;
 namespace HVO.Enterprise.Samples.Net8.BackgroundServices
 {
     /// <summary>
-    /// Periodically fetches weather data from all monitored locations.
+    /// Periodically fetches weather data from all monitored locations and feeds
+    /// the multi-stage processing pipeline.
     /// Demonstrates:
     ///   • BackgroundService with cancellation support
     ///   • Correlation propagation into background work
@@ -22,10 +26,14 @@ namespace HVO.Enterprise.Samples.Net8.BackgroundServices
     ///   • Exception handling that doesn't crash the worker
     ///   • Metric recording for monitoring collection health
     ///   • IServiceScopeFactory for resolving scoped services from a singleton
+    ///   • Persisting observations to SQLite via EF Core
+    ///   • Publishing observations to the message pipeline
+    ///   • Caching the latest weather summary in Redis
     /// </summary>
     public sealed class WeatherCollectorService : BackgroundService
     {
         private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly FakeMessageBus _messageBus;
         private readonly ITelemetryService _telemetry;
         private readonly IOperationScopeFactory _scopeFactory;
         private readonly ILogger<WeatherCollectorService> _logger;
@@ -40,11 +48,13 @@ namespace HVO.Enterprise.Samples.Net8.BackgroundServices
 
         public WeatherCollectorService(
             IServiceScopeFactory serviceScopeFactory,
+            FakeMessageBus messageBus,
             ITelemetryService telemetry,
             IOperationScopeFactory scopeFactory,
             ILogger<WeatherCollectorService> logger)
         {
             _serviceScopeFactory = serviceScopeFactory;
+            _messageBus = messageBus;
             _telemetry = telemetry;
             _scopeFactory = scopeFactory;
             _logger = logger;
@@ -88,28 +98,112 @@ namespace HVO.Enterprise.Samples.Net8.BackgroundServices
                         "Collection cycle #{Cycle} starting (CorrelationId={CorrelationId})",
                         _collectionCount, CorrelationContext.Current);
 
-                    // Resolve scoped IWeatherService within its own DI scope.
+                    // Resolve scoped services within their own DI scope.
                     // This is the correct pattern for background services that
                     // need scoped dependencies.
                     using var serviceScope = _serviceScopeFactory.CreateScope();
                     var weatherService = serviceScope.ServiceProvider
                         .GetRequiredService<IWeatherService>();
+                    var repository = serviceScope.ServiceProvider
+                        .GetRequiredService<WeatherRepository>();
+                    var cacheService = serviceScope.ServiceProvider
+                        .GetRequiredService<WeatherCacheService>();
 
                     var sw = Stopwatch.StartNew();
                     var summary = await weatherService.GetWeatherSummaryAsync(stoppingToken);
                     sw.Stop();
 
-                    // Evaluate alerts from collected data
+                    scope.WithTag("collector.fetch_duration_ms", sw.ElapsedMilliseconds);
+
+                    // ── Persist each observation to SQLite ──
+                    var persistSw = Stopwatch.StartNew();
+                    int persistedCount = 0;
+                    foreach (var observation in summary.Observations)
+                    {
+                        var entity = new WeatherReadingEntity
+                        {
+                            Location = observation.LocationName,
+                            TemperatureCelsius = observation.TemperatureCelsius,
+                            Humidity = observation.RelativeHumidity,
+                            WindSpeedKmh = observation.WindSpeedKmh,
+                            Condition = $"WMO:{observation.WeatherCode}",
+                            RecordedAtUtc = DateTime.UtcNow,
+                            CorrelationId = CorrelationContext.Current,
+                        };
+
+                        await repository.AddReadingAsync(entity, stoppingToken).ConfigureAwait(false);
+                        persistedCount++;
+                    }
+                    persistSw.Stop();
+
+                    _logger.LogInformation(
+                        "Persisted {Count} readings to database in {Duration}ms (CorrelationId={CorrelationId})",
+                        persistedCount, persistSw.ElapsedMilliseconds, CorrelationContext.Current);
+
+                    scope.WithTag("collector.persisted_count", persistedCount)
+                         .WithTag("collector.persist_duration_ms", persistSw.ElapsedMilliseconds);
+
+                    // ── Publish each observation to the message pipeline ──
+                    var publishSw = Stopwatch.StartNew();
+                    int publishedCount = 0;
+                    foreach (var observation in summary.Observations)
+                    {
+                        var evt = new WeatherObservationEvent
+                        {
+                            Location = observation.LocationName,
+                            TemperatureCelsius = observation.TemperatureCelsius,
+                            Humidity = observation.RelativeHumidity,
+                            WindSpeedKmh = observation.WindSpeedKmh,
+                            Condition = $"WMO:{observation.WeatherCode}",
+                            ObservedAtUtc = DateTime.UtcNow,
+                        };
+
+                        await _messageBus.PublishAsync(
+                            FakeMessageBus.ObservationsTopic, evt, stoppingToken)
+                            .ConfigureAwait(false);
+                        publishedCount++;
+                    }
+                    publishSw.Stop();
+
+                    _logger.LogInformation(
+                        "Published {Count} observations to [{Topic}] in {Duration}ms (CorrelationId={CorrelationId})",
+                        publishedCount, FakeMessageBus.ObservationsTopic,
+                        publishSw.ElapsedMilliseconds, CorrelationContext.Current);
+
+                    scope.WithTag("collector.published_count", publishedCount)
+                         .WithTag("collector.publish_duration_ms", publishSw.ElapsedMilliseconds);
+
+                    // ── Cache the latest summary in Redis ──
+                    var cacheSw = Stopwatch.StartNew();
+                    await cacheService.GetOrCreateAsync(
+                        "weather:summary:latest",
+                        _ => Task.FromResult(summary),
+                        TimeSpan.FromMinutes(4), // slightly shorter than collection interval
+                        stoppingToken).ConfigureAwait(false);
+                    cacheSw.Stop();
+
+                    _logger.LogInformation(
+                        "Cached latest weather summary (TTL=4min, {Duration}ms, CorrelationId={CorrelationId})",
+                        cacheSw.ElapsedMilliseconds, CorrelationContext.Current);
+
+                    scope.WithTag("collector.cache_duration_ms", cacheSw.ElapsedMilliseconds);
+
+                    // ── Evaluate alerts from collected data ──
                     var alerts = weatherService.EvaluateAlerts(summary.Observations);
+
+                    var totalDurationMs = sw.ElapsedMilliseconds + persistSw.ElapsedMilliseconds
+                        + publishSw.ElapsedMilliseconds + cacheSw.ElapsedMilliseconds;
 
                     scope.WithTag("collector.locations_collected", summary.LocationCount)
                          .WithTag("collector.avg_temperature", summary.AverageTemperature)
                          .WithTag("collector.alert_count", alerts.Count)
-                         .WithTag("collector.duration_ms", sw.ElapsedMilliseconds)
+                         .WithTag("collector.total_duration_ms", totalDurationMs)
                          .Succeed();
 
-                    _telemetry.RecordMetric("collector.cycle.duration_ms", sw.ElapsedMilliseconds);
+                    _telemetry.RecordMetric("collector.cycle.duration_ms", totalDurationMs);
                     _telemetry.RecordMetric("collector.cycle.locations", summary.LocationCount);
+                    _telemetry.RecordMetric("collector.cycle.persisted", persistedCount);
+                    _telemetry.RecordMetric("collector.cycle.published", publishedCount);
                     _telemetry.TrackEvent("collector.cycle.completed");
 
                     if (alerts.Count > 0)
@@ -124,9 +218,11 @@ namespace HVO.Enterprise.Samples.Net8.BackgroundServices
 
                     _logger.LogInformation(
                         "Collection cycle #{Cycle} complete: {Locations} locations, " +
-                        "avg {AvgTemp}°C, {Alerts} alerts, {Duration}ms",
+                        "avg {AvgTemp}°C, {Persisted} persisted, {Published} published, " +
+                        "{Alerts} alerts, {Duration}ms (CorrelationId={CorrelationId})",
                         _collectionCount, summary.LocationCount,
-                        summary.AverageTemperature, alerts.Count, sw.ElapsedMilliseconds);
+                        summary.AverageTemperature, persistedCount, publishedCount,
+                        alerts.Count, totalDurationMs, CorrelationContext.Current);
                 }
                 catch (OperationCanceledException)
                 {

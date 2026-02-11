@@ -26,7 +26,7 @@ namespace HVO.Enterprise.Samples.Net8.Messaging
         }
 
         /// <summary>
-        /// Publishes a weather observation event.
+        /// Publishes a weather observation event to the observations topic.
         /// </summary>
         /// <param name="observation">The weather observation data.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -38,7 +38,8 @@ namespace HVO.Enterprise.Samples.Net8.Messaging
                 "Publishing weather observation for {Location}: {Temperature}°C",
                 observation.Location, observation.TemperatureCelsius);
 
-            await _bus.PublishAsync(observation, cancellationToken).ConfigureAwait(false);
+            await _bus.PublishAsync(FakeMessageBus.ObservationsTopic, observation, cancellationToken)
+                .ConfigureAwait(false);
         }
     }
 

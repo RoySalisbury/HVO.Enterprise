@@ -330,7 +330,24 @@ namespace HVO.Enterprise.Samples.Net8.Configuration
                 {
                     services.AddSingleton<FakeMessageBus>();
                     services.AddScoped<WeatherObservationPublisher>();
+
+                    // Multi-stage message processing pipeline:
+                    //   Stage 1: AlertProcessorSubscriber
+                    //     Consumes weather.observations → evaluates alerts, computes
+                    //     heat index/wind chill, performs CPU work (Pi digits) →
+                    //     publishes WeatherAnalysisEvent to weather.analysis
+                    //
+                    //   Stage 2: WeatherAnalyticsProcessor
+                    //     Consumes weather.analysis → summarises, hash iterations,
+                    //     random delay → publishes WeatherNotificationEvent to
+                    //     weather.notifications
+                    //
+                    //   Stage 3: NotificationDispatchSubscriber
+                    //     Consumes weather.notifications → logs final notification
+                    //     with full pipeline timing and the original correlation ID.
                     services.AddHostedService<AlertProcessorSubscriber>();
+                    services.AddHostedService<WeatherAnalyticsProcessor>();
+                    services.AddHostedService<NotificationDispatchSubscriber>();
                 }
             }
 
