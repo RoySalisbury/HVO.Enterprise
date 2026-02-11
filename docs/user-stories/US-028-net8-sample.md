@@ -1166,7 +1166,6 @@ A comprehensive .NET 8 ASP.NET Core Web API that serves as a **real-time weather
 |---|---|---|
 | **Operation Scopes** | `WeatherService`, `WeatherController` | `IOperationScopeFactory.Begin()` with `ActivityKind`, `InitialTags`, `WithTag`, `WithResult`, `Succeed`, `Fail` |
 | **Correlation Context** | `CorrelationMiddleware` | `CorrelationContext.BeginScope()` with X-Correlation-ID header propagation |
-| **Background Job Context** | `WeatherCollectorService` | `BackgroundJobContext.Capture()` / `Restore()` for cross-thread correlation |
 | **DispatchProxy Instrumentation** | `ServiceConfiguration` | `AddInstrumentedScoped<IWeatherService, WeatherService>()` with `InstrumentationOptions` |
 | **Exception Tracking** | `WeatherService`, error-demo endpoint | `ExceptionAggregator`, `TrackException()`, `scope.RecordException()`, `scope.Fail()` |
 | **Telemetry Statistics** | `/api/weather/diagnostics`, `TelemetryReporterService` | `ITelemetryStatistics.GetSnapshot()` — activities, errors, metrics, queue depth, throughput |
