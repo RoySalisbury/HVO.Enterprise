@@ -139,20 +139,20 @@ namespace HVO.Enterprise.Telemetry.Exceptions
             if (exception == null || options == null)
                 return false;
 
-            var exceptionTypeName = exception.GetType().FullName ?? exception.GetType().Name;
-
             // 1. Exclude list takes highest priority
-            if (options.ExcludeExceptionTypes != null && options.ExcludeExceptionTypes.Count > 0)
+            if (options.ExcludeExceptionTypes != null &&
+                options.ExcludeExceptionTypes.Count > 0 &&
+                MatchesTypeList(exception, options.ExcludeExceptionTypes))
             {
-                if (MatchesTypeList(exception, options.ExcludeExceptionTypes))
-                    return false;
+                return false;
             }
 
             // 2. Include list (whitelist) — when non-empty, must match
-            if (options.IncludeExceptionTypes != null && options.IncludeExceptionTypes.Count > 0)
+            if (options.IncludeExceptionTypes != null &&
+                options.IncludeExceptionTypes.Count > 0 &&
+                !MatchesTypeList(exception, options.IncludeExceptionTypes))
             {
-                if (!MatchesTypeList(exception, options.IncludeExceptionTypes))
-                    return false;
+                return false;
             }
 
             // 3. Exclude namespace patterns
@@ -209,7 +209,9 @@ namespace HVO.Enterprise.Telemetry.Exceptions
             if (_isHandling)
                 return;
 
+#pragma warning disable CA2246 // ThreadStatic field written from instance method (intentional per-thread guard)
             _isHandling = true;
+#pragma warning restore CA2246
             try
             {
                 HandleFirstChanceException(e.Exception);
@@ -220,7 +222,9 @@ namespace HVO.Enterprise.Telemetry.Exceptions
             }
             finally
             {
+#pragma warning disable CA2246 // ThreadStatic field written from instance method (intentional per-thread guard)
                 _isHandling = false;
+#pragma warning restore CA2246
             }
         }
 
@@ -267,41 +271,49 @@ namespace HVO.Enterprise.Telemetry.Exceptions
                 ? (targetSite.DeclaringType?.FullName ?? "Unknown") + "." + targetSite.Name
                 : "Unknown";
 
-            // Use the appropriate log level
+            // Use the appropriate log level — pass the exception instance so sinks
+            // can capture stack traces and exception details.
             switch (level)
             {
                 case Microsoft.Extensions.Logging.LogLevel.Trace:
                     _logger.LogTrace(
+                        exception,
                         "First-chance exception: {ExceptionType} in {Source} — {Message}",
                         typeName, source, exception.Message);
                     break;
                 case Microsoft.Extensions.Logging.LogLevel.Debug:
                     _logger.LogDebug(
+                        exception,
                         "First-chance exception: {ExceptionType} in {Source} — {Message}",
                         typeName, source, exception.Message);
                     break;
                 case Microsoft.Extensions.Logging.LogLevel.Information:
                     _logger.LogInformation(
+                        exception,
                         "First-chance exception: {ExceptionType} in {Source} — {Message}",
                         typeName, source, exception.Message);
                     break;
                 case Microsoft.Extensions.Logging.LogLevel.Warning:
                     _logger.LogWarning(
+                        exception,
                         "First-chance exception: {ExceptionType} in {Source} — {Message}",
                         typeName, source, exception.Message);
                     break;
                 case Microsoft.Extensions.Logging.LogLevel.Error:
                     _logger.LogError(
+                        exception,
                         "First-chance exception: {ExceptionType} in {Source} — {Message}",
                         typeName, source, exception.Message);
                     break;
                 case Microsoft.Extensions.Logging.LogLevel.Critical:
                     _logger.LogCritical(
+                        exception,
                         "First-chance exception: {ExceptionType} in {Source} — {Message}",
                         typeName, source, exception.Message);
                     break;
                 default:
                     _logger.LogWarning(
+                        exception,
                         "First-chance exception: {ExceptionType} in {Source} — {Message}",
                         typeName, source, exception.Message);
                     break;

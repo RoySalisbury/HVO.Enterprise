@@ -90,24 +90,12 @@ namespace HVO.Enterprise.Samples.Net8.Configuration
             //     Detects exceptions the instant they are thrown, even
             //     if they are subsequently caught and suppressed. Useful
             //     for diagnosing hidden failures at runtime.
-            //     Configuration is hot-reloadable via appsettings.json.
+            //     Configuration is hot-reloadable via appsettings.json
+            //     (section: Telemetry:FirstChanceExceptions).
             // ────────────────────────────────────────────────────────
 
-            services.AddFirstChanceExceptionMonitoring(options =>
-            {
-                // Disabled by default — enable via appsettings.json or here
-                options.Enabled = false;
-
-                // Log first-chance exceptions at Warning level
-                options.MinimumLogLevel = LogLevel.Warning;
-
-                // Cap at 100 events/second to prevent log flooding
-                options.MaxEventsPerSecond = 100;
-
-                // Ignore common harmless cancellation exceptions
-                options.ExcludeExceptionTypes.Add("System.OperationCanceledException");
-                options.ExcludeExceptionTypes.Add("System.Threading.Tasks.TaskCanceledException");
-            });
+            services.AddFirstChanceExceptionMonitoring(
+                configuration.GetSection("Telemetry:FirstChanceExceptions"));
 
             // ────────────────────────────────────────────────────────
             // 3. TELEMETRY HEALTH CHECKS

@@ -1,6 +1,6 @@
 # US-032: First Chance Exception Monitoring
 
-**Status**: 🚧 In Progress  
+**Status**: ✅ Complete  
 **GitHub Issue**: [#74](https://github.com/RoySalisbury/HVO.Enterprise/issues/74)  
 **Category**: Core Package  
 **Effort**: 5 story points  
@@ -26,42 +26,42 @@ Because the event fires on **every** exception (including harmless ones like `Op
 ## Acceptance Criteria
 
 1. **Core Monitor Service**
-   - [ ] `FirstChanceExceptionMonitor` subscribes to `AppDomain.CurrentDomain.FirstChanceException`
-   - [ ] Implements `IHostedService` for clean startup/shutdown lifecycle
-   - [ ] Implements `IDisposable` to unsubscribe from the event
-   - [ ] Thread-safe and re-entrant safe (the handler itself may trigger exceptions)
+   - [x] `FirstChanceExceptionMonitor` subscribes to `AppDomain.CurrentDomain.FirstChanceException`
+   - [x] Implements `IHostedService` for clean startup/shutdown lifecycle
+   - [x] Implements `IDisposable` to unsubscribe from the event
+   - [x] Thread-safe and re-entrant safe (the handler itself may trigger exceptions)
 
 2. **Configurable Filtering**
-   - [ ] `Enabled` master toggle (default: `false` — opt-in only)
-   - [ ] `IncludeExceptionTypes` list — only monitor these types when non-empty (whitelist)
-   - [ ] `ExcludeExceptionTypes` list — never monitor these types (blacklist, default includes `OperationCanceledException`, `TaskCanceledException`)
-   - [ ] `IncludeNamespacePatterns` list — only monitor exceptions from these source namespaces
-   - [ ] `ExcludeNamespacePatterns` list — ignore exceptions originating from these namespaces
-   - [ ] `MinimumLogLevel` — the `LogLevel` at which first-chance exceptions are logged (default: `Warning`)
-   - [ ] `MaxEventsPerSecond` — rate-limiting to prevent log flooding (default: `100`)
-   - [ ] Filtering evaluates type lists first, then namespace patterns, then rate limit
+   - [x] `Enabled` master toggle (default: `false` — opt-in only)
+   - [x] `IncludeExceptionTypes` list — only monitor these types when non-empty (whitelist)
+   - [x] `ExcludeExceptionTypes` list — never monitor these types (blacklist, default includes `OperationCanceledException`, `TaskCanceledException`)
+   - [x] `IncludeNamespacePatterns` list — only monitor exceptions from these source namespaces
+   - [x] `ExcludeNamespacePatterns` list — ignore exceptions originating from these namespaces
+   - [x] `MinimumLogLevel` — the `LogLevel` at which first-chance exceptions are logged (default: `Warning`)
+   - [x] `MaxEventsPerSecond` — rate-limiting to prevent log flooding (default: `100`)
+   - [x] Filtering evaluates type lists first, then namespace patterns, then rate limit
 
 3. **Runtime Configuration Changes**
-   - [ ] Uses `IOptionsMonitor<FirstChanceExceptionOptions>` for hot-reload support
-   - [ ] Changes to `Enabled`, filter lists, or rate limits take effect immediately without restart
-   - [ ] Configurable from `appsettings.json` section `Telemetry:FirstChanceExceptions`
+   - [x] Uses `IOptionsMonitor<FirstChanceExceptionOptions>` for hot-reload support
+   - [x] Changes to `Enabled`, filter lists, or rate limits take effect immediately without restart
+   - [x] Configurable from `appsettings.json` section `Telemetry:FirstChanceExceptions`
 
 4. **Telemetry Integration**
-   - [ ] Logs each accepted exception via `ILogger<FirstChanceExceptionMonitor>` at the configured level
-   - [ ] Integrates with existing `ExceptionAggregator` for fingerprinting and grouping
-   - [ ] Records `firstchance.exceptions.total` metric counter
-   - [ ] Records `firstchance.exceptions.suppressed` counter for rate-limited/filtered exceptions
+   - [x] Logs each accepted exception via `ILogger<FirstChanceExceptionMonitor>` at the configured level
+   - [x] Integrates with existing `ExceptionAggregator` for fingerprinting and grouping
+   - [x] Records `firstchance.exceptions.total` metric counter
+   - [x] Records `firstchance.exceptions.suppressed` counter for rate-limited/filtered exceptions
 
 5. **DI Registration (follows existing patterns)**
-   - [ ] `services.AddFirstChanceExceptionMonitoring(Action<FirstChanceExceptionOptions>?)` on `IServiceCollection`
-   - [ ] `builder.WithFirstChanceExceptionMonitoring(Action<FirstChanceExceptionOptions>?)` on `TelemetryBuilder`
-   - [ ] Idempotent registration (skip if already added)
+   - [x] `services.AddFirstChanceExceptionMonitoring(Action<FirstChanceExceptionOptions>?)` on `IServiceCollection`
+   - [x] `builder.WithFirstChanceExceptionMonitoring(Action<FirstChanceExceptionOptions>?)` on `TelemetryBuilder`
+   - [x] Idempotent registration (skip if already added)
 
 6. **Safety Guarantees**
-   - [ ] Re-entrance guard: if the handler itself throws, it must not recurse
-   - [ ] Never throws from the event handler (all errors silently suppressed)
-   - [ ] Minimal allocation in the hot path
-   - [ ] Does not hold references to exception objects beyond the handler scope
+   - [x] Re-entrance guard: if the handler itself throws, it must not recurse
+   - [x] Never throws from the event handler (all errors silently suppressed)
+   - [x] Minimal allocation in the hot path
+   - [x] Does not hold references to exception objects beyond the handler scope
 
 ## Technical Requirements
 
@@ -149,15 +149,15 @@ services.AddTelemetry(builder => builder
 
 ## Definition of Done
 
-- [ ] `FirstChanceExceptionOptions` class implemented
-- [ ] `FirstChanceExceptionMonitor` implemented with IHostedService
-- [ ] DI extension methods on IServiceCollection and TelemetryBuilder
-- [ ] Runtime hot-reload via IOptionsMonitor
-- [ ] All unit tests passing (>90% coverage)
-- [ ] Sample app updated with opt-in configuration
-- [ ] appsettings.json updated with commented-out section
-- [ ] XML documentation on all public APIs
-- [ ] Zero warnings in build
+- [x] `FirstChanceExceptionOptions` class implemented
+- [x] `FirstChanceExceptionMonitor` implemented with IHostedService
+- [x] DI extension methods on IServiceCollection and TelemetryBuilder
+- [x] Runtime hot-reload via IOptionsMonitor
+- [x] All unit tests passing (>90% coverage)
+- [x] Sample app updated with opt-in configuration
+- [x] appsettings.json updated with commented-out section
+- [x] XML documentation on all public APIs
+- [x] Zero warnings in build
 
 ## Notes
 
@@ -175,3 +175,37 @@ services.AddTelemetry(builder => builder
 - String formatting inside the handler can itself throw and cause recursion
 - Holding references to exception objects can prevent GC and cause memory pressure
 - On high-throughput services, even the filtering logic must be fast (<1μs)
+
+## Implementation Summary
+
+**Completed**: 2026-02-11
+**Implemented by**: GitHub Copilot
+
+### What Was Implemented
+- `FirstChanceExceptionOptions` — fully configurable options with type/namespace filtering, rate limiting
+- `FirstChanceExceptionMonitor` — hosted service subscribing to `AppDomain.CurrentDomain.FirstChanceException` with `[ThreadStatic]` re-entrance guard
+- DI extension methods: `AddFirstChanceExceptionMonitoring(Action<>?)` and `AddFirstChanceExceptionMonitoring(IConfiguration)` overloads
+- `TelemetryBuilder.WithFirstChanceExceptionMonitoring()` builder integration
+- `LogEnrichmentScope` wrapper for human-readable console scope rendering
+- Sample app updated with config-bound registration
+- appsettings.json with `Telemetry:FirstChanceExceptions` section
+
+### Key Files
+- `src/HVO.Enterprise.Telemetry/Exceptions/FirstChanceExceptionOptions.cs`
+- `src/HVO.Enterprise.Telemetry/Exceptions/FirstChanceExceptionMonitor.cs`
+- `src/HVO.Enterprise.Telemetry/Exceptions/FirstChanceExceptionServiceCollectionExtensions.cs`
+- `src/HVO.Enterprise.Telemetry/Logging/LogEnrichmentScope.cs`
+- `src/HVO.Enterprise.Telemetry/TelemetryBuilder.cs`
+- `tests/HVO.Enterprise.Telemetry.Tests/Exceptions/FirstChanceExceptionMonitorTests.cs`
+
+### Decisions Made
+- Added `IConfiguration` overload for `AddFirstChanceExceptionMonitoring` to support config binding and hot-reload
+- Exception instance is now passed to `ILogger` in `LogException` so sinks capture stack traces
+- `[ThreadStatic]` write warnings suppressed with `#pragma warning disable CA2246` (intentional per-thread guard)
+- Sample app simplified to use config-bound registration instead of redundant code defaults
+
+### Quality Gates
+- ✅ Build: 0 warnings, 0 errors
+- ✅ Tests: All passing including new namespace filter, hot-reload, and IConfiguration binding tests
+- ✅ XML documentation on all public APIs
+- ✅ Zero warnings in build

@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using HVO.Enterprise.Telemetry.Exceptions;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -282,6 +284,158 @@ namespace HVO.Enterprise.Telemetry.Tests.Exceptions
             Assert.IsTrue(
                 FirstChanceExceptionMonitor.ShouldProcess(
                     new InvalidOperationException("test"), options));
+        }
+
+        // ── Namespace Filter Tests ──────────────────────────────────
+
+        [TestMethod]
+        public void ShouldProcess_ExcludeNamespace_MatchingPrefix_ReturnsFalse()
+        {
+            var options = new FirstChanceExceptionOptions
+            {
+                Enabled = true,
+                IncludeExceptionTypes = new List<string>(),
+                ExcludeExceptionTypes = new List<string>(),
+                IncludeNamespacePatterns = new List<string>(),
+                ExcludeNamespacePatterns = new List<string> { "System" },
+            };
+
+            // InvalidOperationException originates from the System namespace —
+            // but TargetSite comes from the *throwing* method. We throw here in the
+            // test namespace, so TargetSite.DeclaringType.Namespace is our test namespace.
+            // Instead, test via ShouldProcess with a crafted exception from System.
+            // Because TargetSite depends on the actual throw site, we test this by
+            // throwing from a known namespace.
+            try
+            {
+                ThrowFromKnownNamespace();
+            }
+            catch (InvalidOperationException ex)
+            {
+                // The exception TargetSite should have a DeclaringType in our test namespace
+                // so ExcludeNamespacePatterns = "HVO.Enterprise.Telemetry.Tests" would match.
+                var testOptions = new FirstChanceExceptionOptions
+                {
+                    Enabled = true,
+                    IncludeExceptionTypes = new List<string>(),
+                    ExcludeExceptionTypes = new List<string>(),
+                    IncludeNamespacePatterns = new List<string>(),
+                    ExcludeNamespacePatterns = new List<string>
+                    {
+                        "HVO.Enterprise.Telemetry.Tests"
+                    },
+                };
+                Assert.IsFalse(
+                    FirstChanceExceptionMonitor.ShouldProcess(ex, testOptions),
+                    "Exceptions from excluded namespaces should be filtered out");
+            }
+        }
+
+        [TestMethod]
+        public void ShouldProcess_ExcludeNamespace_NonMatchingPrefix_ReturnsTrue()
+        {
+            try
+            {
+                ThrowFromKnownNamespace();
+            }
+            catch (InvalidOperationException ex)
+            {
+                var options = new FirstChanceExceptionOptions
+                {
+                    Enabled = true,
+                    IncludeExceptionTypes = new List<string>(),
+                    ExcludeExceptionTypes = new List<string>(),
+                    IncludeNamespacePatterns = new List<string>(),
+                    ExcludeNamespacePatterns = new List<string> { "SomeOther.Namespace" },
+                };
+                Assert.IsTrue(
+                    FirstChanceExceptionMonitor.ShouldProcess(ex, options),
+                    "Exceptions from non-excluded namespaces should pass through");
+            }
+        }
+
+        [TestMethod]
+        public void ShouldProcess_IncludeNamespace_MatchingPrefix_ReturnsTrue()
+        {
+            try
+            {
+                ThrowFromKnownNamespace();
+            }
+            catch (InvalidOperationException ex)
+            {
+                var options = new FirstChanceExceptionOptions
+                {
+                    Enabled = true,
+                    IncludeExceptionTypes = new List<string>(),
+                    ExcludeExceptionTypes = new List<string>(),
+                    IncludeNamespacePatterns = new List<string>
+                    {
+                        "HVO.Enterprise.Telemetry.Tests"
+                    },
+                    ExcludeNamespacePatterns = new List<string>(),
+                };
+                Assert.IsTrue(
+                    FirstChanceExceptionMonitor.ShouldProcess(ex, options),
+                    "Exceptions from included namespaces should pass through");
+            }
+        }
+
+        [TestMethod]
+        public void ShouldProcess_IncludeNamespace_NonMatchingPrefix_ReturnsFalse()
+        {
+            try
+            {
+                ThrowFromKnownNamespace();
+            }
+            catch (InvalidOperationException ex)
+            {
+                var options = new FirstChanceExceptionOptions
+                {
+                    Enabled = true,
+                    IncludeExceptionTypes = new List<string>(),
+                    ExcludeExceptionTypes = new List<string>(),
+                    IncludeNamespacePatterns = new List<string> { "SomeOther.Namespace" },
+                    ExcludeNamespacePatterns = new List<string>(),
+                };
+                Assert.IsFalse(
+                    FirstChanceExceptionMonitor.ShouldProcess(ex, options),
+                    "Exceptions from non-included namespaces should be filtered out");
+            }
+        }
+
+        [TestMethod]
+        public void ShouldProcess_NamespaceCaseInsensitive()
+        {
+            try
+            {
+                ThrowFromKnownNamespace();
+            }
+            catch (InvalidOperationException ex)
+            {
+                var options = new FirstChanceExceptionOptions
+                {
+                    Enabled = true,
+                    IncludeExceptionTypes = new List<string>(),
+                    ExcludeExceptionTypes = new List<string>(),
+                    IncludeNamespacePatterns = new List<string>
+                    {
+                        "hvo.enterprise.telemetry.tests"
+                    },
+                    ExcludeNamespacePatterns = new List<string>(),
+                };
+                Assert.IsTrue(
+                    FirstChanceExceptionMonitor.ShouldProcess(ex, options),
+                    "Namespace matching should be case-insensitive");
+            }
+        }
+
+        /// <summary>
+        /// Helper method that throws an exception so that TargetSite.DeclaringType.Namespace
+        /// is predictable (our test namespace).
+        /// </summary>
+        private static void ThrowFromKnownNamespace()
+        {
+            throw new InvalidOperationException("namespace-test");
         }
     }
 
@@ -597,6 +751,128 @@ namespace HVO.Enterprise.Telemetry.Tests.Exceptions
                 "Log message should contain the prefix");
         }
 
+        [TestMethod]
+        public async Task LogException_PassesExceptionToLogger()
+        {
+            var logger = new TestLogger<FirstChanceExceptionMonitor>();
+            var options = new FirstChanceExceptionOptions
+            {
+                Enabled = true,
+                MinimumLogLevel = LogLevel.Warning,
+                ExcludeExceptionTypes = new List<string>(),
+                IncludeExceptionTypes = new List<string>(),
+                IncludeNamespacePatterns = new List<string>(),
+                ExcludeNamespacePatterns = new List<string>(),
+            };
+            var optionsMonitor = CreateOptionsMonitor(options);
+
+            using var monitor = new FirstChanceExceptionMonitor(logger, optionsMonitor);
+            await monitor.StartAsync(CancellationToken.None);
+
+            try { throw new InvalidOperationException("exception-pass-test"); }
+            catch { /* intentionally caught */ }
+
+            await monitor.StopAsync(CancellationToken.None);
+
+            var entry = logger.LogEntries.FirstOrDefault(
+                e => e.Message.Contains("exception-pass-test"));
+
+            Assert.IsNotNull(entry, "Should have logged the exception");
+            Assert.IsNotNull(entry.Exception,
+                "Exception instance should be passed to ILogger so sinks can capture stack traces");
+            Assert.IsInstanceOfType(entry.Exception, typeof(InvalidOperationException));
+        }
+
+        [TestMethod]
+        public async Task OptionsHotReload_ChangeTakesEffectWithoutRestart()
+        {
+            var logger = new TestLogger<FirstChanceExceptionMonitor>();
+            var options = new FirstChanceExceptionOptions
+            {
+                Enabled = false, // Start disabled
+                ExcludeExceptionTypes = new List<string>(),
+                IncludeExceptionTypes = new List<string>(),
+                IncludeNamespacePatterns = new List<string>(),
+                ExcludeNamespacePatterns = new List<string>(),
+            };
+            var optionsMonitor = CreateOptionsMonitor(options);
+
+            using var monitor = new FirstChanceExceptionMonitor(logger, optionsMonitor);
+            await monitor.StartAsync(CancellationToken.None);
+
+            // Phase 1: Disabled — should not log
+            try { throw new InvalidOperationException("hot-reload-before"); }
+            catch { /* intentionally caught */ }
+
+            Assert.IsFalse(
+                logger.LogEntries.Any(e => e.Message.Contains("hot-reload-before")),
+                "Should NOT log when disabled");
+
+            // Phase 2: Enable via hot-reload (mutate the options object)
+            options.Enabled = true;
+
+            try { throw new InvalidOperationException("hot-reload-after"); }
+            catch { /* intentionally caught */ }
+
+            Assert.IsTrue(
+                logger.LogEntries.Any(e => e.Message.Contains("hot-reload-after")),
+                "Should log after options are hot-reloaded to Enabled=true");
+
+            // Phase 3: Disable again via hot-reload
+            options.Enabled = false;
+            logger.LogEntries.Clear();
+
+            try { throw new InvalidOperationException("hot-reload-disabled"); }
+            catch { /* intentionally caught */ }
+
+            Assert.IsFalse(
+                logger.LogEntries.Any(e => e.Message.Contains("hot-reload-disabled")),
+                "Should NOT log after options are hot-reloaded back to Enabled=false");
+
+            await monitor.StopAsync(CancellationToken.None);
+        }
+
+        [TestMethod]
+        public async Task OptionsHotReload_FilterChangeTakesEffect()
+        {
+            var logger = new TestLogger<FirstChanceExceptionMonitor>();
+            var options = new FirstChanceExceptionOptions
+            {
+                Enabled = true,
+                ExcludeExceptionTypes = new List<string>
+                {
+                    "System.InvalidOperationException"
+                },
+                IncludeExceptionTypes = new List<string>(),
+                IncludeNamespacePatterns = new List<string>(),
+                ExcludeNamespacePatterns = new List<string>(),
+            };
+            var optionsMonitor = CreateOptionsMonitor(options);
+
+            using var monitor = new FirstChanceExceptionMonitor(logger, optionsMonitor);
+            await monitor.StartAsync(CancellationToken.None);
+
+            // Phase 1: Excluded — should not log
+            try { throw new InvalidOperationException("filter-change-before"); }
+            catch { /* intentionally caught */ }
+
+            Assert.IsFalse(
+                logger.LogEntries.Any(e => e.Message.Contains("filter-change-before")),
+                "Should NOT log excluded exception type");
+
+            // Phase 2: Remove the exclusion via hot-reload
+            options.ExcludeExceptionTypes.Clear();
+
+            try { throw new InvalidOperationException("filter-change-after"); }
+            catch { /* intentionally caught */ }
+
+            Assert.IsTrue(
+                logger.LogEntries.Any(e => e.Message.Contains("filter-change-after")),
+                "Should log after exclude filter is removed via hot-reload");
+
+            await monitor.StopAsync(CancellationToken.None);
+        }
+
         // ── DI Registration Tests ──────────────────────────────────
 
         [TestMethod]
@@ -654,6 +930,41 @@ namespace HVO.Enterprise.Telemetry.Tests.Exceptions
             Assert.IsTrue(optionsSnapshot.Value.Enabled);
             Assert.AreEqual(42, optionsSnapshot.Value.MaxEventsPerSecond);
             Assert.AreEqual(LogLevel.Critical, optionsSnapshot.Value.MinimumLogLevel);
+        }
+
+        [TestMethod]
+        public void AddFirstChanceExceptionMonitoring_WithConfiguration_BindsOptions()
+        {
+            var json = @"{
+                ""Enabled"": true,
+                ""MinimumLogLevel"": ""Error"",
+                ""MaxEventsPerSecond"": 42
+            }";
+            var stream = new System.IO.MemoryStream(System.Text.Encoding.UTF8.GetBytes(json));
+            var configuration = new ConfigurationBuilder()
+                .AddJsonStream(stream)
+                .Build();
+
+            var services = new ServiceCollection();
+            services.AddLogging();
+            services.AddFirstChanceExceptionMonitoring(configuration);
+
+            var sp = services.BuildServiceProvider();
+            var optionsSnapshot = sp.GetRequiredService<IOptions<FirstChanceExceptionOptions>>();
+
+            Assert.IsTrue(optionsSnapshot.Value.Enabled);
+            Assert.AreEqual(42, optionsSnapshot.Value.MaxEventsPerSecond);
+            Assert.AreEqual(LogLevel.Error, optionsSnapshot.Value.MinimumLogLevel);
+        }
+
+        [TestMethod]
+        public void AddFirstChanceExceptionMonitoring_WithConfiguration_NullSection_Throws()
+        {
+            var services = new ServiceCollection();
+            Microsoft.Extensions.Configuration.IConfiguration? config = null;
+
+            Assert.ThrowsException<ArgumentNullException>(() =>
+                services.AddFirstChanceExceptionMonitoring(config!));
         }
 
         // ── TelemetryBuilder Extension Test ─────────────────────────
