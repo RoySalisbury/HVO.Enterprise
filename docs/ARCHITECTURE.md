@@ -50,16 +50,16 @@ graph TB
 |---------|--------|---------|
 | [`HVO.Common`](../src/HVO.Common/) | netstandard2.0 | Shared utilities: `Result<T>`, `Option<T>`, `OneOf`, guards, extensions |
 | [`HVO.Enterprise.Telemetry`](../src/HVO.Enterprise.Telemetry/) | netstandard2.0 | Core telemetry: tracing, metrics, logging, configuration |
-| [`HVO.Enterprise.Telemetry.IIS`](../src/HVO.Enterprise.Telemetry/IIS/) | netstandard2.0 | IIS lifecycle & request telemetry |
-| [`HVO.Enterprise.Telemetry.WCF`](../src/HVO.Enterprise.Telemetry/WCF/) | netstandard2.0 | WCF dispatch inspector integration |
-| [`HVO.Enterprise.Telemetry.Serilog`](../src/HVO.Enterprise.Telemetry/Serilog/) | netstandard2.0 | Serilog sink & enricher bridge |
-| [`HVO.Enterprise.Telemetry.AppInsights`](../src/HVO.Enterprise.Telemetry/AppInsights/) | netstandard2.0 | Application Insights telemetry export |
-| [`HVO.Enterprise.Telemetry.Datadog`](../src/HVO.Enterprise.Telemetry/Datadog/) | netstandard2.0 | Datadog APM integration |
-| [`HVO.Enterprise.Telemetry.Data`](../src/HVO.Enterprise.Telemetry/Data/) | netstandard2.0 | Shared data instrumentation base |
-| [`HVO.Enterprise.Telemetry.Data.EfCore`](../src/HVO.Enterprise.Telemetry/Data/EfCore/) | netstandard2.0 | Entity Framework Core diagnostics |
-| [`HVO.Enterprise.Telemetry.Data.AdoNet`](../src/HVO.Enterprise.Telemetry/Data/AdoNet/) | netstandard2.0 | ADO.NET command tracing |
-| [`HVO.Enterprise.Telemetry.Data.Redis`](../src/HVO.Enterprise.Telemetry/Data/Redis/) | netstandard2.0 | Redis operation tracing |
-| [`HVO.Enterprise.Telemetry.Data.RabbitMQ`](../src/HVO.Enterprise.Telemetry/Data/RabbitMQ/) | netstandard2.0 | RabbitMQ message tracing |
+| [`HVO.Enterprise.Telemetry.IIS`](../src/HVO.Enterprise.Telemetry.IIS/) | netstandard2.0 | IIS lifecycle & request telemetry |
+| [`HVO.Enterprise.Telemetry.Wcf`](../src/HVO.Enterprise.Telemetry.Wcf/) | netstandard2.0 | WCF dispatch inspector integration |
+| [`HVO.Enterprise.Telemetry.Serilog`](../src/HVO.Enterprise.Telemetry.Serilog/) | netstandard2.0 | Serilog enricher bridge |
+| [`HVO.Enterprise.Telemetry.AppInsights`](../src/HVO.Enterprise.Telemetry.AppInsights/) | netstandard2.0 | Application Insights telemetry export |
+| [`HVO.Enterprise.Telemetry.Datadog`](../src/HVO.Enterprise.Telemetry.Datadog/) | netstandard2.0 | Datadog APM integration |
+| [`HVO.Enterprise.Telemetry.Data`](../src/HVO.Enterprise.Telemetry.Data/) | netstandard2.0 | Shared data instrumentation base |
+| [`HVO.Enterprise.Telemetry.Data.EfCore`](../src/HVO.Enterprise.Telemetry.Data.EfCore/) | netstandard2.0 | Entity Framework Core diagnostics |
+| [`HVO.Enterprise.Telemetry.Data.AdoNet`](../src/HVO.Enterprise.Telemetry.Data.AdoNet/) | netstandard2.0 | ADO.NET command tracing |
+| [`HVO.Enterprise.Telemetry.Data.Redis`](../src/HVO.Enterprise.Telemetry.Data.Redis/) | netstandard2.0 | Redis operation tracing |
+| [`HVO.Enterprise.Telemetry.Data.RabbitMQ`](../src/HVO.Enterprise.Telemetry.Data.RabbitMQ/) | netstandard2.0 | RabbitMQ message tracing |
 
 ## Core Component Architecture
 
