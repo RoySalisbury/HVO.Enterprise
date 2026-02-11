@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -46,23 +45,16 @@ namespace HVO.Enterprise.Samples.Net8.Middleware
                 return Task.CompletedTask;
             });
 
-            // 4. Enrich the ILogger scope for all downstream logging
-            using (_logger.BeginScope(new Dictionary<string, object>
-            {
-                ["CorrelationId"] = correlationId,
-                ["TraceId"] = Activity.Current?.TraceId.ToString() ?? "none",
-                ["RequestPath"] = context.Request.Path.Value ?? "/",
-                ["RequestMethod"] = context.Request.Method,
-            }))
-            {
-                _logger.LogDebug("Request started — CorrelationId={CorrelationId}", correlationId);
+            // 4. Log request lifecycle — CorrelationId and TraceId are
+            //    automatically enriched by AddTelemetryLoggingEnrichment(),
+            //    so there is no need for a manual BeginScope here.
+            _logger.LogDebug("Request started — CorrelationId={CorrelationId}", correlationId);
 
-                await _next(context);
+            await _next(context);
 
-                _logger.LogDebug(
-                    "Request completed — StatusCode={StatusCode}, CorrelationId={CorrelationId}",
-                    context.Response.StatusCode, correlationId);
-            }
+            _logger.LogDebug(
+                "Request completed — StatusCode={StatusCode}, CorrelationId={CorrelationId}",
+                context.Response.StatusCode, correlationId);
         }
     }
 

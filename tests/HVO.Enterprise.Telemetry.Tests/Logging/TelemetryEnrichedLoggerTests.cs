@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Text.RegularExpressions;
 using HVO.Enterprise.Telemetry.Correlation;
 using HVO.Enterprise.Telemetry.Logging;
 using Microsoft.Extensions.Logging;
@@ -558,6 +560,328 @@ namespace HVO.Enterprise.Telemetry.Tests.Logging
             Assert.IsNotNull(scope);
             Assert.AreEqual(1, scope.Count);
             Assert.IsTrue(scope.ContainsKey("TraceId"));
+        }
+
+        // --- Enrichment Value Type Validation ---
+        // These tests ensure enrichment values are stored as proper string data,
+        // not as boxed struct types (ActivityTraceId, ActivitySpanId, etc.) that
+        // would render as type names in some logging providers.
+
+        [TestMethod]
+        public void Log_TraceId_IsString_NotActivityTraceIdStruct()
+        {
+            // Arrange
+            var logger = CreateEnrichedLogger();
+            using var source = new ActivitySource("test");
+            using var listener = new ActivityListener
+            {
+                ShouldListenTo = _ => true,
+                Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded
+            };
+            ActivitySource.AddActivityListener(listener);
+
+            using var activity = source.StartActivity("TestOp");
+            Assert.IsNotNull(activity);
+
+            // Act
+            logger.LogInformation("TraceId type check");
+
+            // Assert — value must be a string, not a boxed ActivityTraceId
+            var scope = _innerLogger.GetLastDictionaryScope();
+            Assert.IsNotNull(scope);
+            var traceIdValue = scope["TraceId"];
+            Assert.IsInstanceOfType(traceIdValue, typeof(string),
+                "TraceId should be a string, not a boxed ActivityTraceId struct");
+        }
+
+        [TestMethod]
+        public void Log_SpanId_IsString_NotActivitySpanIdStruct()
+        {
+            // Arrange
+            var logger = CreateEnrichedLogger();
+            using var source = new ActivitySource("test");
+            using var listener = new ActivityListener
+            {
+                ShouldListenTo = _ => true,
+                Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded
+            };
+            ActivitySource.AddActivityListener(listener);
+
+            using var activity = source.StartActivity("TestOp");
+            Assert.IsNotNull(activity);
+
+            // Act
+            logger.LogInformation("SpanId type check");
+
+            // Assert — value must be a string, not a boxed ActivitySpanId
+            var scope = _innerLogger.GetLastDictionaryScope();
+            Assert.IsNotNull(scope);
+            var spanIdValue = scope["SpanId"];
+            Assert.IsInstanceOfType(spanIdValue, typeof(string),
+                "SpanId should be a string, not a boxed ActivitySpanId struct");
+        }
+
+        [TestMethod]
+        public void Log_ParentSpanId_IsString_NotActivitySpanIdStruct()
+        {
+            // Arrange
+            var logger = CreateEnrichedLogger();
+            using var source = new ActivitySource("test");
+            using var listener = new ActivityListener
+            {
+                ShouldListenTo = _ => true,
+                Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded
+            };
+            ActivitySource.AddActivityListener(listener);
+
+            using var parentActivity = source.StartActivity("Parent");
+            Assert.IsNotNull(parentActivity);
+            using var childActivity = source.StartActivity("Child");
+            Assert.IsNotNull(childActivity);
+
+            // Act
+            logger.LogInformation("ParentSpanId type check");
+
+            // Assert
+            var scope = _innerLogger.GetLastDictionaryScope();
+            Assert.IsNotNull(scope);
+            var parentSpanIdValue = scope["ParentSpanId"];
+            Assert.IsInstanceOfType(parentSpanIdValue, typeof(string),
+                "ParentSpanId should be a string, not a boxed ActivitySpanId struct");
+        }
+
+        [TestMethod]
+        public void Log_TraceFlags_IsString_NotEnumValue()
+        {
+            // Arrange
+            _options.IncludeTraceFlags = true;
+            var logger = CreateEnrichedLogger();
+            using var source = new ActivitySource("test");
+            using var listener = new ActivityListener
+            {
+                ShouldListenTo = _ => true,
+                Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded
+            };
+            ActivitySource.AddActivityListener(listener);
+
+            using var activity = source.StartActivity("TestOp");
+            Assert.IsNotNull(activity);
+
+            // Act
+            logger.LogInformation("TraceFlags type check");
+
+            // Assert — should be a string like "Recorded" or "None", not a boxed enum
+            var scope = _innerLogger.GetLastDictionaryScope();
+            Assert.IsNotNull(scope);
+            var traceFlagsValue = scope["TraceFlags"];
+            Assert.IsInstanceOfType(traceFlagsValue, typeof(string),
+                "TraceFlags should be a string, not a boxed ActivityTraceFlags enum");
+        }
+
+        [TestMethod]
+        public void Log_TraceId_MatchesHexFormat()
+        {
+            // Arrange
+            var logger = CreateEnrichedLogger();
+            using var source = new ActivitySource("test");
+            using var listener = new ActivityListener
+            {
+                ShouldListenTo = _ => true,
+                Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded
+            };
+            ActivitySource.AddActivityListener(listener);
+
+            using var activity = source.StartActivity("TestOp");
+            Assert.IsNotNull(activity);
+
+            // Act
+            logger.LogInformation("TraceId format check");
+
+            // Assert — W3C TraceId is 32 lowercase hex characters
+            var scope = _innerLogger.GetLastDictionaryScope();
+            Assert.IsNotNull(scope);
+            var traceId = (string)scope["TraceId"]!;
+            Assert.IsTrue(Regex.IsMatch(traceId, @"^[0-9a-f]{32}$"),
+                $"TraceId should be 32 hex chars, got: '{traceId}'");
+        }
+
+        [TestMethod]
+        public void Log_SpanId_MatchesHexFormat()
+        {
+            // Arrange
+            var logger = CreateEnrichedLogger();
+            using var source = new ActivitySource("test");
+            using var listener = new ActivityListener
+            {
+                ShouldListenTo = _ => true,
+                Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded
+            };
+            ActivitySource.AddActivityListener(listener);
+
+            using var activity = source.StartActivity("TestOp");
+            Assert.IsNotNull(activity);
+
+            // Act
+            logger.LogInformation("SpanId format check");
+
+            // Assert — W3C SpanId is 16 lowercase hex characters
+            var scope = _innerLogger.GetLastDictionaryScope();
+            Assert.IsNotNull(scope);
+            var spanId = (string)scope["SpanId"]!;
+            Assert.IsTrue(Regex.IsMatch(spanId, @"^[0-9a-f]{16}$"),
+                $"SpanId should be 16 hex chars, got: '{spanId}'");
+        }
+
+        [TestMethod]
+        public void Log_AllEnrichedValues_AreStrings_NeverContainTypeNames()
+        {
+            // Arrange — enable all fields for maximum coverage
+            _options.IncludeTraceFlags = true;
+            _options.IncludeTraceState = true;
+            var logger = CreateEnrichedLogger();
+
+            using var source = new ActivitySource("test");
+            using var listener = new ActivityListener
+            {
+                ShouldListenTo = _ => true,
+                Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded
+            };
+            ActivitySource.AddActivityListener(listener);
+
+            using var parentActivity = source.StartActivity("Parent");
+            Assert.IsNotNull(parentActivity);
+            using var childActivity = source.StartActivity("Child");
+            Assert.IsNotNull(childActivity);
+            childActivity.TraceStateString = "vendor=value";
+            CorrelationContext.SetRawValue("corr-12345");
+
+            // Act
+            logger.LogInformation("Full enrichment type check");
+
+            // Assert — every value must be a string
+            var scope = _innerLogger.GetLastDictionaryScope();
+            Assert.IsNotNull(scope);
+
+            foreach (var kvp in scope)
+            {
+                Assert.IsNotNull(kvp.Value, $"Value for '{kvp.Key}' should not be null");
+                Assert.IsInstanceOfType(kvp.Value, typeof(string),
+                    $"Value for '{kvp.Key}' should be string, but was {kvp.Value?.GetType().FullName}");
+
+                var strValue = (string)kvp.Value;
+                Assert.IsFalse(strValue.StartsWith("System."),
+                    $"Value for '{kvp.Key}' looks like a type name: '{strValue}'");
+                Assert.IsFalse(strValue.Contains("ActivityTraceId"),
+                    $"Value for '{kvp.Key}' contains struct type name: '{strValue}'");
+                Assert.IsFalse(strValue.Contains("ActivitySpanId"),
+                    $"Value for '{kvp.Key}' contains struct type name: '{strValue}'");
+            }
+        }
+
+        [TestMethod]
+        public void Log_EnrichmentScope_ToString_NeverContainsTypeNames()
+        {
+            // Arrange — enable all fields
+            _options.IncludeTraceFlags = true;
+            var logger = CreateEnrichedLogger();
+
+            using var source = new ActivitySource("test");
+            using var listener = new ActivityListener
+            {
+                ShouldListenTo = _ => true,
+                Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded
+            };
+            ActivitySource.AddActivityListener(listener);
+
+            using var parentActivity = source.StartActivity("Parent");
+            Assert.IsNotNull(parentActivity);
+            using var childActivity = source.StartActivity("Child");
+            Assert.IsNotNull(childActivity);
+            CorrelationContext.SetRawValue("corr-abc");
+
+            // Act
+            logger.LogInformation("Scope ToString check");
+
+            // Assert — the scope's ToString should contain data, not type names
+            var rawScope = _innerLogger.Scopes.LastOrDefault();
+            Assert.IsNotNull(rawScope);
+            var toStringResult = rawScope!.ToString()!;
+
+            Assert.IsFalse(toStringResult.Contains("System.Diagnostics"),
+                $"ToString should not contain System.Diagnostics: '{toStringResult}'");
+            Assert.IsFalse(toStringResult.Contains("ActivityTraceId"),
+                $"ToString should not contain ActivityTraceId: '{toStringResult}'");
+            Assert.IsFalse(toStringResult.Contains("ActivitySpanId"),
+                $"ToString should not contain ActivitySpanId: '{toStringResult}'");
+            Assert.IsFalse(toStringResult.Contains("ActivityTraceFlags"),
+                $"ToString should not contain ActivityTraceFlags: '{toStringResult}'");
+            Assert.IsFalse(toStringResult.Contains("Dictionary"),
+                $"ToString should not contain Dictionary type name: '{toStringResult}'");
+
+            // Positive checks: should contain actual data
+            Assert.IsTrue(toStringResult.Contains("TraceId:"),
+                $"ToString should contain TraceId key: '{toStringResult}'");
+            Assert.IsTrue(toStringResult.Contains("SpanId:"),
+                $"ToString should contain SpanId key: '{toStringResult}'");
+        }
+
+        [TestMethod]
+        public void Log_CustomEnricherWithNonStringValue_PreservesTypeInScope()
+        {
+            // Arrange — custom enricher that stores an int (not a string).
+            // This is allowed but the test documents the behavior:
+            // ToString() will render the int fine, but structured providers
+            // will see an int, not a string. Enrichers SHOULD store strings
+            // for telemetry fields to avoid provider-specific formatting issues.
+            _options.CustomEnrichers = new List<ILogEnricher>
+            {
+                new FakeEnricher(props =>
+                {
+                    props["HttpStatus"] = 200;
+                    props["IsHealthy"] = true;
+                    props["UserId"] = "user-42"; // Best practice: store as string
+                })
+            };
+            var logger = CreateEnrichedLogger();
+
+            // Act
+            logger.LogInformation("Custom enricher types");
+
+            // Assert — verify original types are preserved for structured providers
+            var scope = _innerLogger.GetLastDictionaryScope();
+            Assert.IsNotNull(scope);
+            Assert.AreEqual(200, scope["HttpStatus"]);
+            Assert.AreEqual(true, scope["IsHealthy"]);
+            Assert.AreEqual("user-42", scope["UserId"]);
+
+            // Verify ToString doesn't produce type names
+            var rawScope = _innerLogger.Scopes.LastOrDefault();
+            Assert.IsNotNull(rawScope);
+            var toStr = rawScope!.ToString()!;
+            Assert.IsTrue(toStr.Contains("HttpStatus:200"), $"Expected HttpStatus:200 in '{toStr}'");
+            Assert.IsTrue(toStr.Contains("IsHealthy:True"), $"Expected IsHealthy:True in '{toStr}'");
+            Assert.IsTrue(toStr.Contains("UserId:user-42"), $"Expected UserId:user-42 in '{toStr}'");
+            Assert.IsFalse(toStr.Contains("Int32"), $"Should not contain Int32 type name: '{toStr}'");
+            Assert.IsFalse(toStr.Contains("Boolean"), $"Should not contain Boolean type name: '{toStr}'");
+        }
+
+        [TestMethod]
+        public void Log_CorrelationId_IsString_NotGuidOrOtherType()
+        {
+            // Arrange
+            var logger = CreateEnrichedLogger();
+            CorrelationContext.SetRawValue("550e8400-e29b-41d4-a716-446655440000");
+
+            // Act
+            logger.LogInformation("CorrelationId type check");
+
+            // Assert
+            var scope = _innerLogger.GetLastDictionaryScope();
+            Assert.IsNotNull(scope);
+            var value = scope["CorrelationId"];
+            Assert.IsInstanceOfType(value, typeof(string),
+                "CorrelationId should be a string, not a Guid or other type");
+            Assert.AreEqual("550e8400-e29b-41d4-a716-446655440000", value);
         }
 
         private TelemetryEnrichedLogger CreateEnrichedLogger()

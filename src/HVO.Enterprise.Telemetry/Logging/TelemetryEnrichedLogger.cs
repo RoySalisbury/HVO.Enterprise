@@ -136,7 +136,7 @@ namespace HVO.Enterprise.Telemetry.Logging
 
             // Only create scope if we have data
             if (enrichmentData.Count > 0)
-                return _innerLogger.BeginScope(enrichmentData);
+                return _innerLogger.BeginScope(new LogEnrichmentScope(enrichmentData));
 
             return null;
         }

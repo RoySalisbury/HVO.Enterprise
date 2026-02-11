@@ -86,6 +86,30 @@ namespace HVO.Enterprise.Samples.Net8.Configuration
             });
 
             // ────────────────────────────────────────────────────────
+            // 2b. FIRST-CHANCE EXCEPTION MONITORING (opt-in)
+            //     Detects exceptions the instant they are thrown, even
+            //     if they are subsequently caught and suppressed. Useful
+            //     for diagnosing hidden failures at runtime.
+            //     Configuration is hot-reloadable via appsettings.json.
+            // ────────────────────────────────────────────────────────
+
+            services.AddFirstChanceExceptionMonitoring(options =>
+            {
+                // Disabled by default — enable via appsettings.json or here
+                options.Enabled = false;
+
+                // Log first-chance exceptions at Warning level
+                options.MinimumLogLevel = LogLevel.Warning;
+
+                // Cap at 100 events/second to prevent log flooding
+                options.MaxEventsPerSecond = 100;
+
+                // Ignore common harmless cancellation exceptions
+                options.ExcludeExceptionTypes.Add("System.OperationCanceledException");
+                options.ExcludeExceptionTypes.Add("System.Threading.Tasks.TaskCanceledException");
+            });
+
+            // ────────────────────────────────────────────────────────
             // 3. TELEMETRY HEALTH CHECKS
             //    Monitors queue depth, drop rate, error rate.
             // ────────────────────────────────────────────────────────
