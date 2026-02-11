@@ -36,7 +36,7 @@ namespace HVO.Enterprise.Samples.Net8.Configuration
             // ────────────────────────────────────────────────────────
 
             // Option A: Configure from appsettings.json (recommended for production)
-            services.AddTelemetry(configuration);
+            services.AddTelemetry(configuration.GetSection("Telemetry"));
 
             // Option B: Configure fluently in code (useful for quick setup)
             // services.AddTelemetry(options =>
@@ -100,6 +100,12 @@ namespace HVO.Enterprise.Samples.Net8.Configuration
                 UnhealthyQueueDepthPercent = 95.0,
             });
 
+            services.AddHealthChecks()
+                .AddCheck<HVO.Enterprise.Telemetry.HealthChecks.TelemetryHealthCheck>(
+                    "telemetry",
+                    failureStatus: HealthStatus.Degraded,
+                    tags: new[] { "ready" });
+
             // ────────────────────────────────────────────────────────
             // 4. PROXY INSTRUMENTATION (DispatchProxy)
             //    Wraps IWeatherService with automatic operation scopes,
@@ -133,13 +139,18 @@ namespace HVO.Enterprise.Samples.Net8.Configuration
                 client.Timeout = TimeSpan.FromSeconds(30);
                 client.DefaultRequestHeaders.Add("Accept", "application/json");
             })
-            .AddHttpMessageHandler(() => new TelemetryHttpMessageHandler(
-                new HttpInstrumentationOptions
-                {
-                    RedactQueryStrings = false, // Weather API queries are not sensitive
-                    CaptureRequestHeaders = false,
-                    CaptureResponseHeaders = false,
-                }));
+            .AddHttpMessageHandler(sp =>
+            {
+                var logger = sp.GetService<ILogger<TelemetryHttpMessageHandler>>();
+                return new TelemetryHttpMessageHandler(
+                    new HttpInstrumentationOptions
+                    {
+                        RedactQueryStrings = false, // Weather API queries are not sensitive
+                        CaptureRequestHeaders = false,
+                        CaptureResponseHeaders = false,
+                    },
+                    logger);
+            });
 
             // Default HttpClient for other uses
             services.AddHttpClient();

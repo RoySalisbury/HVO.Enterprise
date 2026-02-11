@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using HVO.Enterprise.Samples.Net8.Services;
 using HVO.Enterprise.Telemetry.Abstractions;
-using HVO.Enterprise.Telemetry.BackgroundJobs;
 using HVO.Enterprise.Telemetry.Correlation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -19,7 +18,6 @@ namespace HVO.Enterprise.Samples.Net8.BackgroundServices
     /// Demonstrates:
     ///   • BackgroundService with cancellation support
     ///   • Correlation propagation into background work
-    ///   • Background job context capture &amp; restore
     ///   • Operation scopes in background threads
     ///   • Exception handling that doesn't crash the worker
     ///   • Metric recording for monitoring collection health
@@ -73,9 +71,6 @@ namespace HVO.Enterprise.Samples.Net8.BackgroundServices
                 // Each collection cycle gets its own correlation context
                 using var correlationScope = CorrelationContext.BeginScope(
                     $"collector-{Interlocked.Increment(ref _collectionCount)}");
-
-                // Capture context for any sub-tasks
-                var jobContext = BackgroundJobContext.Capture();
 
                 using var scope = _scopeFactory.Begin("WeatherCollector.Cycle", new()
                 {
