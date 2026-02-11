@@ -31,6 +31,7 @@ namespace HVO.Enterprise.Telemetry.Internal
 
         private Dictionary<string, object?>? _tags;
         private List<LazyProperty>? _lazyProperties;
+        private readonly object _failLock = new object();
         private bool _disposed;
         private bool _failed;
         private Exception? _exception;
@@ -145,24 +146,30 @@ namespace HVO.Enterprise.Telemetry.Internal
             if (exception == null)
                 throw new ArgumentNullException(nameof(exception));
 
-            // Guard against duplicate tag recording when Fail() is called
-            // multiple times (e.g. via RecordException → Fail → Fail again).
+            // Guard against duplicate tag recording when Fail() is called multiple
+            // times with the same exception instance (e.g. via RecordException,
+            // which delegates to Fail, or by calling Fail directly multiple times).
             // Activity.AddTag appends rather than deduplicates, so without
             // this guard exception.type / exception.fingerprint would appear
             // N times in the completed Activity's tag list.
-            var alreadyRecorded = _failed && ReferenceEquals(_exception, exception);
-
-            _failed = true;
-            _exception = exception;
-
-            if (_activity != null)
+            // Use a lock to prevent a race when multiple threads call Fail()
+            // concurrently on the same scope instance.
+            lock (_failLock)
             {
-                _activity.SetStatus(ActivityStatusCode.Error, exception.Message);
-            }
+                var alreadyRecorded = _failed && ReferenceEquals(_exception, exception);
 
-            if (_options.CaptureExceptions && !alreadyRecorded)
-            {
-                RecordExceptionOnActivity(exception);
+                _failed = true;
+                _exception = exception;
+
+                if (_activity != null)
+                {
+                    _activity.SetStatus(ActivityStatusCode.Error, exception.Message);
+                }
+
+                if (_options.CaptureExceptions && !alreadyRecorded)
+                {
+                    RecordExceptionOnActivity(exception);
+                }
             }
 
             return this;
