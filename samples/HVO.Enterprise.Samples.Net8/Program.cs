@@ -20,11 +20,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi;
 using Serilog;
 using Serilog.Events;
 
 // ╔═══════════════════════════════════════════════════════════════════════╗
-// ║  HVO.Enterprise.Telemetry — .NET 8 Sample Application               ║
+// ║  HVO.Enterprise.Telemetry — Sample Application                      ║
 // ║                                                                       ║
 // ║  A real-time weather monitoring API that demonstrates comprehensive   ║
 // ║  usage of the HVO.Enterprise.Telemetry library including:             ║
@@ -99,11 +100,11 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new Microsoft.OpenApi.OpenApiInfo
+    options.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "HVO Telemetry Sample — Weather Monitor",
         Version = "v1",
-        Description = "A sample .NET 8 Web API that demonstrates the HVO.Enterprise.Telemetry library. "
+        Description = "A sample Web API that demonstrates the HVO.Enterprise.Telemetry library. "
             + "All endpoints are instrumented with operation scopes, correlation IDs, and structured logging.",
     });
 });

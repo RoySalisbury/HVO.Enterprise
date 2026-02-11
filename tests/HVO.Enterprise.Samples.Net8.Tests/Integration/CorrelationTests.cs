@@ -35,7 +35,7 @@ namespace HVO.Enterprise.Samples.Net8.Tests.Integration
         public async Task Request_WithCorrelationHeader_PropagatesCorrelation()
         {
             var correlationId = Guid.NewGuid().ToString();
-            var request = new HttpRequestMessage(HttpMethod.Get, "/ping");
+            using var request = new HttpRequestMessage(HttpMethod.Get, "/ping");
             request.Headers.Add("X-Correlation-ID", correlationId);
 
             var response = await _client.SendAsync(request);

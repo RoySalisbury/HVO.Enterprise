@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
@@ -16,7 +16,6 @@ namespace HVO.Enterprise.Samples.Net8.Telemetry
     public sealed class ConsoleTelemetrySink : BackgroundService
     {
         private readonly ILogger<ConsoleTelemetrySink> _logger;
-        private readonly ConcurrentQueue<ActivityEvent> _events = new();
         private ActivityListener? _listener;
         private long _activitiesStarted;
         private long _activitiesStopped;
@@ -53,13 +52,12 @@ namespace HVO.Enterprise.Samples.Net8.Telemetry
 
             ActivitySource.AddActivityListener(_listener);
 
-            // Periodically flush queued events
+            // Keep the service alive while listener processes events inline
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
                     await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken).ConfigureAwait(false);
-                    FlushEvents();
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {
@@ -86,11 +84,13 @@ namespace HVO.Enterprise.Samples.Net8.Telemetry
             var status = activity.Status;
             var statusDesc = activity.StatusDescription;
 
-            var tagInfo = string.Empty;
+            var tagBuilder = new StringBuilder();
             foreach (var tag in activity.Tags)
             {
-                tagInfo += $"\n       {tag.Key} = {tag.Value}";
+                tagBuilder.Append($"\n       {tag.Key} = {tag.Value}");
             }
+
+            var tagInfo = tagBuilder.ToString();
 
             var logLevel = status == ActivityStatusCode.Error ? LogLevel.Error : LogLevel.Information;
 
@@ -102,26 +102,6 @@ namespace HVO.Enterprise.Samples.Net8.Telemetry
                 status,
                 string.IsNullOrEmpty(statusDesc) ? "" : $" ({statusDesc})",
                 string.IsNullOrEmpty(tagInfo) ? "" : $"\n     Tags:{tagInfo}");
-        }
-
-        private void FlushEvents()
-        {
-            // Process any queued events (reserved for future use with buffered output)
-            while (_events.TryDequeue(out _))
-            {
-                // Events processed inline in OnActivityStopped
-            }
-        }
-
-        /// <summary>
-        /// Structured event for activity tracking.
-        /// </summary>
-        private readonly struct ActivityEvent
-        {
-            public string SourceName { get; init; }
-            public string OperationName { get; init; }
-            public double DurationMs { get; init; }
-            public ActivityStatusCode Status { get; init; }
         }
     }
 }

@@ -61,8 +61,10 @@ namespace HVO.Enterprise.Samples.Net8.Data
 
             if (!string.IsNullOrWhiteSpace(location))
             {
-                query = query.Where(r =>
-                    r.Location.ToLower().Contains(location.ToLower()));
+                // Use EF.Functions.Like() for server-side case-insensitive matching
+                // instead of .ToLower() which causes client-side evaluation.
+                var pattern = $"%{location}%";
+                query = query.Where(r => EF.Functions.Like(r.Location, pattern));
             }
 
             var results = await query
@@ -87,24 +89,25 @@ namespace HVO.Enterprise.Samples.Net8.Data
         public async Task<WeatherAggregateResult?> GetAggregateAsync(
             string location, CancellationToken cancellationToken = default)
         {
-            var readings = await _context.WeatherReadings
-                .Where(r => r.Location.ToLower() == location.ToLower())
-                .ToListAsync(cancellationToken)
+            // Use EF.Functions.Like() for server-side case-insensitive matching
+            // and compute aggregates on the server to avoid loading all rows.
+            var aggregate = await _context.WeatherReadings
+                .Where(r => EF.Functions.Like(r.Location, location))
+                .GroupBy(r => 1) // Single group for aggregate functions
+                .Select(g => new WeatherAggregateResult
+                {
+                    Location = location,
+                    ReadingCount = g.Count(),
+                    AverageTemperature = g.Average(r => r.TemperatureCelsius),
+                    MinTemperature = g.Min(r => r.TemperatureCelsius),
+                    MaxTemperature = g.Max(r => r.TemperatureCelsius),
+                    FirstReading = g.Min(r => r.RecordedAtUtc),
+                    LastReading = g.Max(r => r.RecordedAtUtc),
+                })
+                .FirstOrDefaultAsync(cancellationToken)
                 .ConfigureAwait(false);
 
-            if (readings.Count == 0)
-                return null;
-
-            return new WeatherAggregateResult
-            {
-                Location = location,
-                ReadingCount = readings.Count,
-                AverageTemperature = readings.Average(r => r.TemperatureCelsius),
-                MinTemperature = readings.Min(r => r.TemperatureCelsius),
-                MaxTemperature = readings.Max(r => r.TemperatureCelsius),
-                FirstReading = readings.Min(r => r.RecordedAtUtc),
-                LastReading = readings.Max(r => r.RecordedAtUtc),
-            };
+            return aggregate?.ReadingCount > 0 ? aggregate : null;
         }
 
         /// <summary>
