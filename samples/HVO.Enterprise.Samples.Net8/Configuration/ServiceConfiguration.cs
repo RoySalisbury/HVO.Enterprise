@@ -1,15 +1,30 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Net.Http;
 using HVO.Enterprise.Samples.Net8.BackgroundServices;
+using HVO.Enterprise.Samples.Net8.Caching;
+using HVO.Enterprise.Samples.Net8.Data;
 using HVO.Enterprise.Samples.Net8.HealthChecks;
+using HVO.Enterprise.Samples.Net8.Messaging;
 using HVO.Enterprise.Samples.Net8.Services;
+using HVO.Enterprise.Samples.Net8.Telemetry;
 using HVO.Enterprise.Telemetry;
+using HVO.Enterprise.Telemetry.AppInsights;
 using HVO.Enterprise.Telemetry.Configuration;
+using HVO.Enterprise.Telemetry.Data.AdoNet;
+using HVO.Enterprise.Telemetry.Data.AdoNet.Extensions;
+using HVO.Enterprise.Telemetry.Data.EfCore.Extensions;
+using HVO.Enterprise.Telemetry.Data.RabbitMQ.Extensions;
+using HVO.Enterprise.Telemetry.Data.Redis.Extensions;
+using HVO.Enterprise.Telemetry.Datadog;
 using HVO.Enterprise.Telemetry.HealthChecks;
 using HVO.Enterprise.Telemetry.Http;
 using HVO.Enterprise.Telemetry.Logging;
 using HVO.Enterprise.Telemetry.Proxies;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -198,116 +213,144 @@ namespace HVO.Enterprise.Samples.Net8.Configuration
             ConfigureMultiLevelTelemetry();
 
             // ════════════════════════════════════════════════════════
-            // DISABLED / OPTIONAL INTEGRATIONS
-            // Uncomment the sections below when infrastructure is
-            // available. Each section shows the correct setup pattern.
+            // EXTENSION INTEGRATIONS
+            // Each extension is toggled via appsettings.json
+            // (section: Extensions:<Name>:Enabled).
             // ════════════════════════════════════════════════════════
 
-            // ── Serilog Extension ──────────────────────────────────
-            // Requires: HVO.Enterprise.Telemetry.Serilog NuGet package
-            //
-            // builder.Host.UseSerilog((context, config) =>
-            // {
-            //     config
-            //         .ReadFrom.Configuration(context.Configuration)
-            //         .Enrich.WithHvoTelemetry()  // Adds CorrelationId, TraceId, etc.
-            //         .WriteTo.Console(
-            //             outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] " +
-            //                           "{CorrelationId} | {Message:lj}{NewLine}{Exception}");
-            // });
+            var extensions = configuration.GetSection("Extensions");
 
             // ── Application Insights Extension ─────────────────────
-            // Requires: HVO.Enterprise.Telemetry.AppInsights NuGet package
-            //
-            // services.AddApplicationInsightsTelemetry(options =>
-            // {
-            //     options.ConnectionString = configuration["ApplicationInsights:ConnectionString"];
-            // });
-            // services.AddHvoAppInsightsTelemetry(); // Bridge HVO telemetry → App Insights
+            // Uses InMemoryChannel — no Azure connection needed.
+            if (extensions.GetValue<bool>("ApplicationInsights:Enabled"))
+            {
+                services.AddAppInsightsTelemetry(options =>
+                {
+                    // InMemoryChannel is configured in Program.cs via
+                    // the Microsoft.ApplicationInsights.AspNetCore SDK;
+                    // the HVO bridge enriches AI items with correlation.
+                    options.EnableBridge = true;
+                    options.EnableActivityInitializer = true;
+                    options.EnableCorrelationInitializer = true;
+                });
+            }
 
             // ── Datadog Extension ──────────────────────────────────
-            // Requires: HVO.Enterprise.Telemetry.Datadog NuGet package
-            //
-            // services.AddHvoDatadogTelemetry(options =>
-            // {
-            //     options.AgentHost = "localhost";
-            //     options.AgentPort = 8126;
-            //     options.ServiceName = "hvo-samples-net8";
-            //     options.Environment = "development";
-            //     options.EnableMetrics = true;
-            //     options.EnableTracing = true;
-            // });
+            // Console exporter mode — no Datadog agent required.
+            if (extensions.GetValue<bool>("Datadog:Enabled"))
+            {
+                services.AddDatadogTelemetry(options =>
+                {
+                    options.ServiceName = "hvo-samples-net8";
+                    options.Environment = "development";
+                    options.AgentHost = extensions["Datadog:AgentHost"] ?? "localhost";
+                    options.EnableMetricsExporter = true;
+                    options.EnableTraceExporter = true;
+                });
+            }
+
+            // ── Database Extension (EF Core + SQLite) ──────────────
+            if (extensions.GetValue("Database:Enabled", true))
+            {
+                var dbConnectionString = extensions["Database:ConnectionString"]
+                    ?? "Data Source=weather.db";
+
+                services.AddEfCoreTelemetry(options =>
+                {
+                    options.RecordStatements = extensions.GetValue("Database:CaptureCommandText", true);
+                    options.RecordParameters = false; // PII safety
+                    options.RecordConnectionInfo = false;
+                });
+
+                services.AddDbContext<WeatherDbContext>((sp, options) =>
+                {
+                    options.UseSqlite(dbConnectionString);
+                    options.AddHvoTelemetry(); // EF Core interceptor
+                });
+
+                services.AddScoped<WeatherRepository>();
+            }
+
+            // ── Database Extension (ADO.NET + SQLite) ──────────────
+            if (extensions.GetValue("Database:Enabled", true))
+            {
+                var dbConnectionString = extensions["Database:ConnectionString"]
+                    ?? "Data Source=weather.db";
+
+                services.AddAdoNetTelemetry(options =>
+                {
+                    options.RecordStatements = extensions.GetValue("Database:CaptureCommandText", true);
+                    options.RecordParameters = false;
+                    options.RecordConnectionInfo = false;
+                });
+
+                // Register an instrumented DbConnection for ADO.NET repository
+                services.AddScoped<DbConnection>(sp =>
+                {
+                    var connection = new SqliteConnection(dbConnectionString);
+                    return connection.WithTelemetry(); // ADO.NET telemetry wrapper
+                });
+
+                services.AddScoped<WeatherAdoNetRepository>();
+            }
+
+            // ── Redis Extension (Fake In-Process Cache) ────────────
+            if (extensions.GetValue("Redis:Enabled", true))
+            {
+                services.AddRedisTelemetry(options =>
+                {
+                    options.RecordCommands = true;
+                    options.RecordKeys = true;
+                    options.RecordDatabaseIndex = true;
+                });
+
+                // Use FakeRedisCache when no real Redis is available
+                if (extensions.GetValue("Redis:UseFakeCache", true))
+                {
+                    services.AddSingleton<FakeRedisCache>();
+                    services.AddSingleton<IDistributedCache>(sp => sp.GetRequiredService<FakeRedisCache>());
+                }
+
+                services.AddScoped<WeatherCacheService>();
+            }
+
+            // ── RabbitMQ Extension (Fake Message Bus) ──────────────
+            if (extensions.GetValue("RabbitMQ:Enabled", true))
+            {
+                services.AddRabbitMqTelemetry(options =>
+                {
+                    options.PropagateTraceContext = true;
+                    options.RecordExchange = true;
+                    options.RecordRoutingKey = true;
+                    options.RecordBodySize = true;
+                });
+
+                // Use FakeMessageBus when no real RabbitMQ is available
+                if (extensions.GetValue("RabbitMQ:UseFakeMessageBus", true))
+                {
+                    services.AddSingleton<FakeMessageBus>();
+                    services.AddScoped<WeatherObservationPublisher>();
+                    services.AddHostedService<AlertProcessorSubscriber>();
+                }
+            }
+
+            // ── Serilog Extension ──────────────────────────────────
+            // Serilog is wired up in Program.cs via builder.Host.UseSerilog().
+            // The enricher (Enrich.WithTelemetry()) is applied there.
+            // See Program.cs for the Serilog configuration.
 
             // ── IIS Extension ──────────────────────────────────────
-            // For ASP.NET (non-Core) hosted in IIS. Not applicable to
-            // this .NET 8 sample but shown for documentation purposes.
-            //
-            // services.AddHvoIisTelemetry(options =>
-            // {
-            //     options.EnableModuleInstrumentation = true;
-            //     options.EnableHandlerInstrumentation = true;
-            //     options.CorrelationHeaderName = "X-Correlation-ID";
-            // });
+            // Not applicable to .NET 8. See US-027 (.NET Framework 4.8 sample)
+            // for IIS/WCF integration examples.
 
             // ── WCF Extension ──────────────────────────────────────
-            // For WCF services. Requires HVO.Enterprise.Telemetry.Wcf.
-            //
-            // services.AddHvoWcfTelemetry(options =>
-            // {
-            //     options.EnableMessageInspector = true;
-            //     options.EnableOperationBehavior = true;
-            //     options.PropagateCorrelation = true;
-            //     options.CaptureMessageHeaders = true;
-            // });
+            // Not applicable to .NET 8. See US-027 (.NET Framework 4.8 sample).
 
-            // ── Database Extension (EF Core) ───────────────────────
-            // Requires: HVO.Enterprise.Telemetry.Data.EfCore
-            //
-            // services.AddDbContext<MyDbContext>(options =>
-            // {
-            //     options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"));
-            //     options.AddInterceptors(new HvoTelemetryDbInterceptor());
-            // });
-            // services.AddHvoDatabaseTelemetry(options =>
-            // {
-            //     options.CaptureCommandText = false;  // PII safety
-            //     options.CaptureParameters = false;
-            //     options.SlowQueryThresholdMs = 500;
-            // });
-
-            // ── Database Extension (ADO.NET) ───────────────────────
-            // Requires: HVO.Enterprise.Telemetry.Data.AdoNet
-            //
-            // services.AddHvoAdoNetTelemetry(options =>
-            // {
-            //     options.CaptureCommandText = false;
-            //     options.SlowQueryThresholdMs = 500;
-            // });
-
-            // ── Redis Extension ────────────────────────────────────
-            // Requires: HVO.Enterprise.Telemetry.Data.Redis
-            //
-            // services.AddStackExchangeRedisCache(options =>
-            // {
-            //     options.Configuration = configuration["Redis:ConnectionString"];
-            // });
-            // services.AddHvoRedisTelemetry(options =>
-            // {
-            //     options.CaptureCommandText = true;
-            //     options.SlowCommandThresholdMs = 50;
-            // });
-
-            // ── RabbitMQ Extension ─────────────────────────────────
-            // Requires: HVO.Enterprise.Telemetry.Data.RabbitMQ
-            //
-            // services.AddHvoRabbitMqTelemetry(options =>
-            // {
-            //     options.HostName = "localhost";
-            //     options.Port = 5672;
-            //     options.PropagateCorrelation = true;
-            //     options.CaptureMessageHeaders = true;
-            //     options.CaptureMessageBody = false;  // PII safety
-            // });
+            // ── Console Telemetry Sink ─────────────────────────────
+            if (configuration.GetValue("Telemetry:ConsoleSink:Enabled", true))
+            {
+                services.AddHostedService<ConsoleTelemetrySink>();
+            }
 
             return services;
         }

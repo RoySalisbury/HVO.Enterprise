@@ -4,18 +4,24 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using HVO.Enterprise.Samples.Net8.Configuration;
+using HVO.Enterprise.Samples.Net8.Data;
 using HVO.Enterprise.Samples.Net8.Middleware;
 using HVO.Enterprise.Telemetry.Abstractions;
 using HVO.Enterprise.Telemetry.Correlation;
+using HVO.Enterprise.Telemetry.Serilog;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Events;
 
 // ╔═══════════════════════════════════════════════════════════════════════╗
 // ║  HVO.Enterprise.Telemetry — .NET 8 Sample Application               ║
@@ -50,10 +56,29 @@ using Microsoft.Extensions.Logging;
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Logging ──────────────────────────────────────────────────────────
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
-builder.Logging.AddDebug();
-builder.Logging.SetMinimumLevel(LogLevel.Debug);
+// Serilog replaces the default logging when enabled (Extensions:Serilog:Enabled).
+// Otherwise, the standard console/debug providers are used.
+var serilogEnabled = builder.Configuration.GetValue("Extensions:Serilog:Enabled", true);
+if (serilogEnabled)
+{
+    builder.Host.UseSerilog((context, loggerConfig) =>
+    {
+        loggerConfig
+            .MinimumLevel.Debug()
+            .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+            .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+            .Enrich.WithTelemetry() // HVO: Adds CorrelationId, TraceId, SpanId
+            .WriteTo.Console(
+                outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {CorrelationId} | {TraceId} | {Message:lj}{NewLine}{Exception}");
+    });
+}
+else
+{
+    builder.Logging.ClearProviders();
+    builder.Logging.AddConsole();
+    builder.Logging.AddDebug();
+    builder.Logging.SetMinimumLevel(LogLevel.Debug);
+}
 
 // ── Services ─────────────────────────────────────────────────────────
 // Central registration of all services including telemetry.
@@ -74,7 +99,7 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.OpenApiInfo
     {
         Title = "HVO Telemetry Sample — Weather Monitor",
         Version = "v1",
@@ -85,6 +110,19 @@ builder.Services.AddSwaggerGen(options =>
 
 // Build the app
 var app = builder.Build();
+
+// ── Database Initialization ──────────────────────────────────────────
+// Create SQLite database and tables on startup (no migrations needed).
+if (builder.Configuration.GetValue("Extensions:Database:Enabled", true))
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<WeatherDbContext>();
+        db.Database.EnsureCreated();
+        app.Logger.LogInformation("SQLite database initialised: {DbPath}",
+            db.Database.GetDbConnection().DataSource);
+    }
+}
 
 // ── Middleware pipeline ──────────────────────────────────────────────
 
@@ -175,3 +213,13 @@ app.Logger.LogInformation(
     "╚═══════════════════════════════════════════════════════════════╝");
 
 app.Run();
+
+// ── WebApplicationFactory Support ─────────────────────────────────────
+// Partial class allows WebApplicationFactory<Program> to discover the entry point.
+namespace HVO.Enterprise.Samples.Net8
+{
+    /// <summary>
+    /// Marker class for WebApplicationFactory integration tests.
+    /// </summary>
+    public partial class Program { }
+}
