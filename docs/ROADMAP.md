@@ -5,10 +5,10 @@
 
 ## Current Progress
 
-**5 of 30 stories complete (26 / 180 SP — 14%)**
+**6 of 30 stories complete (34 / 180 SP — 19%)**
 
 ```
-Overall ████░░░░░░░░░░░░░░░░░░░░░░░░░░ 14%
+Overall █████░░░░░░░░░░░░░░░░░░░░░░░░░ 19%
 ```
 
 ### Completed
@@ -20,6 +20,7 @@ Overall ████░░░░░░░░░░░░░░░░░░░░
 | US-003 | Background Job Correlation | 5 | 1 | ✅ Done |
 | US-004 | Bounded Queue Worker | 8 | 1 | ✅ Done |
 | US-019 | HVO.Common Library | 5 | — | ✅ Done |
+| US-029 | Documentation | 8 | 10 | ✅ Done |
 
 ### In Progress / Not Started
 
@@ -48,7 +49,7 @@ Overall ████░░░░░░░░░░░░░░░░░░░░
 | US-026 | Sample Applications | 8 | 10 | 🔲 Not started |
 | US-027 | CI/CD Pipeline | 5 | 10 | 🔲 Not started |
 | US-028 | NuGet Packaging | 5 | 10 | 🔲 Not started |
-| US-029 | Documentation | 8 | 10 | 🔲 Not started |
+| US-029 | Documentation | 8 | 10 | ✅ Done |
 | US-030 | Security & Compliance | 5 | 10 | 🔲 Not started |
 
 ## Sprint Timeline
@@ -169,7 +170,7 @@ gantt
 | .NET Framework 4.8.1 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 - **HVO.Common** and **Core Telemetry** target .NET Standard 2.0 for broad compatibility, with runtime-adaptive features on .NET 8+.
-- **IIS** and **WCF** extensions target .NET Framework 4.8.1 only.
+- **IIS** and **WCF** extensions target .NET Standard 2.0 (compatible with .NET Framework 4.8.1 and modern .NET versions that support .NET Standard 2.0).
 - **Data.\*** packages target .NET Standard 2.0 with optional .NET 8+ optimizations.
 
 ## Breaking Change Policy
@@ -205,5 +206,5 @@ Deprecation notices will be added here as the API stabilizes. The general policy
 ## Further Reading
 
 - [User Stories](./user-stories/) — Detailed acceptance criteria for each story
-- [Architecture](./architecture/) — System design and component diagrams
+- [Architecture](./ARCHITECTURE.md) — System design and component diagrams
 - [README](../README.md) — Getting started and quick overview

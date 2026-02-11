@@ -26,8 +26,8 @@ HVO.Enterprise targets .NET Standard 2.0 for single-binary deployment across all
 
 | Runtime | Recorder | Detection |
 |---|---|---|
-| .NET 6+ | `MeterApiRecorder` (System.Diagnostics.Metrics) | `Environment.Version.Major >= 6` + reflection probe for `Meter` type |
-| .NET Framework / older | `EventCounterRecorder` (EventCounter API) | Fallback when Meter type is unavailable |
+| .NET 6+ | `MeterApiRecorder` (System.Diagnostics.Metrics) | `Environment.Version.Major >= 6` + attempts to construct a `Meter` instance (catches `TypeLoadException` / `MissingMethodException` / `NotSupportedException`) |
+| .NET Framework / older | `EventCounterRecorder` (EventCounter API) | Selected when constructing `Meter` throws `TypeLoadException`, `MissingMethodException`, or `NotSupportedException` |
 
 Both recorders expose the same `IMetricRecorder` interface — callers never need to know which is active.
 
@@ -49,7 +49,7 @@ var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddTelemetry(options =>
 {
     options.ServiceName = "OrderService";
-    options.EnableMetrics = true;
+    options.Metrics.Enabled = true;
 });
 var app = builder.Build();
 await app.RunAsync(); // lifecycle managed by IHostedService
@@ -62,7 +62,7 @@ await app.RunAsync(); // lifecycle managed by IHostedService
 Telemetry.Initialize(new TelemetryOptions
 {
     ServiceName = "OrderService",
-    EnableMetrics = true
+    Metrics = { Enabled = true }
 });
 
 // Application_End
@@ -104,7 +104,7 @@ The factory caches the result after first detection — subsequent calls return 
 
 ## Performance Characteristics
 
-Benchmarked on .NET 10.0.2 (RyuJIT, AdvSIMD). All core operations are zero-allocation on the hot path.
+Benchmarked on .NET 10.0.2 (RyuJIT, AdvSIMD). Core metric operations (counter, histogram) are zero-allocation; correlation and scope operations have minimal allocations as shown below.
 
 | Operation | Latency | Allocation | Target |
 |---|---:|---:|---|

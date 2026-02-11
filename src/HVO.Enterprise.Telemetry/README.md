@@ -22,8 +22,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddTelemetry(options =>
 {
     options.ServiceName = "MyService";
-    options.EnableDistributedTracing = true;
-    options.EnableMetrics = true;
+    options.Metrics.Enabled = true;
 });
 
 var app = builder.Build();
@@ -38,10 +37,20 @@ using HVO.Enterprise.Telemetry;
 Telemetry.Initialize();
 
 // Create an operation scope
-using (var scope = Telemetry.CreateScope("ProcessOrder"))
+using (var operation = Telemetry.StartOperation("ProcessOrder"))
 {
-    scope.SetTag("orderId", orderId);
-    // ... business logic
+    operation.WithTag("orderId", orderId);
+
+    try
+    {
+        // ... business logic
+        operation.Succeed();
+    }
+    catch (Exception ex)
+    {
+        operation.Fail(ex);
+        throw;
+    }
 }
 
 // Shutdown cleanly
@@ -58,7 +67,7 @@ Telemetry.Shutdown();
 | **Operation Scoping** | `IOperationScopeFactory` / `OperationScopeFactory` for structured operation tracking |
 | **Exception Aggregation** | `ExceptionAggregator` groups exceptions by fingerprint to reduce noise |
 | **Health Checks** | `TelemetryHealthCheck` implements `IHealthCheck` for liveness/readiness probes |
-| **Configuration Hot Reload** | `ConfigurationProvider` with a 4-level hierarchy (defaults → file → env → runtime) |
+| **Configuration Hot Reload** | `ConfigurationProvider` that merges Global/Namespace/Type/Method/Call levels across Code/File/Runtime sources with runtime hot reload |
 | **Background Processing** | `BackgroundJobContext` captures and restores correlation across threads/jobs |
 | **Lifecycle Management** | `TelemetryHostedService` handles startup/shutdown in hosted environments |
 | **Sampling** | `ISampler` with Probabilistic, Adaptive, PerSource, and Conditional strategies |
@@ -82,7 +91,7 @@ Telemetry.Shutdown();
 
 - **`ExceptionAggregator`** — Fingerprint-based exception grouping and rate limiting.
 - **`TelemetryHealthCheck`** — `IHealthCheck` implementation reporting telemetry subsystem status.
-- **`TelemetryHostedService`** — `IHostedService` for automatic lifecycle management.
+- **`TelemetryHostedService`** — Internal `IHostedService` used by `AddTelemetry()` for automatic lifecycle management (not intended for direct use).
 - **`ISampler`** — Sampling strategy interface (Probabilistic, Adaptive, PerSource, Conditional).
 - **`ConfigurationProvider`** — 4-level configuration hierarchy with hot-reload support.
 

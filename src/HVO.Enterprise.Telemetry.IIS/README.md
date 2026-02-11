@@ -24,7 +24,7 @@ using HVO.Enterprise.Telemetry.IIS;
 services.AddIisTelemetryIntegration(options =>
 {
     options.ShutdownTimeout = TimeSpan.FromSeconds(25);
-    options.OnPreShutdown  = () => Log.Information("IIS shutting down…");
+    options.OnPreShutdown  = (ct) => Task.Run(() => Log.Information("IIS shutting down…"));
 });
 ```
 
@@ -45,8 +45,8 @@ The integration automatically detects whether the application is hosted under II
 | `ShutdownTimeout` | `TimeSpan` | `25s` | Maximum time to wait for telemetry flush on shutdown |
 | `AutoInitialize` | `bool` | `true` | Automatically initialize the lifecycle manager on startup |
 | `RegisterWithHostingEnvironment` | `bool` | `true` | Register the shutdown handler with `HostingEnvironment` |
-| `OnPreShutdown` | `Action` | — | Callback invoked before telemetry shutdown begins |
-| `OnPostShutdown` | `Action` | — | Callback invoked after telemetry shutdown completes |
+| `OnPreShutdown` | `Func<CancellationToken, Task>?` | — | Callback invoked before telemetry shutdown begins |
+| `OnPostShutdown` | `Func<CancellationToken, Task>?` | — | Callback invoked after telemetry shutdown completes |
 
 ## How It Works
 

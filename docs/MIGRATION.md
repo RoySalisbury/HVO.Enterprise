@@ -101,8 +101,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddTelemetry(options =>
 {
     options.ServiceName = "MyService";
-    options.WithActivitySources("MyApp.*");
-    options.AddAppInsightsTelemetry("InstrumentationKey=...");
+    options.ActivitySources.Add("MyApp.*");
+});
+
+builder.Services.AddAppInsightsTelemetry(ai =>
+{
+    ai.ConnectionString = "InstrumentationKey=...";
 });
 ```
 
@@ -123,14 +127,14 @@ client.TrackEvent("AppStarted");
 
 ```csharp
 using HVO.Enterprise.Telemetry;
-using HVO.Enterprise.Telemetry.AppInsights;
 
-Telemetry.Initialize(options =>
+var options = new TelemetryOptions
 {
-    options.ServiceName = "MyLegacyService";
-    options.WithActivitySources("MyApp.*");
-    options.AddAppInsightsTelemetry("InstrumentationKey=...");
-});
+    ServiceName = "MyLegacyService"
+};
+options.ActivitySources.Add("MyApp.*");
+
+Telemetry.Initialize(options);
 ```
 
 ### Step 3 — Replace TelemetryClient usage
@@ -194,13 +198,13 @@ public class OrderService
         try
         {
             var order = await _repository.GetOrderAsync(orderId);
-            scope.SetResult(true);
+            scope.Succeed();
             return order;
         }
         catch (Exception ex)
         {
             scope.RecordException(ex);
-            scope.SetResult(false);
+            scope.Fail(ex);
             throw;
         }
     }
@@ -265,8 +269,7 @@ using HVO.Enterprise.Telemetry.Serilog;
 builder.Services.AddTelemetry(options =>
 {
     options.ServiceName = "MyApp";
-    options.WithActivitySources("MyApp.*");
-    options.AddSerilogEnrichment();
+    options.ActivitySources.Add("MyApp.*");
 });
 
 // Then configure Serilog with the telemetry enricher
@@ -320,14 +323,14 @@ public async Task<PaymentResult> ChargeAsync(Payment payment)
     try
     {
         var result = await _gateway.ChargeAsync(payment);
-        scope.SetResult(true);
+        scope.Succeed();
         Log.Information("Payment {PaymentId} succeeded", payment.Id);
         return result;
     }
     catch (Exception ex)
     {
         scope.RecordException(ex);
-        scope.SetResult(false);
+        scope.Fail(ex);
         Log.Error(ex, "Payment {PaymentId} failed", payment.Id);
         throw;
     }
@@ -409,7 +412,7 @@ public class OrderController : ApiController
         var correlationId = CorrelationContext.Current;
 
         var result = await _service.ProcessAsync(request);
-        scope.SetResult(true);
+        scope.Succeed();
         return Ok(result);
     }
 }
@@ -442,11 +445,11 @@ using HVO.Enterprise.Telemetry;
 using HVO.Enterprise.Telemetry.IIS;
 
 // Global.asax.cs or Startup.cs
-Telemetry.Initialize(options =>
+var options = new TelemetryOptions
 {
-    options.ServiceName = "MyIISApp";
-    options.AddIisTelemetryIntegration(); // Handles BeginRequest/EndRequest automatically
-});
+    ServiceName = "MyIISApp"
+};
+Telemetry.Initialize(options);
 ```
 
 ### Step 3b — WCF services
@@ -480,11 +483,11 @@ public class CorrelationInspector : IDispatchMessageInspector
 using HVO.Enterprise.Telemetry;
 using HVO.Enterprise.Telemetry.Wcf;
 
-Telemetry.Initialize(options =>
+var options = new TelemetryOptions
 {
-    options.ServiceName = "MyWcfService";
-    options.AddWcfTelemetryInstrumentation(); // Replaces custom message inspectors
-});
+    ServiceName = "MyWcfService"
+};
+Telemetry.Initialize(options);
 ```
 
 ### Step 4 — Migrate background job correlation
@@ -569,19 +572,22 @@ using HVO.Enterprise.Telemetry.Database;
 builder.Services.AddTelemetry(options =>
 {
     options.ServiceName = "MyService";
-    options.WithActivitySources("MyApp.*");
-
-    // Pick your backend — the library handles exporter configuration
-    options.AddAppInsightsTelemetry("InstrumentationKey=...");
-    // or: options.AddDatadogTelemetry(dd => { dd.AgentHost = "localhost"; });
-    // or: options.AddDatadogTelemetryFromEnvironment();
-
-    // Database instrumentation
-    options.AddEfCoreTelemetry();
-    options.AddAdoNetTelemetry();
-    options.AddRedisTelemetry();
-    options.AddRabbitMqTelemetry();
+    options.ActivitySources.Add("MyApp.*");
 });
+
+// Extension packages are registered separately via DI
+builder.Services.AddAppInsightsTelemetry(ai =>
+{
+    ai.ConnectionString = "InstrumentationKey=...";
+});
+// or: builder.Services.AddDatadogTelemetry(dd => { dd.AgentHost = "localhost"; });
+// or: builder.Services.AddDatadogTelemetryFromEnvironment();
+
+// Database instrumentation
+builder.Services.AddEfCoreTelemetry();
+builder.Services.AddAdoNetTelemetry();
+builder.Services.AddRedisTelemetry();
+builder.Services.AddRabbitMqTelemetry();
 ```
 
 ### Step 2 — Replace ActivitySource usage
@@ -638,13 +644,13 @@ public class OrderService
         try
         {
             var order = await _repository.FindAsync(id);
-            scope.SetResult(true);
+            scope.Succeed();
             return order;
         }
         catch (Exception ex)
         {
             scope.RecordException(ex);
-            scope.SetResult(false);
+            scope.Fail(ex);
             throw;
         }
     }
@@ -723,19 +729,18 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddTelemetry(options =>
 {
     options.ServiceName = "MyNewService";
-    options.WithActivitySources("MyNewService.*");
-
-    // Backend
-    options.AddAppInsightsTelemetry(
-        builder.Configuration["ApplicationInsights:ConnectionString"]);
-
-    // Enrichment
-    options.AddSerilogEnrichment();
-
-    // Database
-    options.AddEfCoreTelemetry();
-    options.AddRedisTelemetry();
+    options.ActivitySources.Add("MyNewService.*");
 });
+
+// Backend
+builder.Services.AddAppInsightsTelemetry(ai =>
+{
+    ai.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
+});
+
+// Database
+builder.Services.AddEfCoreTelemetry();
+builder.Services.AddRedisTelemetry();
 
 var app = builder.Build();
 ```
@@ -748,13 +753,12 @@ using HVO.Enterprise.Telemetry.AppInsights;
 using HVO.Enterprise.Telemetry.IIS;
 
 // In Global.asax Application_Start or similar
-Telemetry.Initialize(options =>
+var options = new TelemetryOptions
 {
-    options.ServiceName = "MyLegacyNewService";
-    options.WithActivitySources("MyLegacyNewService.*");
-    options.AddAppInsightsTelemetry("InstrumentationKey=...");
-    options.AddIisTelemetryIntegration();
-});
+    ServiceName = "MyLegacyNewService"
+};
+options.ActivitySources.Add("MyLegacyNewService.*");
+Telemetry.Initialize(options);
 ```
 
 ### Step 3 — Instrument your code
@@ -780,14 +784,14 @@ public class CustomerService
         try
         {
             var customer = await _repository.CreateAsync(request);
-            scope.SetResult(true);
+            scope.Succeed();
             scope.WithProperty("CustomerId", customer.Id);
             return customer;
         }
         catch (Exception ex)
         {
             scope.RecordException(ex);
-            scope.SetResult(false);
+            scope.Fail(ex);
             throw;
         }
     }
@@ -846,8 +850,11 @@ builder.Services.AddApplicationInsightsTelemetry();
 builder.Services.AddTelemetry(options =>
 {
     options.ServiceName = "MyService";
-    options.WithActivitySources("MyService.*");
-    options.AddAppInsightsTelemetry("InstrumentationKey=...");
+    options.ActivitySources.Add("MyService.*");
+});
+builder.Services.AddAppInsightsTelemetry(ai =>
+{
+    ai.ConnectionString = "InstrumentationKey=...";
 });
 ```
 
@@ -1116,9 +1123,9 @@ protected void Application_Start()
 {
     if (_initialized) return;
 
-    Telemetry.Initialize(options =>
+    Telemetry.Initialize(new TelemetryOptions
     {
-        options.ServiceName = "MyService";
+        ServiceName = "MyService"
     });
 
     _initialized = true;

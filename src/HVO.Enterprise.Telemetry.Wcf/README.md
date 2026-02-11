@@ -20,7 +20,7 @@ dotnet add package HVO.Enterprise.Telemetry.Wcf
 ### Server-Side
 
 ```csharp
-using HVO.Enterprise.Telemetry.Wcf;
+using HVO.Enterprise.Telemetry.Wcf.Server;
 
 [WcfTelemetryBehavior]
 public class OrderService : IOrderService
@@ -29,13 +29,15 @@ public class OrderService : IOrderService
 }
 ```
 
+> **Note:** `WcfTelemetryBehaviorAttribute` is a marker attribute. Server-side telemetry inspection must also be registered via `WcfServerIntegration.TryAddTelemetryInspector(...)` or the DI extension `AddWcfTelemetryInstrumentation()`.
+
 ### Client-Side
 
 ```csharp
 using HVO.Enterprise.Telemetry.Wcf;
 
 var client = new OrderServiceClient();
-client.AddTelemetryBehavior(); // extension on ClientBase<T>
+client.Endpoint.AddTelemetryBehavior(); // extension on ServiceEndpoint
 var order = await client.GetOrderAsync(42);
 ```
 

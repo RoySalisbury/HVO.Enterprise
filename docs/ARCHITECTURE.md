@@ -158,13 +158,13 @@ graph LR
     subgraph "Static API (.NET Framework)"
         S1["Telemetry.Initialize(cfg)"] --> S2[TelemetryBuilder]
         S2 --> S3[Internal Singleton]
-        S3 --> S4["Telemetry.BeginScope()"]
+        S3 --> S4["Telemetry.StartOperation(...)"]
     end
 
     subgraph "DI API (.NET 8+)"
         D1["services.AddTelemetry(cfg)"] --> D2[TelemetryBuilder]
         D2 --> D3[IServiceCollection]
-        D3 --> D4["IOperationScopeFactory (injected)"]
+        D3 --> D4["IOperationScopeFactory.Begin(...)"]
     end
 
     S2 -.- D2
@@ -195,7 +195,7 @@ sequenceDiagram
     participant BG as TelemetryBackgroundWorker
     participant MR as IMetricRecorder
 
-    App->>SF: CreateScope("OrderService.PlaceOrder")
+    App->>SF: Begin("OrderService.PlaceOrder", options)
     SF->>Samp: ShouldSample(context)
     Samp-->>SF: SamplingDecision
 
