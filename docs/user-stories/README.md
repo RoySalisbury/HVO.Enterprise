@@ -69,6 +69,20 @@ Comprehensive documentation and future-proofing.
 - [US-029: Project Documentation](./US-029-project-documentation.md)
 - [US-030: Future Extensibility](./US-030-future-extensibility.md)
 
+### Additional Stories (US-031 to US-032)
+Further core and sample enhancements.
+
+- [US-031: Sample Extension Integrations](./US-031-sample-extension-integrations.md) ✅
+- [US-032: First Chance Exception Monitoring](./US-032-first-chance-exception-monitoring.md) ✅
+
+### Additional Extension Packages (US-033 to US-036)
+Additional telemetry export and transport integrations.
+
+- [US-033: OpenTelemetry/OTLP Extension](./US-033-opentelemetry-otlp-extension.md) — Universal OTLP exporter for traces, metrics, and logs
+- [US-034: Seq Extension](./US-034-seq-extension.md) — Seq structured log integration (CLEF + Serilog sink helper)
+- [US-035: Grafana Extension](./US-035-grafana-extension.md) — Grafana Loki log push + Tempo/Mimir OTLP topology
+- [US-036: gRPC Interceptor Extension](./US-036-grpc-interceptor-extension.md) — Server and client interceptors with `rpc.*` semantic conventions
+
 ## Story Template
 
 Each user story follows this structure:
@@ -107,6 +121,9 @@ Stories should generally be implemented in numerical order, though some can be p
 **Phase 7 - Documentation (US-029 to US-030)**
 - Final documentation and extensibility design
 
+**Phase 8 - Additional Extensions (US-031 to US-036)**
+- Sample extension integrations, first-chance exceptions, OpenTelemetry/OTLP, Seq, Grafana, gRPC
+
 ## Progress Tracking
 
 Mark stories as:
@@ -116,7 +133,7 @@ Mark stories as:
 - 🔍 In Review
 - ⚠️ Blocked
 
-Current Status: ❌ Not Started
+Current Status: Stories US-001 through US-036 defined. See individual stories for current status.
 
 ## Notes
 

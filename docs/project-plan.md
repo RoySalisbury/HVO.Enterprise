@@ -316,6 +316,10 @@ Define `IMethodInstrumentationStrategy` interface for DispatchProxyInstrumentati
 - ✅ `Telemetry.Datadog` - Datadog with dual-mode metrics bridge
 
 **Future Extensions (v1.1+):**
+- 🔮 `Telemetry.OpenTelemetry` - First-class OTLP export for traces, metrics, logs (US-033)
+- 🔮 `Telemetry.Seq` - Seq structured log integration via CLEF (US-034)
+- 🔮 `Telemetry.Grafana` - Grafana Loki log push + Tempo/Mimir OTLP topology (US-035)
+- 🔮 `Telemetry.Grpc` - gRPC server/client interceptors with rpc.* semantic conventions (US-036)
 - 🔮 Local development dashboard (real-time telemetry viewer)
 - 🔮 Message queue instrumentation (RabbitMQ, Service Bus, SQS)
 - 🔮 Smart adaptive sampling (more on errors/slow operations)
@@ -361,6 +365,10 @@ HVO.Enterprise/
 ├── HVO.Enterprise.Telemetry.Serilog/                  # Serilog extension
 ├── HVO.Enterprise.Telemetry.AppInsights/              # App Insights extension
 ├── HVO.Enterprise.Telemetry.Datadog/                  # Datadog extension
+├── HVO.Enterprise.Telemetry.OpenTelemetry/            # OTLP export extension (US-033)
+├── HVO.Enterprise.Telemetry.Seq/                      # Seq structured log extension (US-034)
+├── HVO.Enterprise.Telemetry.Grafana/                  # Grafana Loki/Tempo extension (US-035)
+├── HVO.Enterprise.Telemetry.Grpc/                     # gRPC interceptor extension (US-036)
 ├── HVO.Enterprise.Telemetry.Tests/                    # Unit tests (net8.0)
 ├── HVO.Enterprise.Samples.Net48/                      # .NET Framework 4.8 sample
 │   ├── WebApp/                                        # ASP.NET MVC + WebAPI

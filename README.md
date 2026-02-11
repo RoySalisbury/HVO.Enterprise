@@ -33,7 +33,11 @@ HVO.Enterprise/
 │   ├── HVO.Enterprise.Telemetry.Data.EfCore/  # Entity Framework Core
 │   ├── HVO.Enterprise.Telemetry.Data.AdoNet/  # Raw ADO.NET
 │   ├── HVO.Enterprise.Telemetry.Data.Redis/   # StackExchange.Redis
-│   └── HVO.Enterprise.Telemetry.Data.RabbitMQ/# RabbitMQ messaging
+│   ├── HVO.Enterprise.Telemetry.Data.RabbitMQ/# RabbitMQ messaging
+│   ├── HVO.Enterprise.Telemetry.OpenTelemetry/# OTLP export (traces, metrics, logs)
+│   ├── HVO.Enterprise.Telemetry.Seq/          # Seq structured log integration
+│   ├── HVO.Enterprise.Telemetry.Grafana/      # Grafana Loki/Tempo integration
+│   └── HVO.Enterprise.Telemetry.Grpc/         # gRPC interceptor instrumentation
 ├── tests/                                     # Unit and integration tests
 ├── samples/
 │   └── HVO.Enterprise.Samples.Net8/           # Weather monitoring API sample
@@ -210,13 +214,13 @@ else
 
 ## Project Planning & User Stories
 
-This project follows a structured user story approach with 30 stories covering all features.
+This project follows a structured user story approach with 36 stories covering all features.
 
 ### Quick Links
 
 - **[Quick Start: Creating GitHub Issues](QUICK-START-ISSUES.md)** - 5-minute guide to create all GitHub issues
 - **[Validation Summary](VALIDATION-SUMMARY.md)** - Complete status report of all user stories
-- **[User Stories Index](docs/user-stories/README.md)** - All 30 user stories (US-001 to US-030)
+- **[User Stories Index](docs/user-stories/README.md)** - All 36 user stories (US-001 to US-036)
 - **[Scripts Documentation](scripts/README.md)** - Automation tools for issue creation
 
 ### Project Status (30 User Stories, 180 Story Points)
@@ -262,7 +266,7 @@ See [QUICK-START-ISSUES.md](QUICK-START-ISSUES.md) for detailed instructions.
 | [Project Plan](docs/project-plan.md) | Detailed implementation plan and decisions |
 | [Benchmarks](docs/benchmarks/benchmark-report-2026-02-08.md) | Performance benchmark results |
 | [Sample App](samples/HVO.Enterprise.Samples.Net8/) | Weather monitoring API with full telemetry |
-| [User Stories](docs/user-stories/README.md) | All 30 user stories with acceptance criteria |
+| [User Stories](docs/user-stories/README.md) | All 36 user stories with acceptance criteria |
 
 ## Development
 

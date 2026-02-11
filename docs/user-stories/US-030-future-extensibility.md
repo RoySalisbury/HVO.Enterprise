@@ -903,7 +903,13 @@ namespace HVO.Enterprise.Telemetry.Abstractions
 - US-001: Core Package Setup
 - US-014: DispatchProxy Instrumentation
 
-**Blocks**: None (this enables future work)
+**Blocks / Enables**:
+- US-033: OpenTelemetry/OTLP Extension (implements `ITelemetryExporter` and `ITelemetryPlugin`)
+- US-034: Seq Extension (implements `ITelemetryExporter` for CLEF push)
+- US-035: Grafana Extension (implements `ITelemetryExporter` for Loki push)
+- US-036: gRPC Interceptor Extension (implements `IActivityEnricher` pattern)
+
+> US-033 serves as the **reference implementation** for the `ITelemetryPlugin` and `ITelemetryExporter` interfaces defined in this story.
 
 ## Definition of Done
 
@@ -967,6 +973,18 @@ namespace HVO.Enterprise.Telemetry.Abstractions
 3. **Insufficient examples** - Users need clear guidance
 4. **Poor error messages** - Extension errors hard to diagnose
 5. **No versioning** - Extension version compatibility must be clear
+
+### Known Consumers (Extension Packages)
+
+The following extension packages will implement or consume the extension interfaces defined here:
+
+| Interface | Consumer Package | Story |
+|---|---|---|
+| `ITelemetryExporter` | `HVO.Enterprise.Telemetry.OpenTelemetry` | US-033 |
+| `ITelemetryExporter` | `HVO.Enterprise.Telemetry.Seq` | US-034 |
+| `ITelemetryExporter` | `HVO.Enterprise.Telemetry.Grafana` | US-035 |
+| `ITelemetryPlugin` | `HVO.Enterprise.Telemetry.OpenTelemetry` | US-033 |
+| `IActivityEnricher` | `HVO.Enterprise.Telemetry.Grpc` | US-036 |
 
 ### Future Enhancements
 
