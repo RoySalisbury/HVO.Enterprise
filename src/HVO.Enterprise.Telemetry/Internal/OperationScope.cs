@@ -145,6 +145,13 @@ namespace HVO.Enterprise.Telemetry.Internal
             if (exception == null)
                 throw new ArgumentNullException(nameof(exception));
 
+            // Guard against duplicate tag recording when Fail() is called
+            // multiple times (e.g. via RecordException → Fail → Fail again).
+            // Activity.AddTag appends rather than deduplicates, so without
+            // this guard exception.type / exception.fingerprint would appear
+            // N times in the completed Activity's tag list.
+            var alreadyRecorded = _failed && ReferenceEquals(_exception, exception);
+
             _failed = true;
             _exception = exception;
 
@@ -153,7 +160,7 @@ namespace HVO.Enterprise.Telemetry.Internal
                 _activity.SetStatus(ActivityStatusCode.Error, exception.Message);
             }
 
-            if (_options.CaptureExceptions)
+            if (_options.CaptureExceptions && !alreadyRecorded)
             {
                 RecordExceptionOnActivity(exception);
             }
