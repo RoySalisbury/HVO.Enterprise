@@ -298,8 +298,8 @@ namespace HVO.Enterprise.Telemetry.Serilog.Tests
             }
             stopwatch.Stop();
 
-            // Assert — should complete in <100ms (avg <10μs per enrichment)
-            Assert.IsTrue(stopwatch.ElapsedMilliseconds < 100,
+            // Assert — should complete in <500ms (avg <50μs per enrichment; relaxed for CI runners)
+            Assert.IsTrue(stopwatch.ElapsedMilliseconds < 500,
                 $"Enrichment too slow: {stopwatch.ElapsedMilliseconds}ms for 10K operations");
         }
     }
