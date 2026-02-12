@@ -84,17 +84,29 @@ jobs:
         with:
           name: nuget-packages
           path: ./artifacts
-      # Push .nupkg to NuGet.org
+      - name: Determine package filter
+        id: filter
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            PACKAGE_NAME="${{ github.event.inputs.package }}"
+          else
+            # Extract package name from tag: "HVO.Common/v1.0.0" -> "HVO.Common"
+            TAG="${GITHUB_REF#refs/tags/}"
+            PACKAGE_NAME="${TAG%%/v*}"
+          fi
+          echo "package_name=${PACKAGE_NAME}" >> "$GITHUB_OUTPUT"
+          echo "Publishing package: ${PACKAGE_NAME}"
+      # Push .nupkg to NuGet.org (only the matching package)
       - name: Push to NuGet.org
         run: >
-          dotnet nuget push "./artifacts/*.nupkg"
+          dotnet nuget push "./artifacts/${{ steps.filter.outputs.package_name }}.*.nupkg"
           --api-key ${{ secrets.NUGET_API_KEY }}
           --source https://api.nuget.org/v3/index.json
           --skip-duplicate
-      # Push .snupkg symbol packages
+      # Push .snupkg symbol packages (only the matching package)
       - name: Push symbols to NuGet.org
         run: >
-          dotnet nuget push "./artifacts/*.snupkg"
+          dotnet nuget push "./artifacts/${{ steps.filter.outputs.package_name }}.*.snupkg"
           --api-key ${{ secrets.NUGET_API_KEY }}
           --source https://api.nuget.org/v3/index.json
           --skip-duplicate
@@ -113,9 +125,29 @@ jobs:
         with:
           name: nuget-packages
           path: ./artifacts
+      - name: Determine package filter
+        id: filter
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            PACKAGE_NAME="${{ github.event.inputs.package }}"
+          else
+            # Extract package name from tag: "HVO.Common/v1.0.0" -> "HVO.Common"
+            TAG="${GITHUB_REF#refs/tags/}"
+            PACKAGE_NAME="${TAG%%/v*}"
+          fi
+          echo "package_name=${PACKAGE_NAME}" >> "$GITHUB_OUTPUT"
+          echo "Publishing package: ${PACKAGE_NAME}"
+      # Push .nupkg to GitHub Packages (only the matching package)
       - name: Push to GitHub Packages
         run: >
-          dotnet nuget push "./artifacts/*.nupkg"
+          dotnet nuget push "./artifacts/${{ steps.filter.outputs.package_name }}.*.nupkg"
+          --api-key ${{ secrets.GITHUB_TOKEN }}
+          --source https://nuget.pkg.github.com/RoySalisbury/index.json
+          --skip-duplicate
+      # Push .snupkg symbol packages (only the matching package)
+      - name: Push symbols to GitHub Packages
+        run: >
+          dotnet nuget push "./artifacts/${{ steps.filter.outputs.package_name }}.*.snupkg"
           --api-key ${{ secrets.GITHUB_TOKEN }}
           --source https://nuget.pkg.github.com/RoySalisbury/index.json
           --skip-duplicate
