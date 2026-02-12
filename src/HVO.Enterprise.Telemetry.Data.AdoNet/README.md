@@ -1,72 +1,27 @@
 # HVO.Enterprise.Telemetry.Data.AdoNet
 
-Raw ADO.NET instrumentation for [HVO.Enterprise.Telemetry](../../README.md) via the wrapper pattern. Wraps `DbConnection` and `DbCommand` to automatically trace database operations without code changes to existing query logic.
+ADO.NET extension for HVO.Enterprise.Telemetry.
+
+## Features
+
+- **Instrumented Wrappers** — Drop-in DbConnection and DbCommand wrappers
+- **Automatic Tracing** — Distributed tracing for raw SQL operations
+- **Semantic Conventions** — OpenTelemetry database span attributes
 
 ## Installation
 
-```shell
+```
 dotnet add package HVO.Enterprise.Telemetry.Data.AdoNet
 ```
 
-### Dependencies
+## Target Framework
 
-| Package | Version |
-|---------|---------|
-| HVO.Enterprise.Telemetry.Data | latest |
+- .NET Standard 2.0 (compatible with .NET Framework 4.8+ and .NET Core 2.0+)
 
-No additional external dependencies required.
+## Documentation
 
-## Quick Start
+See the [HVO.Enterprise documentation](https://github.com/RoySalisbury/HVO.Enterprise) for full usage guides.
 
-### Via Dependency Injection
+## License
 
-```csharp
-using HVO.Enterprise.Telemetry.Data.AdoNet;
-
-services.AddAdoNetTelemetry();
-```
-
-### Via Extension Method
-
-```csharp
-using HVO.Enterprise.Telemetry.Data.AdoNet;
-
-using var connection = new SqlConnection(connectionString).WithTelemetry();
-using var command = connection.CreateCommand();
-command.CommandText = "SELECT * FROM Orders WHERE Id = @id";
-command.Parameters.AddWithValue("@id", orderId);
-using var reader = await command.ExecuteReaderAsync();
-```
-
-### With Options
-
-```csharp
-services.AddAdoNetTelemetry(options =>
-{
-    options.RecordStatements = true;
-    options.RecordParameters = false;
-    options.RecordConnectionInfo = false;
-    options.MaxStatementLength = 2000;
-});
-```
-
-## Key Types
-
-| Type | Description |
-|------|-------------|
-| `InstrumentedDbConnection` | Wraps `DbConnection` to create spans for connection lifecycle |
-| `InstrumentedDbCommand` | Wraps `DbCommand` to create spans for query execution |
-
-## Configuration Options
-
-Inherits all options from [`DataExtensionOptions`](../HVO.Enterprise.Telemetry.Data/README.md#configuration-options-dataextensionoptions), plus:
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `RecordConnectionInfo` | `bool` | `false` | Include server/database name on spans |
-
-## Further Reading
-
-- [Data Base Package](../HVO.Enterprise.Telemetry.Data/README.md)
-- [HVO.Enterprise.Telemetry Documentation](../../docs/)
-- [Main README](../../README.md)
+MIT — see [LICENSE](https://github.com/RoySalisbury/HVO.Enterprise/blob/main/LICENSE) for details.

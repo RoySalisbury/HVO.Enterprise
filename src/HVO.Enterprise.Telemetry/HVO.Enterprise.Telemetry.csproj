@@ -2,18 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>disable</ImplicitUsings>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Authors>HVO Enterprise</Authors>
-    <Company>HVO Enterprise</Company>
-    <Product>HVO.Enterprise.Telemetry</Product>
-    <Description>Core telemetry library providing unified observability (distributed tracing, metrics, structured logging) across all .NET platforms (.NET Framework 4.8 through .NET 10+)</Description>
-    <PackageProjectUrl>https://github.com/RoySalisbury/HVO.Enterprise</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/RoySalisbury/HVO.Enterprise</RepositoryUrl>
+    <PackageId>HVO.Enterprise.Telemetry</PackageId>
     <Version>1.0.0</Version>
+    <Description>Core telemetry library providing unified observability (distributed tracing, metrics, structured logging) across all .NET platforms (.NET Framework 4.8 through .NET 10+)</Description>
+    <PackageTags>telemetry;tracing;metrics;logging;observability;opentelemetry;distributed-tracing</PackageTags>
+    <PackageReleaseNotes></PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -33,9 +26,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="HVO.Enterprise.Telemetry.Tests" />
-    <InternalsVisibleTo Include="HVO.Enterprise.Telemetry.Benchmarks" />
-    <InternalsVisibleTo Include="HVO.Enterprise.Telemetry.Serilog.Tests" />
+    <InternalsVisibleTo Include="HVO.Enterprise.Telemetry.Tests" Key="$(HvoPublicKey)" />
+    <InternalsVisibleTo Include="HVO.Enterprise.Telemetry.Benchmarks" Key="$(HvoPublicKey)" />
+    <InternalsVisibleTo Include="HVO.Enterprise.Telemetry.Serilog.Tests" Key="$(HvoPublicKey)" />
   </ItemGroup>
 
 </Project>

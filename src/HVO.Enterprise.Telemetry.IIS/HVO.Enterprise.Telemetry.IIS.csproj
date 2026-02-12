@@ -2,18 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>disable</ImplicitUsings>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Authors>HVO Enterprise</Authors>
-    <Company>HVO Enterprise</Company>
-    <Product>HVO.Enterprise.Telemetry.IIS</Product>
-    <Description>IIS extension for HVO.Enterprise.Telemetry providing automatic lifecycle management, graceful shutdown handling via IRegisteredObject, and IIS hosting environment detection.</Description>
-    <PackageProjectUrl>https://github.com/RoySalisbury/HVO.Enterprise</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/RoySalisbury/HVO.Enterprise</RepositoryUrl>
+    <PackageId>HVO.Enterprise.Telemetry.IIS</PackageId>
     <Version>1.0.0</Version>
+    <Description>IIS extension for HVO.Enterprise.Telemetry providing automatic lifecycle management, graceful shutdown handling via IRegisteredObject, and IIS hosting environment detection.</Description>
+    <PackageTags>telemetry;iis;asp-net;web;lifecycle;shutdown;hosting</PackageTags>
+    <PackageReleaseNotes></PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="HVO.Enterprise.Telemetry.IIS.Tests" />
+    <InternalsVisibleTo Include="HVO.Enterprise.Telemetry.IIS.Tests" Key="$(HvoPublicKey)" />
   </ItemGroup>
 
 </Project>

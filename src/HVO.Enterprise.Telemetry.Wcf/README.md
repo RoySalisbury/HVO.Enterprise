@@ -1,75 +1,27 @@
 # HVO.Enterprise.Telemetry.Wcf
 
-WCF service and client instrumentation for [HVO.Enterprise.Telemetry](../../README.md) with automatic W3C TraceContext propagation via SOAP headers. Provides distributed tracing across WCF service boundaries.
+WCF extension for HVO.Enterprise.Telemetry.
+
+## Features
+
+- **Distributed Tracing** — Automatic W3C TraceContext propagation in SOAP headers
+- **Message Inspectors** — Client and server-side telemetry capture
+- **Fault Tracking** — Automatic WCF fault exception correlation
 
 ## Installation
 
-```shell
+```
 dotnet add package HVO.Enterprise.Telemetry.Wcf
 ```
 
-### Dependencies
+## Target Framework
 
-| Package | Version |
-|---------|---------|
-| System.ServiceModel.Primitives | 4.10.3 |
-| HVO.Enterprise.Telemetry | latest |
+- .NET Standard 2.0 (compatible with .NET Framework 4.8+ and .NET Core 2.0+)
 
-## Quick Start
+## Documentation
 
-### Server-Side
+See the [HVO.Enterprise documentation](https://github.com/RoySalisbury/HVO.Enterprise) for full usage guides.
 
-```csharp
-using HVO.Enterprise.Telemetry.Wcf.Server;
+## License
 
-[WcfTelemetryBehavior]
-public class OrderService : IOrderService
-{
-    public Order GetOrder(int id) => _repository.Find(id);
-}
-```
-
-> **Note:** `WcfTelemetryBehaviorAttribute` is a marker attribute. Server-side telemetry inspection must also be registered via `WcfServerIntegration.TryAddTelemetryInspector(...)` or the DI extension `AddWcfTelemetryInstrumentation()`.
-
-### Client-Side
-
-```csharp
-using HVO.Enterprise.Telemetry.Wcf;
-
-var client = new OrderServiceClient();
-client.Endpoint.AddTelemetryBehavior(); // extension on ServiceEndpoint
-var order = await client.GetOrderAsync(42);
-```
-
-### Dependency Injection
-
-```csharp
-services.AddWcfTelemetryInstrumentation(options =>
-{
-    options.PropagateTraceContextInReply = true;
-    options.CaptureFaultDetails = true;
-});
-```
-
-## Key Types
-
-| Type | Description |
-|------|-------------|
-| `WcfTelemetryBehaviorAttribute` | Service behavior attribute for server-side instrumentation |
-| `WcfDispatchInspectorProxy` | Server-side message inspector that extracts/injects trace context |
-| `TelemetryClientEndpointBehavior` | Client-side endpoint behavior for outgoing calls |
-| `TelemetryClientMessageInspector` | Client-side message inspector that propagates trace context |
-| `W3CTraceContextPropagator` | Propagates W3C TraceContext via SOAP headers |
-
-## Configuration Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `PropagateTraceContextInReply` | `bool` | `true` | Include trace context headers in service replies |
-| `OperationFilter` | `Func<string, bool>?` | `null` | Filter which WCF operations are instrumented |
-| `CaptureFaultDetails` | `bool` | `true` | Record fault details on spans when service faults occur |
-
-## Further Reading
-
-- [HVO.Enterprise.Telemetry Documentation](../../docs/)
-- [Main README](../../README.md)
+MIT — see [LICENSE](https://github.com/RoySalisbury/HVO.Enterprise/blob/main/LICENSE) for details.

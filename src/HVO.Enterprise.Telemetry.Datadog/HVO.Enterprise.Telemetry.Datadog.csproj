@@ -2,18 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>disable</ImplicitUsings>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Authors>HVO Enterprise</Authors>
-    <Company>HVO Enterprise</Company>
-    <Product>HVO.Enterprise.Telemetry.Datadog</Product>
-    <Description>Datadog integration for HVO.Enterprise.Telemetry with dual-mode OTLP and DogStatsD support, metrics export, trace enrichment, and cross-platform transport (UDP and Unix domain socket).</Description>
-    <PackageProjectUrl>https://github.com/RoySalisbury/HVO.Enterprise</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/RoySalisbury/HVO.Enterprise</RepositoryUrl>
+    <PackageId>HVO.Enterprise.Telemetry.Datadog</PackageId>
     <Version>1.0.0</Version>
+    <Description>Datadog integration for HVO.Enterprise.Telemetry with dual-mode OTLP and DogStatsD support, metrics export, trace enrichment, and cross-platform transport (UDP and Unix domain socket).</Description>
+    <PackageTags>telemetry;datadog;dogstatsd;apm;monitoring;metrics;tracing</PackageTags>
+    <PackageReleaseNotes></PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -28,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="HVO.Enterprise.Telemetry.Datadog.Tests" />
+    <InternalsVisibleTo Include="HVO.Enterprise.Telemetry.Datadog.Tests" Key="$(HvoPublicKey)" />
   </ItemGroup>
 
 </Project>

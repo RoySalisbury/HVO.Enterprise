@@ -1,0 +1,35 @@
+<Project>
+  <PropertyGroup>
+    <!-- Language & Build Settings -->
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- Shared NuGet Metadata -->
+    <Authors>Roy Salisbury</Authors>
+    <Company>HVO Enterprise</Company>
+    <Copyright>Copyright © HVO Enterprise 2024-2026</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/RoySalisbury/HVO.Enterprise</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/RoySalisbury/HVO.Enterprise</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageIcon>nuget-icon.png</PackageIcon>
+
+    <!-- Build Quality -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Deterministic>true</Deterministic>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+    <!-- Strong Naming -->
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)HVO.Enterprise.snk</AssemblyOriginatorKeyFile>
+    <HvoPublicKey>00240000048000009400000006020000002400005253413100040000010001005b2420b11f871dd42d0b627ca61c4cd04326c783c64414702a8abd4110d58ad9a63e9f8a0750f98a97c913a72d4ee12f38db35597e6d9409ecff212ff3b3565507354e7359edaac4667b164810faae472b6f03c7fc02c8f4a22342382d4ec5f1b9355e9f8cf8ac45aa2b2c5c9e50005cb16879b73c90364c5ff104a0ccc7d4b8</HvoPublicKey>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+  </ItemGroup>
+</Project>
