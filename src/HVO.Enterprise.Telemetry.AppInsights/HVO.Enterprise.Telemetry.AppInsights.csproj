@@ -2,18 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>disable</ImplicitUsings>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Authors>HVO Enterprise</Authors>
-    <Company>HVO Enterprise</Company>
-    <Product>HVO.Enterprise.Telemetry.AppInsights</Product>
-    <Description>Application Insights integration for HVO.Enterprise.Telemetry with dual-mode support (OTLP and Direct SDK), telemetry initializers for Activity tracing and correlation context enrichment.</Description>
-    <PackageProjectUrl>https://github.com/RoySalisbury/HVO.Enterprise</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/RoySalisbury/HVO.Enterprise</RepositoryUrl>
+    <PackageId>HVO.Enterprise.Telemetry.AppInsights</PackageId>
     <Version>1.0.0</Version>
+    <Description>Application Insights integration for HVO.Enterprise.Telemetry with dual-mode support (OTLP and Direct SDK), telemetry initializers for Activity tracing and correlation context enrichment.</Description>
+    <PackageTags>telemetry;application-insights;appinsights;azure;monitoring;tracing;correlation</PackageTags>
+    <PackageReleaseNotes></PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -28,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="HVO.Enterprise.Telemetry.AppInsights.Tests" />
+    <InternalsVisibleTo Include="HVO.Enterprise.Telemetry.AppInsights.Tests" Key="$(HvoPublicKey)" />
   </ItemGroup>
 
 </Project>

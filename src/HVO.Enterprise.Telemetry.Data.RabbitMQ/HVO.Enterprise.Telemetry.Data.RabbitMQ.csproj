@@ -2,18 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>disable</ImplicitUsings>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Authors>HVO Enterprise</Authors>
-    <Company>HVO Enterprise</Company>
-    <Product>HVO.Enterprise.Telemetry.Data.RabbitMQ</Product>
-    <Description>RabbitMQ extension for HVO.Enterprise.Telemetry providing automatic distributed tracing for RabbitMQ publish and consume operations with W3C TraceContext propagation in message headers and OpenTelemetry semantic conventions.</Description>
-    <PackageProjectUrl>https://github.com/RoySalisbury/HVO.Enterprise</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/RoySalisbury/HVO.Enterprise</RepositoryUrl>
+    <PackageId>HVO.Enterprise.Telemetry.Data.RabbitMQ</PackageId>
     <Version>1.0.0</Version>
+    <Description>RabbitMQ extension for HVO.Enterprise.Telemetry providing automatic distributed tracing for RabbitMQ publish and consume operations with W3C TraceContext propagation in message headers and OpenTelemetry semantic conventions.</Description>
+    <PackageTags>telemetry;rabbitmq;messaging;amqp;tracing;instrumentation</PackageTags>
+    <PackageReleaseNotes></PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="HVO.Enterprise.Telemetry.Data.RabbitMQ.Tests" />
+    <InternalsVisibleTo Include="HVO.Enterprise.Telemetry.Data.RabbitMQ.Tests" Key="$(HvoPublicKey)" />
   </ItemGroup>
 
 </Project>

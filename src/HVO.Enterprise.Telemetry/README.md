@@ -1,134 +1,106 @@
 # HVO.Enterprise.Telemetry
 
-Core telemetry library providing unified observability — distributed tracing, metrics, and structured logging — across all .NET platforms (.NET Framework 4.8 through .NET 10+).
+Core telemetry library providing unified observability (distributed tracing, metrics, structured logging) across all .NET platforms.
 
-Built on **.NET Standard 2.0** for single-binary universal deployment.
+## Features
+
+- **Distributed Tracing** — OpenTelemetry-compatible Activity-based tracing
+- **Metrics** — Counter, histogram, and gauge instrumentation
+- **Structured Logging** — ILogger integration with correlation context
+- **Correlation** — Automatic request/operation correlation across service boundaries
+- **Health Checks** — Built-in telemetry health monitoring
+- **Configuration** — Hierarchical, hot-reloadable telemetry settings
+- **Sampling** — Configurable per-operation sampling rates
+- **Multi-Platform** — Single binary works on .NET Framework 4.8+ through .NET 10+
 
 ## Installation
 
-```shell
+```
 dotnet add package HVO.Enterprise.Telemetry
 ```
 
 ## Quick Start
 
-### Dependency Injection (recommended)
+### Dependency Injection Setup
 
 ```csharp
 using HVO.Enterprise.Telemetry;
 
-var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddTelemetry(options =>
+// In Startup.cs or Program.cs
+services.AddTelemetry(options =>
 {
     options.ServiceName = "MyService";
-    options.Metrics.Enabled = true;
+    options.DefaultSamplingRate = 0.1;
+    options.DefaultDetailLevel = DetailLevel.Normal;
 });
-
-var app = builder.Build();
-app.Run();
 ```
 
-### Static Initialization (non-DI / legacy)
+### Tracking Operations
 
 ```csharp
-using HVO.Enterprise.Telemetry;
+// Track an operation with automatic timing and correlation
+using var operation = telemetry.TrackOperation("ProcessOrder");
+operation.AddProperty("orderId", orderId);
+operation.AddProperty("customerId", customerId);
 
-Telemetry.Initialize();
-
-// Create an operation scope
-using (var operation = Telemetry.StartOperation("ProcessOrder"))
-{
-    operation.WithTag("orderId", orderId);
-
-    try
-    {
-        // ... business logic
-        operation.Succeed();
-    }
-    catch (Exception ex)
-    {
-        operation.Fail(ex);
-        throw;
-    }
-}
-
-// Shutdown cleanly
-Telemetry.Shutdown();
+// Nested operations are automatically correlated
+using var childOp = telemetry.TrackOperation("ValidatePayment");
+childOp.AddProperty("amount", amount);
 ```
 
-## Key Features
+### Error Handling
 
-| Feature | Description |
-|---|---|
-| **Distributed Tracing** | `ActivitySource`-based tracing with automatic context propagation |
-| **Runtime-Adaptive Metrics** | `IMetricRecorder` abstraction; adapts to available runtime APIs |
-| **Correlation Management** | `CorrelationContext` uses `AsyncLocal<T>` for ambient correlation IDs |
-| **Operation Scoping** | `IOperationScopeFactory` / `OperationScopeFactory` for structured operation tracking |
-| **Exception Aggregation** | `ExceptionAggregator` groups exceptions by fingerprint to reduce noise |
-| **Health Checks** | `TelemetryHealthCheck` implements `IHealthCheck` for liveness/readiness probes |
-| **Configuration Hot Reload** | `ConfigurationProvider` that merges Global/Namespace/Type/Method/Call levels across Code/File/Runtime sources with runtime hot reload |
-| **Background Processing** | `BackgroundJobContext` captures and restores correlation across threads/jobs |
-| **Lifecycle Management** | `TelemetryHostedService` handles startup/shutdown in hosted environments |
-| **Sampling** | `ISampler` with Probabilistic, Adaptive, PerSource, and Conditional strategies |
+```csharp
+using var operation = telemetry.TrackOperation("ImportData");
+try
+{
+    await ImportDataAsync();
+}
+catch (Exception ex)
+{
+    operation.SetException(ex);
+    throw;
+}
+```
 
-## Main Public APIs
+### Configuration Hierarchy
 
-### Entry Points
+Telemetry settings can be configured at multiple levels (global → type → method → call-site), with more specific settings taking precedence:
 
-- **`Telemetry`** — Static class for non-DI scenarios. Call `Initialize()` / `Shutdown()`.
-- **`TelemetryServiceCollectionExtensions.AddTelemetry()`** — Registers all services with DI. Idempotent.
-- **`TelemetryBuilder`** — Fluent configuration builder for advanced setup.
+```csharp
+// Global default
+services.AddTelemetry(o => o.DefaultSamplingRate = 0.1);
 
-### Core Services
+// Per-type override via attribute
+[TelemetryOptions(SamplingRate = 1.0)]
+public class CriticalService { }
 
-- **`IOperationScopeFactory`** / **`OperationScopeFactory`** — Create structured operation scopes for tracing.
-- **`CorrelationContext`** — Manage ambient correlation IDs via `AsyncLocal<T>`.
-- **`BackgroundJobContext`** — Capture/restore correlation state for background jobs.
-- **`IMetricRecorder`** — Record counters, histograms, and gauges.
+// Per-method override
+[TelemetryOptions(DetailLevel = DetailLevel.Detailed, CaptureParameters = CaptureLevel.Values)]
+public Task<Order> GetOrderAsync(int id) { }
+```
 
-### Infrastructure
+## Extension Packages
 
-- **`ExceptionAggregator`** — Fingerprint-based exception grouping and rate limiting.
-- **`TelemetryHealthCheck`** — `IHealthCheck` implementation reporting telemetry subsystem status.
-- **`TelemetryHostedService`** — Internal `IHostedService` used by `AddTelemetry()` for automatic lifecycle management (not intended for direct use).
-- **`ISampler`** — Sampling strategy interface (Probabilistic, Adaptive, PerSource, Conditional).
-- **`ConfigurationProvider`** — 4-level configuration hierarchy with hot-reload support.
-
-## Dependencies
-
-| Package | Version |
-|---|---|
-| OpenTelemetry.Api | 1.9.0 |
-| System.Diagnostics.DiagnosticSource | 8.0.1 |
-| Microsoft.Extensions.Logging.Abstractions | 8.0.0 |
-| Microsoft.Extensions.DependencyInjection.Abstractions | 8.0.0 |
-| Microsoft.Extensions.Configuration.Abstractions | 8.0.0 |
-| Microsoft.Extensions.Configuration.Binder | 8.0.0 |
-| Microsoft.Extensions.Options | 8.0.0 |
-| Microsoft.Extensions.Hosting.Abstractions | 8.0.0 |
-| Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions | 8.0.0 |
-| System.Threading.Channels | 7.0.0 |
-
-## Performance Targets
-
-| Metric | Target |
-|---|---|
-| Operation scope creation | < 1 μs |
-| Metric recording (single point) | < 500 ns |
-| Correlation context read | < 100 ns |
-| Memory per active scope | < 1 KB |
-| Background channel throughput | > 100K items/sec |
+| Package | Purpose |
+|---------|--------|
+| [HVO.Enterprise.Telemetry.OpenTelemetry](https://www.nuget.org/packages/HVO.Enterprise.Telemetry.OpenTelemetry) | OTLP export to Jaeger, Prometheus, Grafana |
+| [HVO.Enterprise.Telemetry.Serilog](https://www.nuget.org/packages/HVO.Enterprise.Telemetry.Serilog) | Serilog sink integration |
+| [HVO.Enterprise.Telemetry.AppInsights](https://www.nuget.org/packages/HVO.Enterprise.Telemetry.AppInsights) | Azure Application Insights bridge |
+| [HVO.Enterprise.Telemetry.Datadog](https://www.nuget.org/packages/HVO.Enterprise.Telemetry.Datadog) | Datadog APM integration |
+| [HVO.Enterprise.Telemetry.IIS](https://www.nuget.org/packages/HVO.Enterprise.Telemetry.IIS) | IIS HTTP module instrumentation |
+| [HVO.Enterprise.Telemetry.Wcf](https://www.nuget.org/packages/HVO.Enterprise.Telemetry.Wcf) | WCF service/client instrumentation |
+| [HVO.Enterprise.Telemetry.Data.EfCore](https://www.nuget.org/packages/HVO.Enterprise.Telemetry.Data.EfCore) | Entity Framework Core interceptor |
+| [HVO.Enterprise.Telemetry.Data.AdoNet](https://www.nuget.org/packages/HVO.Enterprise.Telemetry.Data.AdoNet) | ADO.NET command wrapper |
 
 ## Documentation
 
-For detailed documentation, see the [`docs/`](../../docs/) folder:
+For full documentation, examples, and architecture details, see the [GitHub repository](https://github.com/RoySalisbury/HVO.Enterprise).
 
-- [Architecture](../../docs/ARCHITECTURE.md) — System design, component interactions, and data flow
-- [Migration Guide](../../docs/MIGRATION.md) — Upgrading from previous versions
-- [Roadmap](../../docs/ROADMAP.md) — Planned features and timeline
-- [Platform Differences](../../docs/DIFFERENCES.md) — Behavior across .NET runtimes
+## Target Framework
+
+- .NET Standard 2.0 (compatible with .NET Framework 4.8+ and .NET Core 2.0+)
 
 ## License
 
-See the repository [LICENSE](../../LICENSE) for details.
+MIT — see [LICENSE](https://github.com/RoySalisbury/HVO.Enterprise/blob/main/LICENSE) for details.

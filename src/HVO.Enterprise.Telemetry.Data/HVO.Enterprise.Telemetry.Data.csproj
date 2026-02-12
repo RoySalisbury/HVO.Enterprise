@@ -2,18 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>disable</ImplicitUsings>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Authors>HVO Enterprise</Authors>
-    <Company>HVO Enterprise</Company>
-    <Product>HVO.Enterprise.Telemetry.Data</Product>
-    <Description>Shared data instrumentation infrastructure for HVO.Enterprise.Telemetry providing OpenTelemetry semantic conventions for database operations, parameter sanitization, database system detection, and common configuration for data extension packages.</Description>
-    <PackageProjectUrl>https://github.com/RoySalisbury/HVO.Enterprise</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/RoySalisbury/HVO.Enterprise</RepositoryUrl>
+    <PackageId>HVO.Enterprise.Telemetry.Data</PackageId>
     <Version>1.0.0</Version>
+    <Description>Shared data instrumentation infrastructure for HVO.Enterprise.Telemetry providing OpenTelemetry semantic conventions for database operations, parameter sanitization, database system detection, and common configuration for data extension packages.</Description>
+    <PackageTags>telemetry;data;database;instrumentation;opentelemetry;semantic-conventions</PackageTags>
+    <PackageReleaseNotes></PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="HVO.Enterprise.Telemetry.Data.Tests" />
+    <InternalsVisibleTo Include="HVO.Enterprise.Telemetry.Data.Tests" Key="$(HvoPublicKey)" />
   </ItemGroup>
 
 </Project>

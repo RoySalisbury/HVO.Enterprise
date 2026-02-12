@@ -421,3 +421,11 @@ FodyWeavers.xsd
 *.msp
 .DS_Store
 samples/HVO.Enterprise.Samples.Net8/weather.db
+
+# NuGet Package Artifacts
+artifacts/
+*.nupkg
+*.snupkg
+
+# Local tool manifest
+.config/dotnet-tools.json

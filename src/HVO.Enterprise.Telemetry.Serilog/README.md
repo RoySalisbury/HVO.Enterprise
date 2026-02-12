@@ -1,68 +1,27 @@
 # HVO.Enterprise.Telemetry.Serilog
 
-Serilog enrichers for [HVO.Enterprise.Telemetry](../../README.md) correlation context. Automatically enriches Serilog log events with distributed tracing identifiers such as `CorrelationId`, `TraceId`, `SpanId`, and `ParentId`.
+Serilog enrichers for HVO.Enterprise.Telemetry.
+
+## Features
+
+- **Activity Enricher** — Adds TraceId, SpanId, and ParentId to log events
+- **Correlation Enricher** — Adds CorrelationId and custom context properties
+- **Automatic Integration** — Works with any Serilog sink
 
 ## Installation
 
-```shell
+```
 dotnet add package HVO.Enterprise.Telemetry.Serilog
 ```
 
-### Dependencies
+## Target Framework
 
-| Package | Version |
-|---------|---------|
-| Serilog | 3.1.1   |
-| HVO.Enterprise.Telemetry | latest |
+- .NET Standard 2.0 (compatible with .NET Framework 4.8+ and .NET Core 2.0+)
 
-## Quick Start
+## Documentation
 
-```csharp
-using Serilog;
-using HVO.Enterprise.Telemetry.Serilog;
+See the [HVO.Enterprise documentation](https://github.com/RoySalisbury/HVO.Enterprise) for full usage guides.
 
-Log.Logger = new LoggerConfiguration()
-    .Enrich.WithTelemetry()   // adds both correlation and activity enrichers
-    .WriteTo.Console(outputTemplate:
-        "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} " +
-        "{CorrelationId} {TraceId}{NewLine}{Exception}")
-    .CreateLogger();
-```
+## License
 
-### Individual Enrichers
-
-```csharp
-Log.Logger = new LoggerConfiguration()
-    .Enrich.WithCorrelation()  // adds CorrelationId only
-    .Enrich.WithActivity()     // adds TraceId, SpanId, ParentId
-    .CreateLogger();
-```
-
-## Key Types
-
-| Type | Description |
-|------|-------------|
-| `CorrelationEnricher` | Enriches log events with the current `CorrelationId` |
-| `ActivityEnricher` | Enriches log events with `TraceId`, `SpanId`, and `ParentId` from the current `Activity` |
-
-## Extension Methods
-
-| Method | Description |
-|--------|-------------|
-| `.Enrich.WithTelemetry()` | Adds both `CorrelationEnricher` and `ActivityEnricher` |
-| `.Enrich.WithCorrelation()` | Adds `CorrelationEnricher` only |
-| `.Enrich.WithActivity()` | Adds `ActivityEnricher` only |
-
-## Enriched Properties
-
-| Property | Source |
-|----------|--------|
-| `CorrelationId` | HVO correlation context |
-| `TraceId` | `System.Diagnostics.Activity.Current.TraceId` |
-| `SpanId` | `System.Diagnostics.Activity.Current.SpanId` |
-| `ParentId` | `System.Diagnostics.Activity.Current.ParentId` |
-
-## Further Reading
-
-- [HVO.Enterprise.Telemetry Documentation](../../docs/)
-- [Main README](../../README.md)
+MIT — see [LICENSE](https://github.com/RoySalisbury/HVO.Enterprise/blob/main/LICENSE) for details.
