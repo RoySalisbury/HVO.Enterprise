@@ -21,6 +21,7 @@ using HVO.Enterprise.Telemetry.Datadog;
 using HVO.Enterprise.Telemetry.HealthChecks;
 using HVO.Enterprise.Telemetry.Http;
 using HVO.Enterprise.Telemetry.Logging;
+using HVO.Enterprise.Telemetry.OpenTelemetry;
 using HVO.Enterprise.Telemetry.Proxies;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -246,6 +247,32 @@ namespace HVO.Enterprise.Samples.Net8.Configuration
                     options.AgentHost = extensions["Datadog:AgentHost"] ?? "localhost";
                     options.EnableMetricsExporter = true;
                     options.EnableTraceExporter = true;
+                });
+            }
+
+            // ── OpenTelemetry OTLP Extension ───────────────────────
+            // Routes traces, metrics, and logs to any OTLP-compatible
+            // backend (Jaeger, Zipkin, Grafana Tempo, Honeycomb, etc.).
+            if (extensions.GetValue<bool>("OpenTelemetry:Enabled"))
+            {
+                services.AddOpenTelemetryExport(options =>
+                {
+                    options.ServiceName = extensions["OpenTelemetry:ServiceName"] ?? "hvo-samples-net8";
+                    options.ServiceVersion = extensions["OpenTelemetry:ServiceVersion"] ?? "1.0.0";
+                    options.Environment = extensions["OpenTelemetry:Environment"] ?? "development";
+                    options.Endpoint = extensions["OpenTelemetry:Endpoint"] ?? "http://localhost:4317";
+
+                    var transport = extensions["OpenTelemetry:Transport"];
+                    if (!string.IsNullOrEmpty(transport)
+                        && Enum.TryParse<OtlpTransport>(transport, ignoreCase: true, out var transportValue))
+                    {
+                        options.Transport = transportValue;
+                    }
+
+                    options.EnableTraceExport = true;
+                    options.EnableMetricsExport = true;
+                    options.EnableLogExport = extensions.GetValue<bool>("OpenTelemetry:EnableLogExport");
+                    options.EnablePrometheusEndpoint = extensions.GetValue<bool>("OpenTelemetry:EnablePrometheus");
                 });
             }
 

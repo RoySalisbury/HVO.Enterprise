@@ -26,6 +26,7 @@
     <ProjectReference Include="..\..\src\HVO.Enterprise.Telemetry.Data.AdoNet\HVO.Enterprise.Telemetry.Data.AdoNet.csproj" />
     <ProjectReference Include="..\..\src\HVO.Enterprise.Telemetry.Data.Redis\HVO.Enterprise.Telemetry.Data.Redis.csproj" />
     <ProjectReference Include="..\..\src\HVO.Enterprise.Telemetry.Data.RabbitMQ\HVO.Enterprise.Telemetry.Data.RabbitMQ.csproj" />
+    <ProjectReference Include="..\..\src\HVO.Enterprise.Telemetry.OpenTelemetry\HVO.Enterprise.Telemetry.OpenTelemetry.csproj" />
   </ItemGroup>
 
   <!-- Serilog -->
