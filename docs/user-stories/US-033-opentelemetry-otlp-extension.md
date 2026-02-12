@@ -48,22 +48,22 @@ accept OTLP ingest.
 
 3. **OTLP Metrics Export**
    - [x] Registers `MeterProvider` with HVO meter names
-   - [x] Bridges `IMetricsRecorder` counters/gauges/histograms to OTel instruments
+   - [ ] Bridges `IMetricsRecorder` counters/gauges/histograms to OTel instruments — deferred to future iteration
    - [x] OTLP metrics exporter with configurable export interval
    - [x] Resource attributes consistent with trace export
    - [x] Delta vs. cumulative temporality configuration (`MetricsTemporality` enum)
 
 4. **Prometheus Scrape Endpoint** (optional sub-feature)
-   - [x] `.WithPrometheusEndpoint()` extension registers `/metrics` ASP.NET Core endpoint
-   - [x] Exposes all HVO metrics in Prometheus exposition format
-   - [x] Works alongside OTLP export (dual-export)
+   - [x] `.WithPrometheusEndpoint()` extension sets configuration flag
+   - [ ] Actual Prometheus exposition middleware — deferred (requires `OpenTelemetry.Exporter.Prometheus.AspNetCore`)
+   - [ ] Works alongside OTLP export (dual-export) — deferred
    - [x] Only available on .NET 6+ (ASP.NET Core required)
 
 5. **OTel Log Export** (optional sub-feature)
-   - [x] `.WithOtlpLogExport()` extension configures `OpenTelemetryLoggerProvider`
-   - [x] Structured log events exported via OTLP with trace correlation
-   - [x] Bridges HVO `ILogger` enrichment (CorrelationId, TraceId) into OTel log records
-   - [x] Configurable log level filter
+   - [x] `.WithOtlpLogExport()` extension sets configuration flag
+   - [ ] Actual `OpenTelemetryLoggerProvider` wiring — deferred to future iteration
+   - [ ] Bridges HVO `ILogger` enrichment (CorrelationId, TraceId) into OTel log records — deferred
+   - [ ] Configurable log level filter — deferred
 
 6. **Configuration Extensions**
    - [x] `IServiceCollection.AddOpenTelemetryExport()` extension method
@@ -76,13 +76,13 @@ accept OTLP ingest.
 7. **Custom Exporter / Plugin Support**
    - [ ] Implements `ITelemetryExporter` from US-030 for OTel-based export — deferred (US-030 not yet implemented)
    - [ ] Implements `ITelemetryPlugin` from US-030 for plugin lifecycle — deferred (US-030 not yet implemented)
-   - [x] Enables custom `Activity` processors via builder callback
-   - [x] Enables custom resource detectors via builder callback
+   - [ ] Enables custom `Activity` processors via builder callback — deferred to future iteration
+   - [ ] Enables custom resource detectors via builder callback — deferred to future iteration
 
 8. **Cross-Platform Support**
    - [x] Works on .NET Framework 4.8 (OTLP HTTP exporter, limited metrics)
-   - [x] Works on .NET 8+ (full OTel SDK features, Prometheus endpoint)
-   - [x] Runtime-adaptive: detects Meter API availability and skips MeterProvider on .NET Framework
+   - [x] Works on .NET 8+ (full OTel SDK features)
+   - [ ] Runtime-adaptive: detects Meter API availability and skips MeterProvider on .NET Framework — deferred
 
 ## Technical Requirements
 

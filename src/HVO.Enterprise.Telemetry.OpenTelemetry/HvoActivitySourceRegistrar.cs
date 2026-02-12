@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.Options;
 
 namespace HVO.Enterprise.Telemetry.OpenTelemetry
@@ -32,18 +33,16 @@ namespace HVO.Enterprise.Telemetry.OpenTelemetry
         {
             yield return "HVO.Enterprise.Telemetry";
             yield return "HVO.Enterprise.Telemetry.Http";
-            yield return "HVO.Enterprise.Telemetry.Database";
+            yield return "HVO.Enterprise.Telemetry.Data";
 
             if (_telemetryOptions.ActivitySources != null)
             {
-                foreach (var source in _telemetryOptions.ActivitySources)
+                foreach (var source in _telemetryOptions.ActivitySources
+                    .Where(s => s != "HVO.Enterprise.Telemetry"
+                        && s != "HVO.Enterprise.Telemetry.Http"
+                        && s != "HVO.Enterprise.Telemetry.Data"))
                 {
-                    if (source != "HVO.Enterprise.Telemetry"
-                        && source != "HVO.Enterprise.Telemetry.Http"
-                        && source != "HVO.Enterprise.Telemetry.Database")
-                    {
-                        yield return source;
-                    }
+                    yield return source;
                 }
             }
         }

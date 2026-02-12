@@ -19,7 +19,7 @@ namespace HVO.Enterprise.Telemetry.OpenTelemetry.Tests
 
             Assert.IsTrue(names.Contains("HVO.Enterprise.Telemetry"));
             Assert.IsTrue(names.Contains("HVO.Enterprise.Telemetry.Http"));
-            Assert.IsTrue(names.Contains("HVO.Enterprise.Telemetry.Database"));
+            Assert.IsTrue(names.Contains("HVO.Enterprise.Telemetry.Data"));
         }
 
         [TestMethod]
@@ -49,7 +49,7 @@ namespace HVO.Enterprise.Telemetry.OpenTelemetry.Tests
                 {
                     "HVO.Enterprise.Telemetry",
                     "HVO.Enterprise.Telemetry.Http",
-                    "HVO.Enterprise.Telemetry.Database"
+                    "HVO.Enterprise.Telemetry.Data"
                 }
             });
             var registrar = new HvoActivitySourceRegistrar(telemetryOptions);

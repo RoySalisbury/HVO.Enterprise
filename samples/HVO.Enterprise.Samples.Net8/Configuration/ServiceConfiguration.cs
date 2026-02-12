@@ -258,7 +258,17 @@ namespace HVO.Enterprise.Samples.Net8.Configuration
                 services.AddOpenTelemetryExport(options =>
                 {
                     options.ServiceName = extensions["OpenTelemetry:ServiceName"] ?? "hvo-samples-net8";
+                    options.ServiceVersion = extensions["OpenTelemetry:ServiceVersion"] ?? "1.0.0";
+                    options.Environment = extensions["OpenTelemetry:Environment"] ?? "development";
                     options.Endpoint = extensions["OpenTelemetry:Endpoint"] ?? "http://localhost:4317";
+
+                    var transport = extensions["OpenTelemetry:Transport"];
+                    if (!string.IsNullOrEmpty(transport)
+                        && Enum.TryParse<OtlpTransport>(transport, ignoreCase: true, out var transportValue))
+                    {
+                        options.Transport = transportValue;
+                    }
+
                     options.EnableTraceExport = true;
                     options.EnableMetricsExport = true;
                     options.EnableLogExport = extensions.GetValue<bool>("OpenTelemetry:EnableLogExport");

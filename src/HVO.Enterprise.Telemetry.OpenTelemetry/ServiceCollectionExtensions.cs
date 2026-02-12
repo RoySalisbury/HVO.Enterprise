@@ -1,8 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+using OpenTelemetry.Exporter;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
 namespace HVO.Enterprise.Telemetry.OpenTelemetry
 {
@@ -21,7 +26,9 @@ namespace HVO.Enterprise.Telemetry.OpenTelemetry
         /// <remarks>
         /// <para>This method is idempotent — calling it multiple times will not add duplicate registrations.</para>
         /// <para>Registers TracerProvider and MeterProvider with all HVO ActivitySource and Meter names,
-        /// exporting via OTLP to the configured collector endpoint.</para>
+        /// exporting via OTLP to the configured collector endpoint. Environment variable defaults
+        /// (<c>OTEL_EXPORTER_OTLP_ENDPOINT</c>, <c>OTEL_SERVICE_NAME</c>, etc.) are applied
+        /// automatically after explicit configuration.</para>
         /// </remarks>
         /// <example>
         /// <code>
@@ -57,8 +64,58 @@ namespace HVO.Enterprise.Telemetry.OpenTelemetry
                 optionsBuilder.Configure(configure);
             }
 
+            // Apply environment variable defaults after all Configure delegates
+            services.PostConfigure<OtlpExportOptions>(o => o.ApplyEnvironmentDefaults());
+
             // Register activity source registrar
             services.TryAddSingleton<HvoActivitySourceRegistrar>();
+
+            // Register OTel SDK infrastructure
+            services.AddOpenTelemetry();
+
+            // Configure TracerProvider with HVO activity sources and OTLP exporter
+            services.ConfigureOpenTelemetryTracerProvider((sp, builder) =>
+            {
+                var options = sp.GetRequiredService<IOptions<OtlpExportOptions>>().Value;
+                var registrar = sp.GetRequiredService<HvoActivitySourceRegistrar>();
+
+                foreach (var source in registrar.GetSourceNames())
+                {
+                    builder.AddSource(source);
+                }
+
+                builder.ConfigureResource(CreateResourceAction(options));
+
+                if (options.EnableTraceExport)
+                {
+                    builder.AddOtlpExporter(exporterOptions =>
+                    {
+                        MapExporterOptions(exporterOptions, options);
+                    });
+                }
+            });
+
+            // Configure MeterProvider with HVO meter name and OTLP exporter
+            services.ConfigureOpenTelemetryMeterProvider((sp, builder) =>
+            {
+                var options = sp.GetRequiredService<IOptions<OtlpExportOptions>>().Value;
+
+                builder.AddMeter("HVO.Enterprise.Telemetry");
+                builder.ConfigureResource(CreateResourceAction(options));
+
+                if (options.EnableMetricsExport)
+                {
+                    builder.AddOtlpExporter((exporterOptions, metricReaderOptions) =>
+                    {
+                        MapExporterOptions(exporterOptions, options);
+                        metricReaderOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds =
+                            (int)options.MetricsExportInterval.TotalMilliseconds;
+                        metricReaderOptions.TemporalityPreference = options.TemporalityPreference == MetricsTemporality.Delta
+                            ? MetricReaderTemporalityPreference.Delta
+                            : MetricReaderTemporalityPreference.Cumulative;
+                    });
+                }
+            });
 
             return services;
         }
@@ -72,7 +129,8 @@ namespace HVO.Enterprise.Telemetry.OpenTelemetry
         /// <remarks>
         /// Reads all configuration from OpenTelemetry environment variables
         /// (<c>OTEL_EXPORTER_OTLP_ENDPOINT</c>, <c>OTEL_SERVICE_NAME</c>,
-        /// <c>OTEL_RESOURCE_ATTRIBUTES</c>).
+        /// <c>OTEL_RESOURCE_ATTRIBUTES</c>). Environment variable defaults are applied
+        /// automatically via <c>PostConfigure</c>.
         /// </remarks>
         public static IServiceCollection AddOpenTelemetryExportFromEnvironment(
             this IServiceCollection services)
@@ -83,6 +141,53 @@ namespace HVO.Enterprise.Telemetry.OpenTelemetry
             }
 
             return services.AddOpenTelemetryExport();
+        }
+
+        private static Action<ResourceBuilder> CreateResourceAction(OtlpExportOptions options)
+        {
+            return resource =>
+            {
+                if (!string.IsNullOrEmpty(options.ServiceName))
+                {
+                    resource.AddService(
+                        serviceName: options.ServiceName!,
+                        serviceVersion: options.ServiceVersion);
+                }
+
+                var extraAttributes = new List<KeyValuePair<string, object>>();
+
+                if (!string.IsNullOrEmpty(options.Environment))
+                {
+                    extraAttributes.Add(
+                        new KeyValuePair<string, object>("deployment.environment", options.Environment!));
+                }
+
+                foreach (var attr in options.ResourceAttributes)
+                {
+                    extraAttributes.Add(new KeyValuePair<string, object>(attr.Key, attr.Value));
+                }
+
+                if (extraAttributes.Count > 0)
+                {
+                    resource.AddAttributes(extraAttributes);
+                }
+            };
+        }
+
+        private static void MapExporterOptions(
+            OtlpExporterOptions exporterOptions,
+            OtlpExportOptions options)
+        {
+            exporterOptions.Endpoint = new Uri(options.Endpoint);
+            exporterOptions.Protocol = options.Transport == OtlpTransport.Grpc
+                ? OtlpExportProtocol.Grpc
+                : OtlpExportProtocol.HttpProtobuf;
+
+            if (options.Headers.Count > 0)
+            {
+                exporterOptions.Headers = string.Join(",",
+                    options.Headers.Select(h => $"{h.Key}={h.Value}"));
+            }
         }
     }
 

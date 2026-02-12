@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace HVO.Enterprise.Telemetry.OpenTelemetry
 {
@@ -134,21 +135,20 @@ namespace HVO.Enterprise.Telemetry.OpenTelemetry
             var resourceAttrs = System.Environment.GetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES");
             if (!string.IsNullOrEmpty(resourceAttrs))
             {
-                foreach (var pair in resourceAttrs.Split(','))
+                var parsedPairs = resourceAttrs.Split(',')
+                    .Select(pair => pair.Split('='))
+                    .Where(parts => parts.Length == 2)
+                    .Select(parts => (key: parts[0].Trim(), value: parts[1].Trim()));
+
+                foreach (var (key, value) in parsedPairs)
                 {
-                    var parts = pair.Split('=');
-                    if (parts.Length == 2)
+                    if (key == "deployment.environment" && Environment == null)
                     {
-                        var key = parts[0].Trim();
-                        var value = parts[1].Trim();
-                        if (key == "deployment.environment" && Environment == null)
-                        {
-                            Environment = value;
-                        }
-                        if (!ResourceAttributes.ContainsKey(key))
-                        {
-                            ResourceAttributes[key] = value;
-                        }
+                        Environment = value;
+                    }
+                    if (!ResourceAttributes.ContainsKey(key))
+                    {
+                        ResourceAttributes[key] = value;
                     }
                 }
             }
@@ -156,13 +156,15 @@ namespace HVO.Enterprise.Telemetry.OpenTelemetry
             var headers = System.Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_HEADERS");
             if (!string.IsNullOrEmpty(headers))
             {
-                foreach (var pair in headers.Split(','))
+                var parsedHeaders = headers.Split(',')
+                    .Select(pair => pair.Split('='))
+                    .Where(parts => parts.Length == 2)
+                    .Select(parts => (key: parts[0].Trim(), value: parts[1].Trim()))
+                    .Where(h => !Headers.ContainsKey(h.key));
+
+                foreach (var (key, value) in parsedHeaders)
                 {
-                    var parts = pair.Split('=');
-                    if (parts.Length == 2 && !Headers.ContainsKey(parts[0].Trim()))
-                    {
-                        Headers[parts[0].Trim()] = parts[1].Trim();
-                    }
+                    Headers[key] = value;
                 }
             }
         }
