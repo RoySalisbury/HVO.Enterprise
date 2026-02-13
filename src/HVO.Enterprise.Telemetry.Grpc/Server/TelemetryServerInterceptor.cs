@@ -62,13 +62,11 @@ namespace HVO.Enterprise.Telemetry.Grpc.Server
                 ActivityKind.Server,
                 parentContext);
 
-            IDisposable? correlationScope = null;
             var correlationId = GrpcMetadataHelper.GetMetadataValue(
                 context.RequestHeaders, _options.CorrelationHeaderName);
-            if (!string.IsNullOrEmpty(correlationId))
-            {
-                correlationScope = CorrelationContext.BeginScope(correlationId!);
-            }
+            using var correlationScope = !string.IsNullOrEmpty(correlationId)
+                ? CorrelationContext.BeginScope(correlationId!)
+                : null;
 
             try
             {
@@ -96,10 +94,6 @@ namespace HVO.Enterprise.Telemetry.Grpc.Server
                     serviceName, methodName);
                 throw;
             }
-            finally
-            {
-                correlationScope?.Dispose();
-            }
         }
 
         /// <inheritdoc />
@@ -121,13 +115,11 @@ namespace HVO.Enterprise.Telemetry.Grpc.Server
                 ActivityKind.Server,
                 parentContext);
 
-            IDisposable? correlationScope = null;
             var correlationId = GrpcMetadataHelper.GetMetadataValue(
                 context.RequestHeaders, _options.CorrelationHeaderName);
-            if (!string.IsNullOrEmpty(correlationId))
-            {
-                correlationScope = CorrelationContext.BeginScope(correlationId!);
-            }
+            using var correlationScope = !string.IsNullOrEmpty(correlationId)
+                ? CorrelationContext.BeginScope(correlationId!)
+                : null;
 
             try
             {
@@ -149,10 +141,6 @@ namespace HVO.Enterprise.Telemetry.Grpc.Server
                 SetErrorStatus(activity, StatusCode.Internal, ex.Message);
                 RecordException(activity, ex);
                 throw;
-            }
-            finally
-            {
-                correlationScope?.Dispose();
             }
         }
 
@@ -177,13 +165,11 @@ namespace HVO.Enterprise.Telemetry.Grpc.Server
                 ActivityKind.Server,
                 parentContext);
 
-            IDisposable? correlationScope = null;
             var correlationId = GrpcMetadataHelper.GetMetadataValue(
                 context.RequestHeaders, _options.CorrelationHeaderName);
-            if (!string.IsNullOrEmpty(correlationId))
-            {
-                correlationScope = CorrelationContext.BeginScope(correlationId!);
-            }
+            using var correlationScope = !string.IsNullOrEmpty(correlationId)
+                ? CorrelationContext.BeginScope(correlationId!)
+                : null;
 
             try
             {
@@ -204,10 +190,6 @@ namespace HVO.Enterprise.Telemetry.Grpc.Server
                 SetErrorStatus(activity, StatusCode.Internal, ex.Message);
                 RecordException(activity, ex);
                 throw;
-            }
-            finally
-            {
-                correlationScope?.Dispose();
             }
         }
 
@@ -232,13 +214,11 @@ namespace HVO.Enterprise.Telemetry.Grpc.Server
                 ActivityKind.Server,
                 parentContext);
 
-            IDisposable? correlationScope = null;
             var correlationId = GrpcMetadataHelper.GetMetadataValue(
                 context.RequestHeaders, _options.CorrelationHeaderName);
-            if (!string.IsNullOrEmpty(correlationId))
-            {
-                correlationScope = CorrelationContext.BeginScope(correlationId!);
-            }
+            using var correlationScope = !string.IsNullOrEmpty(correlationId)
+                ? CorrelationContext.BeginScope(correlationId!)
+                : null;
 
             try
             {
@@ -259,10 +239,6 @@ namespace HVO.Enterprise.Telemetry.Grpc.Server
                 SetErrorStatus(activity, StatusCode.Internal, ex.Message);
                 RecordException(activity, ex);
                 throw;
-            }
-            finally
-            {
-                correlationScope?.Dispose();
             }
         }
 

@@ -1,7 +1,7 @@
 using System;
 using Microsoft.Extensions.Options;
 
-namespace HVO.Enterprise.Telemetry.Grpc.Configuration
+namespace HVO.Enterprise.Telemetry.Grpc
 {
     /// <summary>
     /// Validates <see cref="GrpcTelemetryOptions"/> configuration.
@@ -21,9 +21,6 @@ namespace HVO.Enterprise.Telemetry.Grpc.Configuration
 
             if (string.IsNullOrWhiteSpace(options.CorrelationHeaderName))
                 return ValidateOptionsResult.Fail("CorrelationHeaderName cannot be null or empty.");
-
-            if (string.IsNullOrWhiteSpace(options.ActivitySourceName))
-                return ValidateOptionsResult.Fail("ActivitySourceName cannot be null or empty.");
 
             return ValidateOptionsResult.Success;
         }

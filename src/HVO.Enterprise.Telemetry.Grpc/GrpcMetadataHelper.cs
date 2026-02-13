@@ -44,8 +44,8 @@ namespace HVO.Enterprise.Telemetry.Grpc
 
             var traceparent = string.Format(
                 "00-{0}-{1}-{2}",
-                activity.TraceId.ToString(),
-                activity.SpanId.ToString(),
+                activity.TraceId,
+                activity.SpanId,
                 activity.Recorded ? "01" : "00");
             metadata.Add("traceparent", traceparent);
 
@@ -90,7 +90,9 @@ namespace HVO.Enterprise.Telemetry.Grpc
             foreach (var entry in headers)
             {
                 if (string.Equals(entry.Key, key, StringComparison.OrdinalIgnoreCase))
+                {
                     return entry.Value;
+                }
             }
 
             return null;

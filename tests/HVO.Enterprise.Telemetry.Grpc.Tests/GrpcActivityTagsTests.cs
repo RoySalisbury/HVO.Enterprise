@@ -46,17 +46,5 @@ namespace HVO.Enterprise.Telemetry.Grpc.Tests
         {
             Assert.AreEqual("grpc", GrpcActivityTags.GrpcSystemValue);
         }
-
-        [TestMethod]
-        public void RpcMessageSentSize_MatchesOTelConvention()
-        {
-            Assert.AreEqual("rpc.message.sent.compressed_size", GrpcActivityTags.RpcMessageSentSize);
-        }
-
-        [TestMethod]
-        public void RpcMessageReceivedSize_MatchesOTelConvention()
-        {
-            Assert.AreEqual("rpc.message.received.compressed_size", GrpcActivityTags.RpcMessageReceivedSize);
-        }
     }
 }

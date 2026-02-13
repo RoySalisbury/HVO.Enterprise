@@ -267,29 +267,28 @@ namespace HVO.Enterprise.Telemetry.Grpc.Client
             Task<TResponse> responseTask, Activity? activity,
             string serviceName, string methodName)
         {
-            try
+            using (activity)
             {
-                var response = await responseTask.ConfigureAwait(false);
-                activity?.SetTag(GrpcActivityTags.RpcGrpcStatusCode, (int)StatusCode.OK);
-                return response;
-            }
-            catch (RpcException ex)
-            {
-                activity?.SetTag(GrpcActivityTags.RpcGrpcStatusCode, (int)ex.StatusCode);
-                activity?.SetStatus(ActivityStatusCode.Error, ex.Status.Detail);
-                RecordException(activity, ex);
-                throw;
-            }
-            catch (Exception ex)
-            {
-                activity?.SetTag(GrpcActivityTags.RpcGrpcStatusCode, (int)StatusCode.Internal);
-                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-                RecordException(activity, ex);
-                throw;
-            }
-            finally
-            {
-                activity?.Dispose();
+                try
+                {
+                    var response = await responseTask.ConfigureAwait(false);
+                    activity?.SetTag(GrpcActivityTags.RpcGrpcStatusCode, (int)StatusCode.OK);
+                    return response;
+                }
+                catch (RpcException ex)
+                {
+                    activity?.SetTag(GrpcActivityTags.RpcGrpcStatusCode, (int)ex.StatusCode);
+                    activity?.SetStatus(ActivityStatusCode.Error, ex.Status.Detail);
+                    RecordException(activity, ex);
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    activity?.SetTag(GrpcActivityTags.RpcGrpcStatusCode, (int)StatusCode.Internal);
+                    activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                    RecordException(activity, ex);
+                    throw;
+                }
             }
         }
 

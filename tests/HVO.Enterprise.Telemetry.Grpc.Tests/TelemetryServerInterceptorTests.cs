@@ -143,6 +143,7 @@ namespace HVO.Enterprise.Telemetry.Grpc.Tests
                 new TestRequest(), mockContext, continuation);
 
             Assert.IsTrue(called);
+            Assert.IsNotNull(result);
         }
 
         [TestMethod]

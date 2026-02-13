@@ -1,6 +1,5 @@
 using System;
 using HVO.Enterprise.Telemetry.Grpc;
-using HVO.Enterprise.Telemetry.Grpc.Configuration;
 using Microsoft.Extensions.Options;
 
 namespace HVO.Enterprise.Telemetry.Grpc.Tests
@@ -51,27 +50,6 @@ namespace HVO.Enterprise.Telemetry.Grpc.Tests
         }
 
         [TestMethod]
-        public void Validate_EmptyActivitySourceName_Fails()
-        {
-            var options = new GrpcTelemetryOptions { ActivitySourceName = "" };
-
-            var result = _validator.Validate(null, options);
-
-            Assert.IsTrue(result.Failed);
-            Assert.IsTrue(result.FailureMessage!.Contains("ActivitySourceName"));
-        }
-
-        [TestMethod]
-        public void Validate_WhitespaceActivitySourceName_Fails()
-        {
-            var options = new GrpcTelemetryOptions { ActivitySourceName = "   " };
-
-            var result = _validator.Validate(null, options);
-
-            Assert.IsTrue(result.Failed);
-        }
-
-        [TestMethod]
         public void Validate_CustomValidOptions_Succeeds()
         {
             var options = new GrpcTelemetryOptions
@@ -79,10 +57,8 @@ namespace HVO.Enterprise.Telemetry.Grpc.Tests
                 EnableServerInterceptor = false,
                 EnableClientInterceptor = false,
                 CorrelationHeaderName = "x-request-id",
-                RecordMessageSize = true,
                 SuppressHealthChecks = false,
-                SuppressReflection = false,
-                ActivitySourceName = "Custom.Source"
+                SuppressReflection = false
             };
 
             var result = _validator.Validate(null, options);

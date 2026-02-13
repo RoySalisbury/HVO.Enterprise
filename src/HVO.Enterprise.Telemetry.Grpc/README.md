@@ -27,7 +27,6 @@ dotnet add package HVO.Enterprise.Telemetry.Grpc
 services.AddGrpcTelemetry(options =>
 {
     options.SuppressHealthChecks = true;
-    options.RecordMessageSize = false;
 });
 
 // Option 2: Via TelemetryBuilder fluent API
@@ -81,10 +80,8 @@ var client = new MyService.MyServiceClient(invoker);
 | `EnableServerInterceptor` | `true` | Enable/disable server-side instrumentation |
 | `EnableClientInterceptor` | `true` | Enable/disable client-side instrumentation |
 | `CorrelationHeaderName` | `"x-correlation-id"` | gRPC metadata key for correlation ID |
-| `RecordMessageSize` | `false` | Record message sizes (opt-in, performance overhead) |
 | `SuppressHealthChecks` | `true` | Suppress `grpc.health.v1.Health` instrumentation |
 | `SuppressReflection` | `true` | Suppress `grpc.reflection` instrumentation |
-| `ActivitySourceName` | `"HVO.Enterprise.Telemetry.Grpc"` | ActivitySource name for activities |
 
 ## Activity Tags (OpenTelemetry Semantic Conventions)
 

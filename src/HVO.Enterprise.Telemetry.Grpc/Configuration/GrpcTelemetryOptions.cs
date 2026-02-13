@@ -18,7 +18,6 @@ namespace HVO.Enterprise.Telemetry.Grpc
     /// services.AddGrpcTelemetry(options =&gt;
     /// {
     ///     options.SuppressHealthChecks = true;
-    ///     options.RecordMessageSize = false;
     /// });
     /// </code>
     /// </remarks>
@@ -43,12 +42,6 @@ namespace HVO.Enterprise.Telemetry.Grpc
         public string CorrelationHeaderName { get; set; } = "x-correlation-id";
 
         /// <summary>
-        /// Gets or sets a value indicating whether to record gRPC message sizes.
-        /// Default: <see langword="false"/> (opt-in due to performance overhead).
-        /// </summary>
-        public bool RecordMessageSize { get; set; }
-
-        /// <summary>
         /// Gets or sets a value indicating whether to suppress instrumentation
         /// for gRPC health check calls (<c>grpc.health.v1.Health</c>).
         /// Default: <see langword="true"/>.
@@ -61,11 +54,5 @@ namespace HVO.Enterprise.Telemetry.Grpc
         /// Default: <see langword="true"/>.
         /// </summary>
         public bool SuppressReflection { get; set; } = true;
-
-        /// <summary>
-        /// Gets or sets the ActivitySource name for gRPC activities.
-        /// Default: <c>"HVO.Enterprise.Telemetry.Grpc"</c>.
-        /// </summary>
-        public string ActivitySourceName { get; set; } = "HVO.Enterprise.Telemetry.Grpc";
     }
 }

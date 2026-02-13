@@ -14,10 +14,8 @@ namespace HVO.Enterprise.Telemetry.Grpc.Tests
             Assert.IsTrue(options.EnableServerInterceptor);
             Assert.IsTrue(options.EnableClientInterceptor);
             Assert.AreEqual("x-correlation-id", options.CorrelationHeaderName);
-            Assert.IsFalse(options.RecordMessageSize);
             Assert.IsTrue(options.SuppressHealthChecks);
             Assert.IsTrue(options.SuppressReflection);
-            Assert.AreEqual("HVO.Enterprise.Telemetry.Grpc", options.ActivitySourceName);
         }
 
         [TestMethod]
@@ -42,13 +40,6 @@ namespace HVO.Enterprise.Telemetry.Grpc.Tests
         }
 
         [TestMethod]
-        public void RecordMessageSize_CanBeEnabled()
-        {
-            var options = new GrpcTelemetryOptions { RecordMessageSize = true };
-            Assert.IsTrue(options.RecordMessageSize);
-        }
-
-        [TestMethod]
         public void SuppressHealthChecks_CanBeDisabled()
         {
             var options = new GrpcTelemetryOptions { SuppressHealthChecks = false };
@@ -60,13 +51,6 @@ namespace HVO.Enterprise.Telemetry.Grpc.Tests
         {
             var options = new GrpcTelemetryOptions { SuppressReflection = false };
             Assert.IsFalse(options.SuppressReflection);
-        }
-
-        [TestMethod]
-        public void ActivitySourceName_CanBeCustomized()
-        {
-            var options = new GrpcTelemetryOptions { ActivitySourceName = "MyCustomSource" };
-            Assert.AreEqual("MyCustomSource", options.ActivitySourceName);
         }
     }
 }

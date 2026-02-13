@@ -29,11 +29,5 @@ namespace HVO.Enterprise.Telemetry.Grpc
 
         /// <summary>The RPC system value for gRPC.</summary>
         public const string GrpcSystemValue = "grpc";
-
-        /// <summary>gRPC request message size in bytes.</summary>
-        public const string RpcMessageSentSize = "rpc.message.sent.compressed_size";
-
-        /// <summary>gRPC response message size in bytes.</summary>
-        public const string RpcMessageReceivedSize = "rpc.message.received.compressed_size";
     }
 }

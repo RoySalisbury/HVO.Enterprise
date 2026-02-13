@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using HVO.Enterprise.Telemetry.Grpc.Client;
-using HVO.Enterprise.Telemetry.Grpc.Configuration;
 using HVO.Enterprise.Telemetry.Grpc.Server;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -40,7 +39,6 @@ namespace HVO.Enterprise.Telemetry.Grpc.Extensions
         /// services.AddGrpcTelemetry(options =&gt;
         /// {
         ///     options.SuppressHealthChecks = true;
-        ///     options.RecordMessageSize = false;
         /// });
         /// </code>
         /// </example>
