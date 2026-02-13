@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>HVO.Enterprise.Telemetry.Grpc</PackageId>
+    <Version>1.0.0-preview.1</Version>
+    <Description>gRPC interceptor integration for HVO.Enterprise.Telemetry — automatic distributed tracing for gRPC services and clients with W3C TraceContext propagation, correlation flow, and OpenTelemetry rpc.* semantic conventions.</Description>
+    <PackageTags>telemetry;grpc;tracing;interceptor;distributed-tracing;correlation;rpc;opentelemetry</PackageTags>
+    <PackageReleaseNotes></PackageReleaseNotes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Grpc.Core.Api" Version="2.62.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\HVO.Enterprise.Telemetry\HVO.Enterprise.Telemetry.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="HVO.Enterprise.Telemetry.Grpc.Tests" Key="$(HvoPublicKey)" />
+  </ItemGroup>
+
+</Project>
