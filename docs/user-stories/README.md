@@ -1,23 +1,6 @@
 # User Stories for HVO.Enterprise Telemetry Library
 
-This directory contains user stories for implementing the HVO.Enterprise telemetry library as outlined in the [project plan](../project-plan.md).
-
-## 🎯 Creating GitHub Issues
-
-These user stories can be converted to **GitHub Issues** using our structured issue templates:
-
-- **[Create a User Story Issue](https://github.com/RoySalisbury/HVO.Enterprise/issues/new?template=user-story.yml)** - Use this template to create issues
-- **[Helper Script](../../scripts/create-issues-helper.sh)** - Run this to see all stories with creation URLs
-- **[Conversion Guide](../../.github/CREATING-ISSUES.md)** - Complete guide for creating issues from these stories
-
-The issue templates provide:
-- ✅ Azure DevOps-style structure with "As a... I want... So that..." format
-- ✅ Trackable checkboxes for Acceptance Criteria and Definition of Done
-- ✅ Story points and sprint tracking
-- ✅ Proper labels (user-story, sp-X, sprint-X, category)
-- ✅ Dependency linking between issues
-
-See [.github/README.md](../../.github/README.md) for complete documentation on using issue templates.
+This directory contains user stories for implementing the HVO.Enterprise telemetry library as outlined in the [design decisions](../project-plan.md).
 
 ## Story Organization
 
@@ -75,65 +58,24 @@ Further core and sample enhancements.
 - [US-031: Sample Extension Integrations](./US-031-sample-extension-integrations.md) ✅
 - [US-032: First Chance Exception Monitoring](./US-032-first-chance-exception-monitoring.md) ✅
 
-### Additional Extension Packages (US-033 to US-036)
+### Additional Extension Packages (US-033 to US-037)
 Additional telemetry export and transport integrations.
 
 - [US-033: OpenTelemetry/OTLP Extension](./US-033-opentelemetry-otlp-extension.md) — Universal OTLP exporter for traces, metrics, and logs
 - [US-034: Seq Extension](./US-034-seq-extension.md) — Seq structured log integration (CLEF + Serilog sink helper)
 - [US-035: Grafana Extension](./US-035-grafana-extension.md) — Grafana Loki log push + Tempo/Mimir OTLP topology
 - [US-036: gRPC Interceptor Extension](./US-036-grpc-interceptor-extension.md) — Server and client interceptors with `rpc.*` semantic conventions
+- [US-037: NuGet Package Publishing](./US-037-nuget-package-publishing.md) — Package metadata, signing, and publishing pipeline
 
-## Story Template
+## Status
 
-Each user story follows this structure:
+| Status | Count |
+|--------|------:|
+| ✅ Complete | 32 |
+| ❌ Not Started | 5 |
+| **Total** | **37** |
 
-1. **Story ID & Title**: Unique identifier and descriptive title
-2. **Description**: User-facing value proposition ("As a... I want... So that...")
-3. **Acceptance Criteria**: Specific, testable conditions for completion
-4. **Technical Requirements**: Implementation details and constraints
-5. **Testing Requirements**: Unit, integration, and validation tests
-6. **Dependencies**: Other stories that must be completed first
-7. **Estimated Effort**: Story points or time estimate
-8. **Definition of Done**: Checklist for story completion
-
-## Implementation Order
-
-Stories should generally be implemented in numerical order, though some can be parallelized:
-
-**Phase 1 - Foundation (US-001 to US-005)**
-- Core infrastructure, correlation, background processing, lifecycle
-
-**Phase 2 - Metrics & Tracing (US-006 to US-010)**
-- Metrics collection, exception tracking, configuration, sampling
-
-**Phase 3 - Enrichment & Instrumentation (US-011 to US-015)**
-- Context enrichment, operation scopes, logging, automatic instrumentation
-
-**Phase 4 - Statistics & HTTP (US-016 to US-018)**
-- Health checks, statistics, HTTP client, DI setup
-
-**Phase 5 - Extensions (US-019 to US-025)**
-- Common library and platform-specific packages (can be parallelized)
-
-**Phase 6 - Testing & Samples (US-026 to US-028)**
-- Comprehensive tests and sample applications
-
-**Phase 7 - Documentation (US-029 to US-030)**
-- Final documentation and extensibility design
-
-**Phase 8 - Additional Extensions (US-031 to US-036)**
-- Sample extension integrations, first-chance exceptions, OpenTelemetry/OTLP, Seq, Grafana, gRPC
-
-## Progress Tracking
-
-Mark stories as:
-- ❌ Not Started
-- 🚧 In Progress
-- ✅ Complete
-- 🔍 In Review
-- ⚠️ Blocked
-
-Current Status: Stories US-001 through US-036 defined. See individual stories for current status.
+**Remaining**: US-027, US-029, US-030, US-034, US-035
 
 ## Notes
 
