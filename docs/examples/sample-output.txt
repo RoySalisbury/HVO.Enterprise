@@ -1,0 +1,269 @@
+Using launch settings from samples/HVO.Enterprise.Samples.Net8/Properties/launchSettings.json...
+Building...
+[22:55:10 INF] 8c8bdda1fcba4f4f9feb7478faadbb37 |  | SQLite database initialised: weather.db
+[22:55:10 INF] 8c8bdda1fcba4f4f9feb7478faadbb37 |  | ╔═══════════════════════════════════════════════════════════════╗
+║  HVO.Enterprise Telemetry Sample Application                  ║
+║  Swagger UI: http://localhost:5133                             ║
+║  Health:     http://localhost:5133/health                      ║
+╚═══════════════════════════════════════════════════════════════╝
+[22:55:10 DBG] 8c8bdda1fcba4f4f9feb7478faadbb37 |  | Hosting starting
+[22:55:10 DBG] 8c8bdda1fcba4f4f9feb7478faadbb37 |  | TelemetryBackgroundWorker started with capacity 10000, maxRestarts 3, baseDelay 1000ms
+[22:55:10 DBG] 8c8bdda1fcba4f4f9feb7478faadbb37 |  | IIS HostingEnvironment integration is not enabled; relying on AppDomain lifecycle events for telemetry shutdown.
+[22:55:10 DBG] 8c8bdda1fcba4f4f9feb7478faadbb37 |  | Telemetry lifecycle hooks registered
+[22:55:10 INF] 8c8bdda1fcba4f4f9feb7478faadbb37 |  | Starting telemetry hosted service
+[22:55:10 INF] 8c8bdda1fcba4f4f9feb7478faadbb37 |  | Starting telemetry service: HVO.Samples.Net8.WeatherMonitor v1.0.0 (Development)
+[22:55:10 INF] 8c8bdda1fcba4f4f9feb7478faadbb37 |  | Telemetry lifetime service started
+[22:55:10 INF] 8c8bdda1fcba4f4f9feb7478faadbb37 |  | First-chance exception monitoring started (Enabled=False)
+[22:55:10 INF] 8c8bdda1fcba4f4f9feb7478faadbb37 |  | Telemetry reporter starting with interval 00:01:00
+[22:55:10 INF] 8c8bdda1fcba4f4f9feb7478faadbb37 |  | 🔬 AlertProcessorSubscriber started — consuming [weather.observations]
+[22:55:10 WRN] 8c8bdda1fcba4f4f9feb7478faadbb37 |  | Overriding HTTP_PORTS '8080' and HTTPS_PORTS ''. Binding to values defined by URLS instead 'http://localhost:5133'.
+[22:55:10 INF] 8c8bdda1fcba4f4f9feb7478faadbb37 |  | 📊 WeatherAnalyticsProcessor started — consuming [weather.analysis]
+[22:55:10 INF] 8c8bdda1fcba4f4f9feb7478faadbb37 |  | 📬 NotificationDispatchSubscriber started — consuming [weather.notifications]
+[22:55:10 INF] 8c8bdda1fcba4f4f9feb7478faadbb37 |  | Weather collector starting. Interval=00:05:00, InitialDelay=00:00:10
+[22:55:10 INF] 8c8bdda1fcba4f4f9feb7478faadbb37 |  | ConsoleTelemetrySink started — listening for Activity events
+[22:55:10 INF] 8c8bdda1fcba4f4f9feb7478faadbb37 |  | Now listening on: http://localhost:5133
+[22:55:10 INF] 8c8bdda1fcba4f4f9feb7478faadbb37 |  | Application started. Press Ctrl+C to shut down.
+[22:55:10 INF] 8c8bdda1fcba4f4f9feb7478faadbb37 |  | Hosting environment: Development
+[22:55:10 INF] 8c8bdda1fcba4f4f9feb7478faadbb37 |  | Content root path: /workspaces/HVO.Enterprise/samples/HVO.Enterprise.Samples.Net8
+[22:55:10 DBG] 8c8bdda1fcba4f4f9feb7478faadbb37 |  | Hosting started
+[22:55:20 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Operation WeatherCollector.Cycle started
+[22:55:20 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Collection cycle #1 starting (CorrelationId=collector-1)
+[22:55:20 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Operation WeatherService.GetSummary started
+[22:55:20 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Collecting weather data for 5 locations
+[22:55:20 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Event tracked: weather.summary.started
+[22:55:20 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Operation WeatherService.GetCurrentWeather started
+[22:55:20 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Fetching weather for New York (40.7128, -74.006)
+[22:55:20 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Start processing HTTP request GET https://api.open-meteo.com/v1/forecast?*
+[22:55:20 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Injected W3C TraceContext: traceparent=00-7c42e0de073aabfdc844a7666d0e765e-e5e0d30eca77cd52-01
+[22:55:20 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Sending HTTP request GET https://api.open-meteo.com/v1/forecast?*
+[22:55:21 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | 📊 [System.Net.Http] System.Net.Http.HttpRequestOut (882.8ms) Status=Unset
+     Tags:
+       http.request.method = GET
+       server.address = api.open-meteo.com
+       url.full = https://api.open-meteo.com/v1/forecast?*
+       network.protocol.version = 1.1
+[22:55:21 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Received HTTP response headers after 886.5369ms - 200
+[22:55:21 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | 📊 [HVO.Enterprise.Telemetry.Http] HTTP GET (889.0ms) Status=Unset
+     Tags:
+       http.method = GET
+       http.url = https://api.open-meteo.com/v1/forecast?latitude=40.7128&longitude=-74.006&current_weather=true&timezone=auto
+       http.scheme = https
+       http.host = api.open-meteo.com
+       http.target = /v1/forecast?latitude=40.7128&longitude=-74.006&current_weather=true&timezone=auto
+[22:55:21 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | End processing HTTP request after 892.224ms - 200
+[22:55:21 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Metric recorded: weather.api.calls = 1
+[22:55:21 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Metric recorded: weather.temperature_celsius = 2.9
+[22:55:21 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Metric recorded: weather.wind_speed_kmh = 4.1
+[22:55:21 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Weather for New York: 2.9°C, 4.1 km/h, Overcast
+[22:55:21 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Operation WeatherService.GetCurrentWeather completed in 908.7865ms
+[22:55:21 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | 📊 [HVO.Enterprise.Telemetry] WeatherService.GetCurrentWeather (909.7ms) Status=Ok
+     Tags:
+       weather.location = New York
+       weather.description = Overcast
+       operation.result = Overcast
+[22:55:21 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Operation WeatherService.GetCurrentWeather started
+[22:55:21 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Fetching weather for Tokyo (35.6762, 139.6503)
+[22:55:21 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Start processing HTTP request GET https://api.open-meteo.com/v1/forecast?*
+[22:55:21 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Injected W3C TraceContext: traceparent=00-7c42e0de073aabfdc844a7666d0e765e-f157394179a98194-01
+[22:55:21 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Sending HTTP request GET https://api.open-meteo.com/v1/forecast?*
+[22:55:21 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | 📊 [System.Net.Http] System.Net.Http.HttpRequestOut (202.2ms) Status=Unset
+     Tags:
+       http.request.method = GET
+       server.address = api.open-meteo.com
+       url.full = https://api.open-meteo.com/v1/forecast?*
+       network.protocol.version = 1.1
+[22:55:21 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Received HTTP response headers after 202.3803ms - 200
+[22:55:21 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | 📊 [HVO.Enterprise.Telemetry.Http] HTTP GET (202.5ms) Status=Unset
+     Tags:
+       http.method = GET
+       http.url = https://api.open-meteo.com/v1/forecast?latitude=35.6762&longitude=139.6503&current_weather=true&timezone=auto
+       http.scheme = https
+       http.host = api.open-meteo.com
+       http.target = /v1/forecast?latitude=35.6762&longitude=139.6503&current_weather=true&timezone=auto
+[22:55:21 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | End processing HTTP request after 202.7962ms - 200
+[22:55:21 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Metric recorded: weather.api.calls = 1
+[22:55:21 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Metric recorded: weather.temperature_celsius = 0.6
+[22:55:21 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Metric recorded: weather.wind_speed_kmh = 4.7
+[22:55:21 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Weather for Tokyo: 0.6°C, 4.7 km/h, Mainly clear
+[22:55:21 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Operation WeatherService.GetCurrentWeather completed in 203.1759ms
+[22:55:21 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | 📊 [HVO.Enterprise.Telemetry] WeatherService.GetCurrentWeather (203.2ms) Status=Ok
+     Tags:
+       weather.location = Tokyo
+       weather.description = Mainly clear
+       operation.result = Mainly clear
+[22:55:21 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Operation WeatherService.GetCurrentWeather started
+[22:55:21 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Fetching weather for Sydney (-33.8688, 151.2093)
+[22:55:21 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Start processing HTTP request GET https://api.open-meteo.com/v1/forecast?*
+[22:55:21 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Injected W3C TraceContext: traceparent=00-7c42e0de073aabfdc844a7666d0e765e-4a2ac2a315a1cf9d-01
+[22:55:21 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Sending HTTP request GET https://api.open-meteo.com/v1/forecast?*
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | 📊 [System.Net.Http] System.Net.Http.HttpRequestOut (201.6ms) Status=Unset
+     Tags:
+       http.request.method = GET
+       server.address = api.open-meteo.com
+       url.full = https://api.open-meteo.com/v1/forecast?*
+       network.protocol.version = 1.1
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Received HTTP response headers after 202.0562ms - 200
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | 📊 [HVO.Enterprise.Telemetry.Http] HTTP GET (202.3ms) Status=Unset
+     Tags:
+       http.method = GET
+       http.url = https://api.open-meteo.com/v1/forecast?latitude=-33.8688&longitude=151.2093&current_weather=true&timezone=auto
+       http.scheme = https
+       http.host = api.open-meteo.com
+       http.target = /v1/forecast?latitude=-33.8688&longitude=151.2093&current_weather=true&timezone=auto
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | End processing HTTP request after 202.4475ms - 200
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Metric recorded: weather.api.calls = 1
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Metric recorded: weather.temperature_celsius = 24.5
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Metric recorded: weather.wind_speed_kmh = 10.3
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Weather for Sydney: 24.5°C, 10.3 km/h, Partly cloudy
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Operation WeatherService.GetCurrentWeather completed in 203.0273ms
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | 📊 [HVO.Enterprise.Telemetry] WeatherService.GetCurrentWeather (203.1ms) Status=Ok
+     Tags:
+       weather.location = Sydney
+       weather.description = Partly cloudy
+       operation.result = Partly cloudy
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Operation WeatherService.GetCurrentWeather started
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Fetching weather for São Paulo (-23.5505, -46.6333)
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Start processing HTTP request GET https://api.open-meteo.com/v1/forecast?*
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Injected W3C TraceContext: traceparent=00-7c42e0de073aabfdc844a7666d0e765e-3ab5b12cdd7fe790-01
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Sending HTTP request GET https://api.open-meteo.com/v1/forecast?*
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | 📊 [System.Net.Http] System.Net.Http.HttpRequestOut (205.6ms) Status=Unset
+     Tags:
+       http.request.method = GET
+       server.address = api.open-meteo.com
+       url.full = https://api.open-meteo.com/v1/forecast?*
+       network.protocol.version = 1.1
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Received HTTP response headers after 206.0407ms - 200
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | 📊 [HVO.Enterprise.Telemetry.Http] HTTP GET (206.3ms) Status=Unset
+     Tags:
+       http.method = GET
+       http.url = https://api.open-meteo.com/v1/forecast?latitude=-23.5505&longitude=-46.6333&current_weather=true&timezone=auto
+       http.scheme = https
+       http.host = api.open-meteo.com
+       http.target = /v1/forecast?latitude=-23.5505&longitude=-46.6333&current_weather=true&timezone=auto
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | End processing HTTP request after 206.485ms - 200
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Metric recorded: weather.api.calls = 1
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Metric recorded: weather.temperature_celsius = 22.8
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Metric recorded: weather.wind_speed_kmh = 11.7
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Weather for São Paulo: 22.8°C, 11.7 km/h, Partly cloudy
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Operation WeatherService.GetCurrentWeather completed in 206.9468ms
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | 📊 [HVO.Enterprise.Telemetry] WeatherService.GetCurrentWeather (207.0ms) Status=Ok
+     Tags:
+       weather.location = São Paulo
+       weather.description = Partly cloudy
+       operation.result = Partly cloudy
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Operation WeatherService.GetCurrentWeather started
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Fetching weather for London (51.5074, -0.1278)
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Start processing HTTP request GET https://api.open-meteo.com/v1/forecast?*
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Injected W3C TraceContext: traceparent=00-7c42e0de073aabfdc844a7666d0e765e-8c0cac141ecba585-01
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Sending HTTP request GET https://api.open-meteo.com/v1/forecast?*
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | 📊 [System.Net.Http] System.Net.Http.HttpRequestOut (201.4ms) Status=Unset
+     Tags:
+       http.request.method = GET
+       server.address = api.open-meteo.com
+       url.full = https://api.open-meteo.com/v1/forecast?*
+       network.protocol.version = 1.1
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Received HTTP response headers after 202.0987ms - 200
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | 📊 [HVO.Enterprise.Telemetry.Http] HTTP GET (202.3ms) Status=Unset
+     Tags:
+       http.method = GET
+       http.url = https://api.open-meteo.com/v1/forecast?latitude=51.5074&longitude=-0.1278&current_weather=true&timezone=auto
+       http.scheme = https
+       http.host = api.open-meteo.com
+       http.target = /v1/forecast?latitude=51.5074&longitude=-0.1278&current_weather=true&timezone=auto
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | End processing HTTP request after 202.5058ms - 200
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Metric recorded: weather.api.calls = 1
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Metric recorded: weather.temperature_celsius = 5.2
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Metric recorded: weather.wind_speed_kmh = 10.2
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Weather for London: 5.2°C, 10.2 km/h, Overcast
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Operation WeatherService.GetCurrentWeather completed in 203.1477ms
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | 📊 [HVO.Enterprise.Telemetry] WeatherService.GetCurrentWeather (203.2ms) Status=Ok
+     Tags:
+       weather.location = London
+       weather.description = Overcast
+       operation.result = Overcast
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Metric recorded: weather.summary.location_count = 5
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Metric recorded: weather.summary.avg_temperature = 11.2
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Event tracked: weather.summary.completed
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Weather summary: 5 locations, avg 11.2°C (0.6..24.5°C), avg wind 8.2 km/h, 0 errors
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Operation WeatherService.GetSummary completed in 1734.2305ms
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | 📊 [HVO.Enterprise.Telemetry] WeatherService.GetSummary (1747.1ms) Status=Ok
+     Tags:
+       operation.result = {"LocationCount":5,"AverageTemperature":11.2,"MinTemperature":0.6,"MaxTemperature":24.5,"AverageWindSpeed":8.2,"CollectedAt":"2026-02-19T22:55:22.4296228+00:00","Observations":[{"LocationName":"New York","Latitude":40.710335,"Longitude":-73.99308,"ObservedAt":"2026-02-19T22:55:21.6053524+00:00","TemperatureCelsius":2.9,"WindSpeedKmh":4.1,"RelativeHumidity":0,"WeatherCode":3,"WeatherDescription":"Overcast"},{"LocationName":"Tokyo","Latitude":35.7,"Longitude":139.625,"ObservedAt":"2026-02-19T22:55:21.810483+00:00","TemperatureCelsius":0.6,"WindSpeedKmh":4.7,"RelativeHumidity":0,"WeatherCode":1,"WeatherDescription":"Mainly clear"},{"LocationName":"Sydney","Latitude":-33.875,"Longitude":151.125,"ObservedAt":"2026-02-19T22:55:22.0134774+00:00","TemperatureCelsius":24.5,"WindSpeedKmh":10.3,"RelativeHumidity":0,"WeatherCode":2,"WeatherDescription":"Partly cloudy"},{"LocationName":"S\u00E3o Paulo","Latitude":-23.5,"Longitude":-46.625,"ObservedAt":"2026-02-19T22:55:22.2206835+00:00","TemperatureCelsius":22.8,"WindSpeedKmh":11.7,"RelativeHumidity":0,"WeatherCode":2,"WeatherDescription":"Partly cloudy"},{"LocationName":"London","Latitude":51.5,"Longitude":-0.120000124,"ObservedAt":"2026-02-19T22:55:22.4237711+00:00","TemperatureCelsius":5.2,"WindSpeedKmh":10.2,"RelativeHumidity":0,"WeatherCode":3,"WeatherDescription":"Overcast"}]}
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Stored 5 weather readings in batch
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Persisted 5 readings to database in 136ms (CorrelationId=collector-1)
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Published WeatherObservationEvent → [weather.observations] (CorrelationId=collector-1)
+[22:55:22 INF] collector-1 |  | 📥 Stage 1: Processing observation for New York (Temp=2.9°C, Wind=4.1km/h, CorrelationId=collector-1)
+[22:55:22 DBG] collector-1 |  | Computed 3966 Leibniz iterations (result: 3.141340510376458...)
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Published WeatherObservationEvent → [weather.observations] (CorrelationId=collector-1)
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Published WeatherObservationEvent → [weather.observations] (CorrelationId=collector-1)
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Published WeatherObservationEvent → [weather.observations] (CorrelationId=collector-1)
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Published WeatherObservationEvent → [weather.observations] (CorrelationId=collector-1)
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Published 5 observations to [weather.observations] in 97ms (CorrelationId=collector-1)
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Cache MISS for key weather:summary:latest, loading from source
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Cached value for key weather:summary:latest (TTL=00:04:00)
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Cached latest weather summary (TTL=4min, 1ms, CorrelationId=collector-1)
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Metric recorded: collector.cycle.duration_ms = 1846
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Metric recorded: collector.cycle.locations = 5
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Metric recorded: collector.cycle.persisted = 5
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Metric recorded: collector.cycle.published = 5
+[22:55:22 DBG] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Event tracked: collector.cycle.completed
+[22:55:22 INF] collector-1 | 7c42e0de073aabfdc844a7666d0e765e | Collection cycle #1 complete: 5 locations, avg 11.2°C, 5 persisted, 5 published, 0 alerts, 1846ms (CorrelationId=collector-1)
+[22:55:22 DBG] collector-1 |  | Published WeatherAnalysisEvent → [weather.analysis] (CorrelationId=collector-1)
+[22:55:22 INF] collector-1 |  | 📤 Stage 1 → [weather.analysis]: New York analysed in 64.8ms (Comfort=Cold, Alert=False, PiIterations=3966, CorrelationId=collector-1)
+[22:55:22 DBG] collector-1 |  | Consumed WeatherObservationEvent ← [weather.observations] (CorrelationId=collector-1)
+[22:55:22 INF] collector-1 |  | 📥 Stage 1: Processing observation for Tokyo (Temp=0.6°C, Wind=4.7km/h, CorrelationId=collector-1)
+[22:55:22 DBG] collector-1 |  | Computed 4192 Leibniz iterations (result: 3.141354103974870...)
+[22:55:22 INF] collector-1 |  | 📥 Stage 2: Processing analysis for New York (Comfort=Cold, Alert=False, Stage1Time=64.8ms, CorrelationId=collector-1)
+[22:55:22 DBG] collector-1 |  | Published WeatherAnalysisEvent → [weather.analysis] (CorrelationId=collector-1)
+[22:55:22 INF] collector-1 |  | 📤 Stage 1 → [weather.analysis]: Tokyo analysed in 277.7ms (Comfort=Cold, Alert=False, PiIterations=4192, CorrelationId=collector-1)
+[22:55:22 DBG] collector-1 |  | Consumed WeatherObservationEvent ← [weather.observations] (CorrelationId=collector-1)
+[22:55:22 INF] collector-1 |  | 📥 Stage 1: Processing observation for Sydney (Temp=24.5°C, Wind=10.3km/h, CorrelationId=collector-1)
+[22:55:22 DBG] collector-1 |  | Computed 2381 Leibniz iterations (result: 3.142012645171440...)
+[22:55:23 DBG] collector-1 |  | Computed 8213 hash iterations (result prefix: EE1B668B)
+[22:55:23 DBG] collector-1 |  | Published WeatherNotificationEvent → [weather.notifications] (CorrelationId=collector-1)
+[22:55:23 INF] collector-1 |  | 📤 Stage 2 → [weather.notifications]: New York notification ready in 326.7ms (Severity=Info, TotalPipeline=391.5ms, CorrelationId=collector-1)
+[22:55:23 DBG] collector-1 |  | Consumed WeatherAnalysisEvent ← [weather.analysis] (CorrelationId=collector-1)
+[22:55:23 INF] collector-1 |  | 📥 Stage 2: Processing analysis for Tokyo (Comfort=Cold, Alert=False, Stage1Time=277.7ms, CorrelationId=collector-1)
+[22:55:23 INF] collector-1 |  | ✅ Stage 3 DISPATCH [Info]: New York: 2.9°C — Cold (PipelineTime=391.5ms, WallClock=544ms, CorrelationId=collector-1)
+[22:55:23 DBG] collector-1 |  | Consumed WeatherNotificationEvent ← [weather.notifications] (CorrelationId=collector-1)
+[22:55:23 DBG] collector-1 |  | Published WeatherAnalysisEvent → [weather.analysis] (CorrelationId=collector-1)
+[22:55:23 INF] collector-1 |  | 📤 Stage 1 → [weather.analysis]: Sydney analysed in 163.6ms (Comfort=Comfortable, Alert=False, PiIterations=2381, CorrelationId=collector-1)
+[22:55:23 DBG] collector-1 |  | Consumed WeatherObservationEvent ← [weather.observations] (CorrelationId=collector-1)
+[22:55:23 INF] collector-1 |  | 📥 Stage 1: Processing observation for São Paulo (Temp=22.8°C, Wind=11.7km/h, CorrelationId=collector-1)
+[22:55:23 DBG] collector-1 |  | Computed 2107 Leibniz iterations (result: 3.142067262011097...)
+[22:55:23 DBG] collector-1 |  | Published WeatherAnalysisEvent → [weather.analysis] (CorrelationId=collector-1)
+[22:55:23 INF] collector-1 |  | 📤 Stage 1 → [weather.analysis]: São Paulo analysed in 280.4ms (Comfort=Comfortable, Alert=False, PiIterations=2107, CorrelationId=collector-1)
+[22:55:23 DBG] collector-1 |  | Consumed WeatherObservationEvent ← [weather.observations] (CorrelationId=collector-1)
+[22:55:23 INF] collector-1 |  | 📥 Stage 1: Processing observation for London (Temp=5.2°C, Wind=10.2km/h, CorrelationId=collector-1)
+[22:55:23 DBG] collector-1 |  | Computed 1017 Leibniz iterations (result: 3.142575937521248...)
+[22:55:23 DBG] collector-1 |  | Computed 7298 hash iterations (result prefix: 36ABDEA8)
+[22:55:23 DBG] collector-1 |  | Published WeatherNotificationEvent → [weather.notifications] (CorrelationId=collector-1)
+[22:55:23 INF] collector-1 |  | 📤 Stage 2 → [weather.notifications]: Tokyo notification ready in 449.2ms (Severity=Info, TotalPipeline=726.9ms, CorrelationId=collector-1)
+[22:55:23 DBG] collector-1 |  | Consumed WeatherAnalysisEvent ← [weather.analysis] (CorrelationId=collector-1)
+[22:55:23 INF] collector-1 |  | 📥 Stage 2: Processing analysis for Sydney (Comfort=Comfortable, Alert=False, Stage1Time=163.6ms, CorrelationId=collector-1)
+[22:55:23 INF] collector-1 |  | ✅ Stage 3 DISPATCH [Info]: Tokyo: 0.6°C — Cold (PipelineTime=726.9ms, WallClock=990ms, CorrelationId=collector-1)
+[22:55:23 DBG] collector-1 |  | Consumed WeatherNotificationEvent ← [weather.notifications] (CorrelationId=collector-1)
+[22:55:23 DBG] collector-1 |  | Published WeatherAnalysisEvent → [weather.analysis] (CorrelationId=collector-1)
+[22:55:23 INF] collector-1 |  | 📤 Stage 1 → [weather.analysis]: London analysed in 155.1ms (Comfort=Cold, Alert=False, PiIterations=1017, CorrelationId=collector-1)
+[22:55:23 DBG] collector-1 |  | Consumed WeatherObservationEvent ← [weather.observations] (CorrelationId=collector-1)
+[22:55:23 DBG] collector-1 |  | Computed 5200 hash iterations (result prefix: 685BC671)
+[22:55:23 DBG] collector-1 |  | Published WeatherNotificationEvent → [weather.notifications] (CorrelationId=collector-1)
+[22:55:23 INF] collector-1 |  | 📤 Stage 2 → [weather.notifications]: Sydney notification ready in 274.8ms (Severity=Info, TotalPipeline=438.4ms, CorrelationId=collector-1)
+[22:55:23 DBG] collector-1 |  | Consumed WeatherAnalysisEvent ← [weather.analysis] (CorrelationId=collector-1)
+[22:55:23 INF] collector-1 |  | 📥 Stage 2: Processing analysis for São Paulo (Comfort=Comfortable, Alert=False, Stage1Time=280.4ms, CorrelationId=collector-1)
+[22:55:23 INF] collector-1 |  | ✅ Stage 3 DISPATCH [Info]: Sydney: 24.5°C — Comfortable (PipelineTime=438.4ms, WallClock=1306ms, CorrelationId=collector-1)
+[22:55:23 DBG] collector-1 |  | Consumed WeatherNotificationEvent ← [weather.notifications] (CorrelationId=collector-1)
+[22:55:24 DBG] collector-1 |  | Computed 7066 hash iterations (result prefix: 8BF35206)
+[22:55:24 DBG] collector-1 |  | Published WeatherNotificationEvent → [weather.notifications] (CorrelationId=collector-1)
+[22:55:24 INF] collector-1 |  | 📤 Stage 2 → [weather.notifications]: São Paulo notification ready in 376.7ms (Severity=Info, TotalPipeline=657.1ms, CorrelationId=collector-1)
+[22:55:24 DBG] collector-1 |  | Consumed WeatherAnalysisEvent ← [weather.analysis] (CorrelationId=collector-1)
+[22:55:24 INF] collector-1 |  | 📥 Stage 2: Processing analysis for London (Comfort=Cold, Alert=False, Stage1Time=155.1ms, CorrelationId=collector-1)
+[22:55:24 INF] collector-1 |  | ✅ Stage 3 DISPATCH [Info]: São Paulo: 22.8°C — Comfortable (PipelineTime=657.1ms, WallClock=1674ms, CorrelationId=collector-1)
+[22:55:24 DBG] collector-1 |  | Consumed WeatherNotificationEvent ← [weather.notifications] (CorrelationId=collector-1)
+[22:55:24 DBG] collector-1 |  | Computed 6251 hash iterations (result prefix: CA64F2AE)
+[22:55:24 DBG] collector-1 |  | Published WeatherNotificationEvent → [weather.notifications] (CorrelationId=collector-1)
+[22:55:24 INF] collector-1 |  | 📤 Stage 2 → [weather.notifications]: London notification ready in 334.3ms (Severity=Info, TotalPipeline=489.4ms, CorrelationId=collector-1)
+[22:55:24 DBG] collector-1 |  | Consumed WeatherAnalysisEvent ← [weather.analysis] (CorrelationId=collector-1)
+[22:55:24 INF] collector-1 |  | ✅ Stage 3 DISPATCH [Info]: London: 5.2°C, feels like 2.9°C (wind chill) — Cold (PipelineTime=489.4ms, WallClock=2056ms, CorrelationId=collector-1)
+[22:55:24 DBG] collector-1 |  | Consumed WeatherNotificationEvent ← [weather.notifications] (CorrelationId=collector-1)
+[22:55:40 INF] reporte

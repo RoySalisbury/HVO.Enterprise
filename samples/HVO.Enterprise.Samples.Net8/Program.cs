@@ -62,6 +62,10 @@ var builder = WebApplication.CreateBuilder(args);
 var serilogEnabled = builder.Configuration.GetValue("Extensions:Serilog:Enabled", true);
 if (serilogEnabled)
 {
+    var serilogOutputTemplate = builder.Configuration.GetValue(
+        "Extensions:Serilog:OutputTemplate",
+        "[{Timestamp:yyyy-MM-dd HH:mm:ss} {Level:u3}] {CorrelationId} | {TraceId} | {Message:lj}{NewLine}{Exception}");
+
     builder.Host.UseSerilog((context, loggerConfig) =>
     {
         loggerConfig
@@ -69,8 +73,7 @@ if (serilogEnabled)
             .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
             .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
             .Enrich.WithTelemetry() // HVO: Adds CorrelationId, TraceId, SpanId
-            .WriteTo.Console(
-                outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {CorrelationId} | {TraceId} | {Message:lj}{NewLine}{Exception}");
+            .WriteTo.Console(outputTemplate: serilogOutputTemplate);
     });
 }
 else
